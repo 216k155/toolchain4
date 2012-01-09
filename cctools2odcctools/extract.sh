@@ -4,12 +4,9 @@ set -e
 
 CCTOOLSNAME=cctools
 CCTOOLSVERS=782
-CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
 LD64NAME=ld64
 LD64VERS=85.2.1
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
-
-DISTDIR=odcctools
 
 TOPSRCDIR=`pwd`
 
@@ -35,13 +32,19 @@ while [ $# -gt 0 ]; do
 	    echo "Usage: $0 [--help] [--distfile] [--updatepatch] [--nosdk]" 1>&2
 	    exit 0
 	    ;;
+	--vers)
+	    shift
+	    CCTOOLSVERS=$1
+	    shift
+	    ;;
 	*)
 	    echo "Unknown option $1" 1>&2
 	    exit 1
     esac
 done
 
-
+CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
+DISTDIR=odcctools-${CCTOOLSVERS}
 
 if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
     TARSTRIP=--strip-components
@@ -51,13 +54,13 @@ else
     TARSTRIP=--strip-path
 fi
 
-PATCHFILESDIR=${TOPSRCDIR}/patches
+PATCHFILESDIR=${TOPSRCDIR}/patches-${CCTOOLSVERS}
 
 #PATCHFILES=`cd "${PATCHFILESDIR}" && find * -type f \! -path \*/.svn\* | sort`
 
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
-as/bignum.diff as/driver.c as/getc_unlocked.diff as/input-scrub.diff \
+as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff as/use_PRI_macros.diff \
 include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
 ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
@@ -180,6 +183,6 @@ if [ $MAKEDISTFILE -eq 1 ]; then
     mv ${DISTDIR} ${DISTDIR}-$DATE
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
-patch odcctools/misc/Makefile.in < patches/misc/Makefile.in.diff
+patch odcctools-${CCTOOLSVERS}/misc/Makefile.in < patches/misc/Makefile.in.diff
 
 exit 0

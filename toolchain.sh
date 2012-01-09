@@ -35,6 +35,8 @@ TOOLCHAIN_VERSION="4.2"
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.2.1"
 MACOSX="MacOSX10.5"
+CCTOOLS_VER=782
+#CCTOOLS_VER=809
 
 # Manualy change this if needed
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
@@ -711,7 +713,7 @@ toolchain_download_darwin_sources() {
 
 
 toolchain_cctools() {
-	local CCTOOLS_DIR="$SRC_DIR/cctools"
+	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER}"
 	local TARGET="arm-apple-darwin9"
 
 	build_as=1
@@ -723,31 +725,31 @@ toolchain_cctools() {
 
 	if [ "x$build_as" == "x1" ]; then
 	   download_cctools=1
-	   if [ -d "${SRC_DIR}/cctools" ]; then
+	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER}" ]; then
 		if ! confirm -N "Download cctools again?"; then
 			download_cctools=0
 		fi
 	   fi
 	   if [ "x$download_cctools" == "x1" ]; then
 		pushd cctools2odcctools
-		if [ -d odcctools ]; then
+		if [ -d odcctools-${CCTOOLS_VER} ]; then
 		  if confirm "remove downloaded cctools?"; then
-			rm -fr odcctools
+			rm -fr odcctools-${CCTOOLS_VER}
 		  fi
 		fi
-		./extract.sh
+		./extract.sh --updatepatch --vers ${CCTOOLS_VER}
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
-		cp -r odcctools "${CCTOOLS_DIR}"
+		cp -r odcctools-${CCTOOLS_VER} "${CCTOOLS_DIR}"
 		popd
 	   fi
 
 		mkdir -p "${PREFIX}"
-		rm -fr "${BUILD_DIR}/cctools-iphone"
-		mkdir -p "${BUILD_DIR}/cctools-iphone"
+		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER}-iphone"
+		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER}-iphone"
 		cd "${CCTOOLS_DIR}"
-		message_status "Configuring cctools-iphone..."
-		cd "${BUILD_DIR}/cctools-iphone"
+		message_status "Configuring cctools-${CCTOOLS_VER}-iphone..."
+		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER}-iphone"
 
 		CFLAGS="-m32" LDFLAGS="-m32" "${CCTOOLS_DIR}"/configure \
 			--target="${TARGET}" \
@@ -755,8 +757,8 @@ toolchain_cctools() {
 
 		make clean > /dev/null
 
-		message_status "Building cctools-iphone..."
-		cecho bold "Build progress logged to: $BUILD_DIR/cctools-iphone/make.log"
+		message_status "Building cctools-${CCTOOLS_VER}-iphone..."
+		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER}-iphone/make.log"
 		if ! ( make &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
@@ -841,7 +843,7 @@ toolchain_build_sys3() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local CCTOOLS_DIR="$SRC_DIR/cctools"
+	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER}"
 	local GCC_DIR="$SRC_DIR/gcc"
 	local CSU_DIR="$SRC_DIR/csu"
 	export PATH="$PREFIX/bin":"${PATH}"
@@ -1410,7 +1412,7 @@ store_dist() {
 	File=/tmp/sys42.tar.bzip2
 	message_action "Making $File"
 	tar cjf $File toolchain/sys
-	File=/tmp/odcctools-782.tar.bzip2
+	File=/tmp/odcctools-${CCTOOLS_VER}.tar.bzip2
 	message_action "Making $File"
 	tar cjf $File toolchain/pre
 }
