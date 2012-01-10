@@ -7,12 +7,16 @@ CCTOOLSVERS=782
 LD64NAME=ld64
 LD64VERS=85.2.1
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
+OSXVER=10.5
 
 TOPSRCDIR=`pwd`
 
 MAKEDISTFILE=0
 UPDATEPATCH=0
+# To use MacOSX headers set USESDK to 999.
+#USESDK=999
 USESDK=1
+FOREIGNHEADERS=
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -37,6 +41,15 @@ while [ $# -gt 0 ]; do
 	    CCTOOLSVERS=$1
 	    shift
 	    ;;
+	--foreignheaders)
+	    shift
+	    FOREIGNHEADERS=-foreign-headers
+	    ;;
+	--osxver)
+	    shift
+	    OSXVER=$1
+	    shift
+	    ;;
 	*)
 	    echo "Unknown option $1" 1>&2
 	    exit 1
@@ -44,7 +57,7 @@ while [ $# -gt 0 ]; do
 done
 
 CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
-DISTDIR=odcctools-${CCTOOLSVERS}
+DISTDIR=odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}
 
 if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
     TARSTRIP=--strip-components
@@ -101,8 +114,12 @@ find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
 rm -rf ${DISTDIR}/{cbtlibs,dyld,file,gprof,libdyld,mkshlib,profileServer}
 
-if [ $USESDK -eq 999 ]; then
-    SDKROOT=/Developer/SDKs/MacOSX10.5.sdk
+if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
+    if [ "$(uname -s)" = "Darwin" ] ; then
+	SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
+    else
+	SDKROOT=${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk
+    fi
     echo "Merging content from $SDKROOT"
     if [ ! -d "$SDKROOT" ]; then
 	echo "$SDKROOT must be present" 1>&2
@@ -110,9 +127,12 @@ if [ $USESDK -eq 999 ]; then
     fi
 
     mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new;
-    for i in mach architecture i386 libkern; do
+    for i in mach architecture i386 libkern sys; do
 	tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
     done
+    rm ${DISTDIR}/include/sys/cdefs.h
+    rm ${DISTDIR}/include/sys/types.h
+    rm ${DISTDIR}/include/sys/select.h
     mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h;
 
     for f in ${DISTDIR}/include/libkern/OSByteOrder.h; do
@@ -127,7 +147,7 @@ find ${DISTDIR} -type f -name \*.[ch] | while read f; do
     sed -e 's/^#import/#include/' < $f > $f.tmp
     mv -f $f.tmp $f
 done
-	
+
 echo "Removing __private_extern__"
 find ${DISTDIR} -type f -name \*.h | while read f; do
     sed -e 's/^__private_extern__/extern/' < $f > $f.tmp
@@ -138,7 +158,7 @@ set +e
 
 INTERACTIVE=0
 echo "Applying patches"
-for p in ${PATCHFILES}; do			
+for p in ${PATCHFILES}; do
     dir=`dirname $p`
     if [ $INTERACTIVE -eq 1 ]; then
 	read -p "Apply patch $p? " REPLY
@@ -167,6 +187,14 @@ set -e
 echo "Adding new files"
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
 
+if [ -z $FOREIGNHEADERS ] ; then
+	echo "Removing include/foreign"
+	rm -rf ${DISTDIR}/include/foreign
+else
+	echo "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
+	rm -rf ${DISTDIR}/include/mach/ppc
+fi
+
 echo "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
 find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
@@ -183,6 +211,6 @@ if [ $MAKEDISTFILE -eq 1 ]; then
     mv ${DISTDIR} ${DISTDIR}-$DATE
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
-patch odcctools-${CCTOOLSVERS}/misc/Makefile.in < patches/misc/Makefile.in.diff
+patch odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}/misc/Makefile.in < patches/misc/Makefile.in.diff
 
 exit 0

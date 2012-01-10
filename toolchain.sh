@@ -27,16 +27,22 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
+# Another reference, this time cctools version 809 from gentoo:
+# http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/sys-devel/binutils-apple/binutils-apple-4.2.ebuild?revision=1.2
+
 # What version of the toolchain are we building?
-TOOLCHAIN_VERSION="4.2"
+TOOLCHAIN_VERSION="4.3"
 #TOOLCHAIN_VERSION="3.1.2"
 
 #what device are we building for?
 DEVICE="iPhone_3GS"
-FIRMWARE_VERSION="4.2.1"
+FIRMWARE_VERSION="4.3"
 MACOSX="MacOSX10.5"
 CCTOOLS_VER=782
 #CCTOOLS_VER=809
+#FOREIGNHEADERS=-foreign-headers
+FOREIGNHEADERS=
+CCTOOLS_VER_FH="${CCTOOLS_VER}${FOREIGNHEADERS}"
 
 # Manualy change this if needed
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
@@ -121,7 +127,7 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 #
 # ./toolchain.sh build | rebuild
 #   Starts the build process decribed by saurik in
-#   http://www.saurik.com/id/4. 
+#   http://www.saurik.com/id/4.
 #   This script uses the paths $BUILD_DIR, $SRC_DIR, $PREFIX and $SYS_DIR.
 #   Theses path defaults to subpaths under $IPHONEDEV_DIR/toolchain/
 #
@@ -136,7 +142,8 @@ MNT_DIR="${FILES_DIR}/mnt"
 FW_DIR="${FILES_DIR}/firmware"
 
 #IPHONE_SDK="iphone_sdk_*.dmg"
-IPHONE_SDK="*sdk_${TOOLCHAIN_VERSION}_final.dmg"
+#IPHONE_SDK="*sdk_${TOOLCHAIN_VERSION}_final.dmg"
+IPHONE_SDK="xcode_3.2.6_and_ios_sdk_4.3.dmg"
 [ -z $IPHONE_SDK_DMG ] && IPHONE_SDK_DMG="${FILES_DIR}/${IPHONE_SDK}"
 
 # URLS
@@ -224,16 +231,23 @@ mount_dmg() {
 		echo "In order to extract `basename $1`, I am going to mount it."
 		echo "This needs to be done as root."
 		sudo hdiutil attach -mountpoint $2 $DMG
+		MOUNT_RES=$?
 	else
 		# Convert the DMG to an IMG for mounting
 		TMP_IMG=${TMP_DIR}/`basename $DMG .dmg`.img
-		dmg2img -v -i $DMG -o $TMP_IMG
+#		dmg2img -v -i $DMG -o $TMP_IMG
+		[ -f ${TMP_IMG} ] || dmg2img -v -i $DMG -o $TMP_IMG
 		echo "In order to extract `basename $1`, I am going to mount it."
 		echo "This needs to be done as root."
 		# This is needed for 3.0 sdk and dmg2img 1.6.2
-		sudo mount -t hfsplus  -o loop,offset=36864 $TMP_IMG $2
+#		sudo mount -t hfsplus  -o loop,offset=36864 $TMP_IMG $2
+		sudo losetup -o 36864 /dev/loop0 $TMP_IMG
+		sudo mount -t hfsplus /dev/loop0 $2
+		MOUNT_RES=$?
+		sleep 1
+		find $2
 	fi
-	if [ ! $? == 0 ]; then
+	if [ ! $MOUNT_RES = 0 ]; then
 		error "Failed to mount `basename $1`."
 		exit 1
 	fi
@@ -270,7 +284,9 @@ dmg_to_img() {
 
 mount_img() {
 	# This is needed for 3.0 sdk and dmg2img 1.6.2
-	sudo mount -t hfsplus  -o loop,offset=36864 $1 $2
+#	sudo mount -t hfsplus  -o loop,offset=36864 $1 $2
+	sudo losetup -o 36864 /dev/loop0 $1
+	sudo mount -t hfsplus /dev/loop0 $2
 }
 
 # Platform independent umount command for the DMGs used in this script
@@ -281,6 +297,8 @@ umount_dmg() {
 		# shouldn't we have a DEBUG var and only
 		# delete the TMP_IMG if DEBUG is not set/true
 		sudo umount -fl $MNT_DIR
+		sudo losetup -d /dev/loop0
+		sleep 1
 	fi
 	if [ ! $? == 0 ]; then
 		error "Failed to unmount."
@@ -297,6 +315,8 @@ umount_img() {
 		# shouldn't we have a DEBUG var and only
 		# delete the TMP_IMG if DEBUG is not set/true
 		sudo umount -fl $MNT_DIR
+		sudo losetup -d /dev/loop0
+		sleep 1
 	fi
 	if [ ! $? == 0 ]; then
 		error "Failed to unmount."
@@ -389,14 +409,16 @@ build_tools() {
 	fi
 	message_status "git is ready!"
 
-	if [ -z $(which ldid) ] ; then 
-		pushd ldid-1.0.476/util
-
-		if ! make install; then
-			error "Failed to make ldid-1.0.476"
+	if [ -z $(which ldid) ] ; then
+		pushd ldid-1.0.610/util
+#		if ! make install; then
+#			error "Failed to make ldid-1.0.610"
+#			exit 1
+#		fi
+		if ! sudo cp ldid /usr/local/bin; then
+			error "Failed to copy ldid"
 			exit 1
 		fi
-
 		popd
 	fi
 	message_status "ldid is ready!"
@@ -412,6 +434,8 @@ build_tools() {
 toolchain_extract_headers() {
 	build_tools
 	mkdir -p ${MNT_DIR} ${SDKS_DIR} ${TMP_DIR}
+	# Remove this next line,
+	rm -fR tmp/Documentation tmp/Examples tmp/Platforms tmp/SDKs tmp/Applications /tmp/System /tmp/Tools /tmp/private /tmp/usr
 
 	# Make sure we don't already have these
 	if [ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
@@ -442,10 +466,19 @@ toolchain_extract_headers() {
 	message_status "Trying to mount the iPhone SDK dmg..."
 	mount_dmg $IPHONE_SDK_DMG $MNT_DIR
 
+	# iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg
+	# xcode_3.2.6_and_ios_sdk_4.3.dmg
+	if [[ "$IPHONE_SDK_DMG" = *xcode_3.2.6_and_ios_sdk_4.3* ]] ; then
+		MPKG_NAME="xCode and iOS SDK"
+	else
+		MPKG_NAME="iPhone SDK"
+	fi
+
+
 	# Check the version of the SDK
 	# Apple seems to apply a policy of rounding off the last component of the long version number
 	# so we'll do the same here
-	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "${MNT_DIR}/iPhone SDK.mpkg/Contents/version.plist" | awk '
+	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "${MNT_DIR}/${MPKG_NAME}.mpkg/Contents/version.plist" | awk '
 		BEGIN { FS="." }
 		{
 			if(substr($4,1,1) >= 5)
@@ -465,8 +498,12 @@ toolchain_extract_headers() {
 	fi
 
 	# Check which PACKAGE we have to extract. Apple does have different
-	# namings for it, depending on the SDK version. 
-	if [ "${TOOLCHAIN_VERSION}" == "3.1.2" ] ; then
+	# namings for it, depending on the SDK version.
+#	if [ "${MPKG_NAME}" = "xCode and iOS SDK" ] ; then
+#		PACKAGE="iPhoneSDK4_3.pkg"
+#		TOOLCHAIN_VERSION=4.3
+#	el
+	if [ "${TOOLCHAIN_VERSION}" = "3.1.2" ] ; then
 		PACKAGE="iPhoneSDKHeadersAndLibs.pkg"
 	elif [[ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "newer" ]]; then
 		PACKAGE="iPhoneSDK`echo $TOOLCHAIN_VERSION | sed 's/\./_/g' `.pkg"
@@ -483,7 +520,7 @@ toolchain_extract_headers() {
 
 	message_status "Extracting `basename $PACKAGE`..."
 
-	rm -fR $TMP_DIR/*
+	rm -fR $TMP_DIR/Documentation $TMP_DIR/Examples $TMP_DIR/Platforms $TMP_DIR/SDKs
 
 	cp ${MNT_DIR}/Packages/$PACKAGE $TMP_DIR/iphone.pkg
 	cd $TMP_DIR
@@ -500,17 +537,15 @@ toolchain_extract_headers() {
 
 	mv -f Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk ${SDKS_DIR}
 
-	rm -fR $TMP_DIR/*
+	rm -fR $TMP_DIR/Documentation $TMP_DIR/Examples $TMP_DIR/Platforms $TMP_DIR/SDKs
 
 	message_status "Extracting ${MACOSX}.pkg..."
 
 	cp ${MNT_DIR}/Packages/${MACOSX}.pkg $TMP_DIR/macosx.pkg
-	cd $TMP_DIR 
+	cd $TMP_DIR
 	xar -xf macosx.pkg Payload
 	cat Payload | zcat | cpio -id
 	mv -f SDKs/${MACOSX}.sdk ${SDKS_DIR}
-
-	rm -fR $TMP_DIR/*
 
 	message_status "Unmounting iPhone SDK img..."
 	cd $HERE
@@ -713,7 +748,7 @@ toolchain_download_darwin_sources() {
 
 
 toolchain_cctools() {
-	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER}"
+	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
 	local TARGET="arm-apple-darwin9"
 
 	build_as=1
@@ -725,40 +760,44 @@ toolchain_cctools() {
 
 	if [ "x$build_as" == "x1" ]; then
 	   download_cctools=1
-	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER}" ]; then
+	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER_FH}" ]; then
 		if ! confirm -N "Download cctools again?"; then
 			download_cctools=0
 		fi
 	   fi
 	   if [ "x$download_cctools" == "x1" ]; then
 		pushd cctools2odcctools
-		if [ -d odcctools-${CCTOOLS_VER} ]; then
+		if [ -d odcctools-${CCTOOLS_VER_FH} ]; then
 		  if confirm "remove downloaded cctools?"; then
-			rm -fr odcctools-${CCTOOLS_VER}
+			rm -fr odcctools-${CCTOOLS_VER_FH}
 		  fi
 		fi
-		./extract.sh --updatepatch --vers ${CCTOOLS_VER}
+		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
+			./extract.sh --updatepatch --vers ${CCTOOLS_VER} --foreignheaders
+		else
+			./extract.sh --updatepatch --vers ${CCTOOLS_VER}
+		fi
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
-		cp -r odcctools-${CCTOOLS_VER} "${CCTOOLS_DIR}"
+		cp -r odcctools-${CCTOOLS_VER_FH} "${CCTOOLS_DIR}"
 		popd
 	   fi
 
 		mkdir -p "${PREFIX}"
-		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER}-iphone"
-		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER}-iphone"
+		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
+		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 		cd "${CCTOOLS_DIR}"
-		message_status "Configuring cctools-${CCTOOLS_VER}-iphone..."
-		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER}-iphone"
+		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
+		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CFLAGS="-m32" LDFLAGS="-m32" "${CCTOOLS_DIR}"/configure \
+		CFLAGS="-m32" LDFLAGS="-m32" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 
 		make clean > /dev/null
 
-		message_status "Building cctools-${CCTOOLS_VER}-iphone..."
-		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER}-iphone/make.log"
+		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
+		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
 		if ! ( make &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
@@ -843,7 +882,7 @@ toolchain_build_sys3() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER}"
+	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
 	local GCC_DIR="$SRC_DIR/gcc"
 	local CSU_DIR="$SRC_DIR/csu"
 	export PATH="$PREFIX/bin":"${PATH}"
@@ -1314,7 +1353,7 @@ toolchain_sys() {
 		  cd "${SDKS_DIR}"; mv Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk .; rm -fr Platforms
 		fi
 
-                pushd "${IPHONE_SDK}"
+	    pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
 		cp -R -pf usr "${SYS_DIR}"
 		popd
@@ -1412,7 +1451,7 @@ store_dist() {
 	File=/tmp/sys42.tar.bzip2
 	message_action "Making $File"
 	tar cjf $File toolchain/sys
-	File=/tmp/odcctools-${CCTOOLS_VER}.tar.bzip2
+	File=/tmp/odcctools-${CCTOOLS_VER_FH}.tar.bzip2
 	message_action "Making $File"
 	tar cjf $File toolchain/pre
 }
@@ -1639,6 +1678,7 @@ case $1 in
 		fi
 		cd ldid-1.0.610
 		g++ -I . -o util/ldid{,.cpp} -x c util/{lookup2,sha1}.c
+		[ -d ${TOOLCHAIN}/pre/bin/ ] || mkdir -p ${TOOLCHAIN}/pre/bin/
 		cp -a util/ldid ${TOOLCHAIN}/pre/bin/
 		message_action "ldid built."
 		;;
