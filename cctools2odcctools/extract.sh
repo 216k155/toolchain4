@@ -59,6 +59,10 @@ done
 CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
 DISTDIR=odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}
 
+if [[ -z $FOREIGNHEADERS ]] ; then
+    USE_OSX_MACHINE_H=1
+fi
+
 if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
     TARSTRIP=--strip-components
 elif [ "`tar --help | grep bsdtar 2> /dev/null`" ]; then
@@ -71,6 +75,7 @@ PATCHFILESDIR=${TOPSRCDIR}/patches-${CCTOOLSVERS}
 
 #PATCHFILES=`cd "${PATCHFILESDIR}" && find * -type f \! -path \*/.svn\* | sort`
 
+if [[ ! ${USE_OSX_MACHINE_H} ]] ; then
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
@@ -91,6 +96,30 @@ otool/nolibmstub.diff otool/noobjc.diff \
 ld64/LTOReader-setasmpath.diff include/mach/machine_armv7.diff \
 ld/ld-nomach.diff libstuff/cmd_with_prefix.diff ld64/cstdio.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
+
+else
+PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
+ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
+as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
+as/messages.diff as/relax.diff \
+include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
+ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
+ld64/Options-config_h.diff ld64/Options-ctype.diff \
+ld64/Options-defcross.diff ld64/Options_h_includes.diff \
+ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
+ld64/Thread64_MachOWriterExecutable.diff ld-sysroot.diff \
+ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
+libstuff/macosx_deployment_target_default_105.diff \
+libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
+misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
+misc/redo_prebinding.nogetattrlist.diff \
+misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
+otool/nolibmstub.diff otool/noobjc.diff \
+ld64/LTOReader-setasmpath.diff include/mach/machine_armv7.diff \
+ld/ld-nomach.diff libstuff/cmd_with_prefix.diff ld64/cstdio.diff \
+misc/with_prefix.diff misc/bootstrap_h.diff"
+
+fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
 
@@ -130,10 +159,14 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
     for i in mach architecture i386 libkern sys; do
 	tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
     done
+
+    if [[ ! ${USE_OSX_MACHINE_H} ]] ; then
+	mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h;
+    fi
+
     rm ${DISTDIR}/include/sys/cdefs.h
     rm ${DISTDIR}/include/sys/types.h
     rm ${DISTDIR}/include/sys/select.h
-    mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h;
 
     for f in ${DISTDIR}/include/libkern/OSByteOrder.h; do
 	sed -e 's/__GNUC__/__GNUC_UNUSED__/g' < $f > $f.tmp
