@@ -17,18 +17,48 @@ else
 	SUDO=sudo
 fi
 
+patch_mingw_types_h() {
+	if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ ! $(egrep uid_t /usr/include/sys/types.h) ]] ; then
+			printf %s \
+'--- sys/types.h-orig	2012-01-13 00:17:02 +0000
++++ sys/types.h	2012-01-13 00:34:53 +0000
+@@ -14,6 +14,15 @@
+ /* All the headers include this file. */
+ #include <_mingw.h>
+ 
++/* Added by Ray Donnelly (mingw.android@gmail.com). libgcc build fails for Android 
++   cross gcc or dmg2img without this. I should find another way as this is a horrible
++   thing to do. */
++typedef        int     uid_t;
++typedef        int     gid_t;
++typedef        int     daddr_t;
++typedef        char *  caddr_t;
++/* End Added by... */
++
+ #define __need_wchar_t
+ #define __need_size_t
+ #define __need_ptrdiff_t
+' > /usr/include/sys-types-uid_daddr_caddr.patch
+			pushd /usr/include
+			patch -p0 < sys-types-uid_daddr_caddr.patch		
+			popd
+		fi
+	fi
+}
+
 # Builds dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools_dmg() {
+	patch_mingw_types_h
 	local _TMP_DIR=$1
 	mkdir -p $_TMP_DIR
+	pushd $_TMP_DIR
 
 	if [ -z $(which dmg2img) ] ; then
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 
 			message_status "Retrieving and building bzip2 1.0.6 ..."
-
-			pushd $_TMP_DIR
 
 			if ! wget -O - http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz | tar -zx; then
 					error "Failed to get and extract bzip2-1.0.6 Check errors."
@@ -38,34 +68,46 @@ build_tools_dmg() {
 
 			pushd bzip2-1.0.6
 			# Fails due to chmod a+x without .exe suffix, ignored.
-			exit 1
+			cp ../../files/bzip2-1.0.6-Makefile ./Makefile
 			make install
 			popd
-			rm -Rf bzip2-1.0.6
+			
+			if ! wget -O - http://www.openssl.org/source/openssl-1.0.0f.tar.gz | tar -zx; then
+					error "Failed to get and extract openssl-1.0.0f Check errors."
+					popd
+					exit 1
+			fi
+
+			pushd openssl-1.0.0f
+			./configure --prefix=/usr/local -no-shared -no-zlib-dynamic -no-test mingw
+			make
+			make install
 			popd
+
+			rm -Rf bzip2-1.0.6
+			rm -Rf openssl-1.0.0f
+	
+			message_status "Retrieving and building dmg2img 1.6.2 ..."
+	
+			if ! wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar -zx; then
+				error "Failed to get and extract dmg2img-1.6.2 Check errors."
+				exit 1
+			fi
 		fi
-
-		message_status "Retrieving and building dmg2img 1.6.2 ..."
-
-		cd $TMP_DIR
-		if ! wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar -zx; then
-			error "Failed to get and extract dmg2img-1.6.2 Check errors."
-			exit 1
-		fi
-
+		
 		pushd dmg2img-1.6.2
-
-		if ! make install; then
+		patch -p0 <../../patches/dmg2img-1.6.2-WIN-fseeko.patch
+		if ! CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -mwindows" make install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
 			exit 1
 		fi
 
-		popd
 		rm -Rf dmg2img-1.6.2
 		popd
 	fi
+	popd
 	message_status "dmg2img is ready!"
 
 	if [ -z $(which xar) ] ; then
@@ -77,6 +119,9 @@ build_tools_dmg() {
 		fi
 
 		pushd xar-1.5.2
+		./configure --prefix=/usr/local
+		make
+		make install
 
 		if ! make install; then
 			error "Failed to make xar-1.5.2"
@@ -85,7 +130,7 @@ build_tools_dmg() {
 		fi
 
 		popd
-		rm -Rf xar-1.5.2
+#		rm -Rf xar-1.5.2
 		popd
 	fi
 	message_status "xar is ready!"

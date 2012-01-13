@@ -1,0 +1,54 @@
+--- dmg2img.h-orig	2012-01-12 21:43:01 +0000
++++ dmg2img.h	2012-01-12 21:45:56 +0000
+@@ -20,6 +20,10 @@
+ #include "adc.h"
+ #include <unistd.h>
+ 
++#if defined(__MINGW32__)
++    #define fseeko _lseeki64
++#endif
++
+ #define BT_ADC   0x80000004
+ #define BT_ZLIB  0x80000005
+ #define BT_BZLIB 0x80000006
+--- vfdecrypt.c.orig	2012-01-12 22:51:20 +0000
++++ vfdecrypt.c	2012-01-12 22:52:42 +0000
+@@ -35,7 +35,15 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <inttypes.h>
++#if defined(__MINGW32__)
++#define htonl(_x) ((((uint32_t)(_x) & 0xff000000) >> 24) | \
++                   (((uint32_t)(_x) & 0x00ff0000) >> 8)  | \
++                   (((uint32_t)(_x) & 0x0000ff00) << 8)  | \
++                   (((uint32_t)(_x) & 0x000000ff) << 24))
++#define ntohl(_x) htonl(_x)
++#else
+ #include <arpa/inet.h>
++#endif
+ #include <openssl/sha.h>
+ #include <openssl/aes.h>
+ #include <openssl/hmac.h>
+--- Makefile.orig	2012-01-12 22:20:00 +0000
++++ Makefile	2012-01-12 23:05:35 +0000
+@@ -1,5 +1,5 @@
+ #CC = gcc
+-CFLAGS = -O2 -Wall
++CFLAGS := ${CFLAGS} -O2 -Wall
+ BIN_DIR = ${DESTDIR}/usr/bin
+ 
+ all: dmg2img vfdecrypt 
+@@ -17,11 +17,11 @@
+ 	$(CC) $(CFLAGS) -c adc.c
+ 
+ vfdecrypt: vfdecrypt.c
+-	$(CC) $(CFLAGS) -s -o vfdecrypt vfdecrypt.c -lcrypto
++	$(CC) ${LDFLAGS} $(CFLAGS) -s -o vfdecrypt vfdecrypt.c -lcrypto
+ 
+ install: dmg2img vfdecrypt
+ 	mkdir -p ${BIN_DIR}
+-	install -c -s -m 755 -o root -g root dmg2img vfdecrypt $(BIN_DIR)
++	install -c -s -m 755 dmg2img vfdecrypt $(BIN_DIR)
+ 
+ clean:
+ 	rm -f dmg2img vfdecrypt *~ *.o core
