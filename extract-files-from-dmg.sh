@@ -56,7 +56,7 @@ build_tools_dmg() {
 	pushd $_TMP_DIR
 
 	if [ -z $(which dmg2img) ] ; then
-		if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ 0 == 1 ]] && [[ "$(uname-bt)" == "Windows" ]] ; then
 
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 
@@ -94,10 +94,10 @@ build_tools_dmg() {
 				exit 1
 			fi
 		fi
-		
+
 		pushd dmg2img-1.6.2
-		patch -p0 <../../patches/dmg2img-1.6.2-WIN-fseeko.patch
-		if ! CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -mwindows" make install; then
+		patch -p0 <../../patches/dmg2img-1.6.2-WIN.patch
+		if ! CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -mwindows" CC="gcc" make install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
@@ -110,18 +110,49 @@ build_tools_dmg() {
 	popd
 	message_status "dmg2img is ready!"
 
+	if [ -z $(which xml2-config) ] ; then
+
+		pushd $_TMP_DIR
+
+		if ! wget -O - http://xmlsoft.org/sources/old/libxml2-2.7.1.tar.gz | tar -zx; then
+			error "Failed to get and extract libxml2-2.7.1 Check errors."
+			popd
+			exit 1
+		fi
+
+		pushd libxml2-2.7.1
+		./configure --prefix=/usr/local --with-threads=no --disable-shared --enable-static
+		make
+		make install
+
+		if ! make install; then
+			error "Failed to make libxml2-2.7.1"
+			popd
+			exit 1
+		fi
+
+		popd
+#		rm -Rf libxml2-2.7.1
+		popd
+	fi
+
+
 	if [ -z $(which xar) ] ; then
 		pushd $_TMP_DIR
+#if [[ ! -d xar-1.5.2 ]] ; then
 		if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
 			error "Failed to get and extract xar-1.5.2 Check errors."
 			popd
 			exit 1
 		fi
-
+#fi
 		pushd xar-1.5.2
-		./configure --prefix=/usr/local
-		make
-		make install
+		patch -p0 < ../../patches/xar-1.5.2-WIN.patch
+		if ! CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" LIBS="-lgdi32" ./configure --prefix=/usr/local --disable-shared --enable-static; then
+			error "Failed to configure xar-1.5.2"
+			popd
+			exit 1
+		fi
 
 		if ! make install; then
 			error "Failed to make xar-1.5.2"
@@ -130,7 +161,7 @@ build_tools_dmg() {
 		fi
 
 		popd
-#		rm -Rf xar-1.5.2
+		rm -Rf xar-1.5.2
 		popd
 	fi
 	message_status "xar is ready!"
