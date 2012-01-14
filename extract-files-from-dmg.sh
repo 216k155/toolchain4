@@ -56,7 +56,7 @@ build_tools_dmg() {
 	pushd $_TMP_DIR
 
 	if [ -z $(which dmg2img) ] ; then
-		if [[ 0 == 1 ]] && [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ 1 == 1 ]] && [[ "$(uname-bt)" == "Windows" ]] ; then
 
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 
@@ -139,6 +139,29 @@ build_tools_dmg() {
 
 	if [ -z $(which xar) ] ; then
 		pushd $_TMP_DIR
+	
+		message_status "Retrieving and building Nokia's lns ..."
+		git clone git://gitorious.org/qt-labs/qtmodularization.git
+		pushd qtmodularization/src/lns
+		CXXFLAGS="-DSE_PRIVILEGE_REMOVED=4" make
+		cp lns.exe /usr/local/bin
+		popd
+
+#  #define _WIN32_WINNT 0x0600
+#  #include <windows.h>
+#  #include <direct.h>
+#  #define DIRSEP '\\'
+#  #define S_IFDIR _S_IFDIR
+#  int link(const char *path1, const char *path2)
+#  {
+#		return CreateHardLinkA(path2, path1, NULL) ? 0 : -1;
+#  }
+#  int symlink(char const *path1, char const *path2)
+#  {
+#		return CreateSymbolicLinkA(path2, path1, 0) ? 0 : -1;
+#  }
+
+
 #if [[ ! -d xar-1.5.2 ]] ; then
 		if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
 			error "Failed to get and extract xar-1.5.2 Check errors."

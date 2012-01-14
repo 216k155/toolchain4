@@ -1,3 +1,108 @@
+--- ./lib/archive.c.orig	2012-01-13 20:14:32 +0000
++++ ./lib/archive.c	2012-01-13 20:14:56 +0000
+@@ -46,7 +46,15 @@
+ #include <errno.h>
+ #include <limits.h>
+ #include <sys/stat.h>
+-#include <arpa/inet.h> /* for ntoh{l,s} */
++#if defined(__MINGW32__)
++#define htonl(_x) ((((uint32_t)(_x) & 0xff000000) >> 24) | \
++                   (((uint32_t)(_x) & 0x00ff0000) >> 8)  | \
++                   (((uint32_t)(_x) & 0x0000ff00) << 8)  | \
++                   (((uint32_t)(_x) & 0x000000ff) << 24))
++#define ntohl(_x) htonl(_x)
++#else
++ #include <arpa/inet.h> /* for ntoh{l,s} */
++#endif
+ #include <inttypes.h>  /* for PRIu64 */
+ #include <libxml/xmlwriter.h>
+ #include <libxml/xmlreader.h>
+--- ./lib/darwinattr.c.orig	2012-01-13 20:18:45 +0000
++++ ./lib/darwinattr.c	2012-01-13 20:19:08 +0000
+@@ -42,7 +42,15 @@
+ #include <libgen.h>
+ #include <sys/fcntl.h>
+ #include <sys/stat.h>
+-#include <arpa/inet.h>
++#if defined(__MINGW32__)
++#define htonl(_x) ((((uint32_t)(_x) & 0xff000000) >> 24) | \
++                   (((uint32_t)(_x) & 0x00ff0000) >> 8)  | \
++                   (((uint32_t)(_x) & 0x0000ff00) << 8)  | \
++                   (((uint32_t)(_x) & 0x000000ff) << 24))
++#define ntohl(_x) htonl(_x)
++#else
++ #include <arpa/inet.h>
++#endif
+ #include "xar.h"
+ #include "arcmod.h"
+ #include "b64.h"
+--- ./lib/ext2.c.orig	2012-01-13 20:19:48 +0000
++++ ./lib/ext2.c	2012-01-13 20:39:46 +0000
+@@ -48,7 +48,10 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <sys/types.h>
+-#include <sys/ioctl.h>
++#if !defined(__MINGW32__)
++ #include <sys/ioctl.h>
++#else
++#endif
+ #include "ext2.h"
+ 
+ #ifdef HAVE_EXT2FS_EXT2_FS_H
+--- ./lib/stat.c.orig	2012-01-13 20:20:42 +0000
++++ ./lib/stat.c	2012-01-13 20:26:57 +0000
+@@ -55,8 +55,8 @@
+ #include <sys/time.h>
+ #include <sys/fcntl.h>
+ #include <time.h>
+-#include <pwd.h>
+-#include <grp.h>
++//#include <pwd.h>
++//#include <grp.h>
+ #include <string.h>
+ #include <unistd.h>
+ #include <limits.h>
+@@ -453,18 +453,20 @@
+ 	asprintf(&tmpstr, "%"PRIu64, (uint64_t)XAR(x)->sbcache.st_uid);
+ 	xar_prop_set(f, "uid", tmpstr);
+ 	free(tmpstr);
+-
++#if !defined(__MINGW32__)
+ 	pw = getpwuid(XAR(x)->sbcache.st_uid);
+ 	if( pw )
+ 		xar_prop_set(f, "user", pw->pw_name);
+-
++#endif
+ 	asprintf(&tmpstr, "%"PRIu64, (uint64_t)XAR(x)->sbcache.st_gid);
+ 	xar_prop_set(f, "gid", tmpstr);
+ 	free(tmpstr);
+ 
++#if !defined(__MINGW32__)
+ 	gr = getgrgid(XAR(x)->sbcache.st_gid);
+ 	if( gr )
+ 		xar_prop_set(f, "group", gr->gr_name);
++#endif
+ 
+ 	gmtime_r(&XAR(x)->sbcache.st_atime, &t);
+ 	memset(time, 0, sizeof(time));
+@@ -508,7 +510,7 @@
+ 	/* in case we don't find anything useful in the archive */
+ 	u = geteuid();
+ 	g = getegid();
+-
++#if !defined(__MINGW32__)
+ 	opt = xar_opt_get(x, XAR_OPT_OWNERSHIP);
+ 	if( opt && (strcmp(opt, XAR_OPT_VAL_SYMBOLIC) == 0) ) {
+ 		struct passwd *pw;
+@@ -529,6 +531,7 @@
+ 			}
+ 		}
+ 	}
++#endif
+ 	if( opt && (strcmp(opt, XAR_OPT_VAL_NUMERIC) == 0) ) {
+ 		xar_prop_get(f, "uid", &opt);
+ 		if( opt ) {
 --- configure.ac-orig	2012-01-13 17:44:45 +0000
 +++ configure.ac	2012-01-13 17:44:48 +0000
 @@ -226,7 +226,11 @@
