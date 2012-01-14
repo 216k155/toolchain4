@@ -23,7 +23,21 @@ uname-bt() {
 # Beautified echo commands
 cecho() {
 	if [[ "$(uname-bt)" == "Windows" ]] ; then
-		echo $*
+	    local _COLOR=$1
+	    shift
+	    case $_COLOR in
+		    black)	printf "\033[30m$*\033[0;37;40m\n";;
+		    yellow)	printf "\033[33m$*\033[0;37;40m\n";;
+		    red)	printf "\033[31m$*\033[0;37;40m\n";;
+		    green)	printf "\033[32m$*\033[0;37;40m\n";;
+		    blue)	printf "\033[34m$*\033[0;37;40m\n";;
+		    purple)	printf "\033[35m$*\033[0;37;40m\n";;
+		    cyan)	printf "\033[36m$*\033[0;37;40m\n";;
+		    grey)	printf "\033[37m$*\033[0;37;40m\n";;
+		    white)	printf "\033[32m$*\033[0;37;40m\n";;
+		    bold)	printf "\033[32m$*\033[0;37;40m\n";;
+		    *)		printf "\033[32m$*\033[0;37;40m\n";;
+	    esac
 	else
 		while [[ $# > 1 ]]; do
 			case $1 in

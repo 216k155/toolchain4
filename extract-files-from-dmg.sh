@@ -147,20 +147,19 @@ build_tools_dmg() {
 		cp lns.exe /usr/local/bin
 		popd
 
-#  #define _WIN32_WINNT 0x0600
-#  #include <windows.h>
-#  #include <direct.h>
-#  #define DIRSEP '\\'
-#  #define S_IFDIR _S_IFDIR
-#  int link(const char *path1, const char *path2)
-#  {
-#		return CreateHardLinkA(path2, path1, NULL) ? 0 : -1;
-#  }
-#  int symlink(char const *path1, char const *path2)
-#  {
-#		return CreateSymbolicLinkA(path2, path1, 0) ? 0 : -1;
-#  }
-
+#if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
+		if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
+			error "Failed to get and extract mingw-regex-2.5.1 Check errors."
+		fi
+		pushd mingw-libgnurx-2.5.1
+		./configure --prefix=/usr/local --enable-static --disable-shared
+		if ! make install; then
+			error "Failed to make mingw-libgnurx-2.5.1"
+			popd
+			exit 1
+		fi
+		popd
+#fi
 
 #if [[ ! -d xar-1.5.2 ]] ; then
 		if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
@@ -170,8 +169,9 @@ build_tools_dmg() {
 		fi
 #fi
 		pushd xar-1.5.2
-		patch -p0 < ../../patches/xar-1.5.2-WIN.patch
-		if ! CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" LIBS="-lgdi32" ./configure --prefix=/usr/local --disable-shared --enable-static; then
+		patch --backup -p0 < ../../patches/xar-1.5.2-WIN.patch
+		
+		if ! CFLAGS="-I/usr/local/include -DENOTSUP=48" LDFLAGS="-L/usr/local/lib" LIBS="-lgdi32" ./configure --prefix=/usr/local --disable-shared --enable-static; then
 			error "Failed to configure xar-1.5.2"
 			popd
 			exit 1
