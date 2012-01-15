@@ -1,0 +1,785 @@
+diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.c
+--- nano-2.3.1-orig/src/files.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/files.c	Sun Jan 15 02:59:09 2012
+@@ -21,16 +21,413 @@
+  *                                                                        *
+  **************************************************************************/
+ 
++#if defined(__MINGW32__)
++#define _WIN32_WINNT 0x0600
++#include <windows.h>
++#include <direct.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#define DIRSEP '\\'
++#define S_IFDIR _S_IFDIR
++/* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
++   (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.  */
++
++static const char letters[] =
++"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
++
++/* Generate a temporary file name based on TMPL.  TMPL must match the
++   rules for mk[s]temp (i.e. end in "XXXXXX").  The name constructed
++   does not exist at the time of the call to mkstemp.  TMPL is
++   overwritten with the result.  */
++static int
++mkstemp (char *tmpl)
++{
++  int len;
++  char *XXXXXX;
++  static unsigned long long value;
++  unsigned long long random_time_bits;
++  unsigned int count;
++  int fd = -1;
++  int save_errno = errno;
++
++  /* A lower bound on the number of temporary files to attempt to
++     generate.  The maximum total number of temporary file names that
++     can exist for a given template is 62**6.  It should never be
++     necessary to try all these combinations.  Instead if a reasonable
++     number of names is tried (we define reasonable as 62**3) fail to
++     give the system administrator the chance to remove the problems.  */
++#define ATTEMPTS_MIN (62 * 62 * 62)
++
++  /* The number of times to attempt to generate a temporary file.  To
++     conform to POSIX, this must be no smaller than TMP_MAX.  */
++#if ATTEMPTS_MIN < TMP_MAX
++  unsigned int attempts = TMP_MAX;
++#else
++  unsigned int attempts = ATTEMPTS_MIN;
++#endif
++
++  len = strlen (tmpl);
++  if (len < 6 || strcmp (&tmpl[len - 6], "XXXXXX"))
++    {
++      errno = EINVAL;
++      return -1;
++    }
++
++/* This is where the Xs start.  */
++  XXXXXX = &tmpl[len - 6];
++
++  /* Get some more or less random data.  */
++  {
++    SYSTEMTIME      stNow;
++    FILETIME ftNow;
++
++    // get system time
++    GetSystemTime(&stNow);
++    stNow.wMilliseconds = 500;
++    if (!SystemTimeToFileTime(&stNow, &ftNow))
++    {
++        errno = -1;
++        return -1;
++    }
++
++    random_time_bits = (((unsigned long long)ftNow.dwHighDateTime << 32)
++                        | (unsigned long long)ftNow.dwLowDateTime);
++  }
++  value += random_time_bits ^ (unsigned long long)GetCurrentThreadId ();
++
++  for (count = 0; count < attempts; value += 7777, ++count)
++    {
++      unsigned long long v = value;
++
++      /* Fill in the random bits.  */
++      XXXXXX[0] = letters[v % 62];
++      v /= 62;
++      XXXXXX[1] = letters[v % 62];
++      v /= 62;
++      XXXXXX[2] = letters[v % 62];
++      v /= 62;
++      XXXXXX[3] = letters[v % 62];
++      v /= 62;
++      XXXXXX[4] = letters[v % 62];
++      v /= 62;
++      XXXXXX[5] = letters[v % 62];
++
++      fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, _S_IREAD | _S_IWRITE);
++      if (fd >= 0)
++    {
++      errno = save_errno;
++      return fd;
++    }
++      else if (errno != EEXIST)
++    return -1;
++    }
++
++  /* We got out of the loop because we ran out of combinations to try.  */
++  errno = EEXIST;
++  return -1;
++}
++#endif
++
++
+ #include "proto.h"
+ 
+ #include <stdio.h>
+ #include <string.h>
++
+ #include <unistd.h>
+ #include <utime.h>
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <ctype.h>
++#if !defined(__MINGW32__)
+ #include <pwd.h>
++#else
++/* Provide a more complete sys/stat header file.
++   Copyright (C) 2006 Free Software Foundation, Inc.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2, or (at your option)
++   any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software Foundation,
++   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
++
++/* Written by Eric Blake, Paul Eggert, and Jim Meyering.  */
++
++#ifndef _gl_SYS_STAT_H
++#define _gl_SYS_STAT_H
++
++/* This file is supposed to be used on platforms where <sys/stat.h> is
++   incomplete.  It is intended to provide definitions and prototypes
++   needed by an application.  Start with what the system provides.  */
++
++#ifndef S_IFMT
++# define S_IFMT 0170000
++#endif
++
++#if STAT_MACROS_BROKEN
++# undef S_ISBLK
++# undef S_ISCHR
++# undef S_ISDIR
++# undef S_ISFIFO
++# undef S_ISLNK
++# undef S_ISNAM
++# undef S_ISMPB
++# undef S_ISMPC
++# undef S_ISNWK
++# undef S_ISREG
++# undef S_ISSOCK
++#endif
++
++#ifndef S_ISBLK
++# ifdef S_IFBLK
++#  define S_ISBLK(m) (((m) & S_IFMT) == S_IFBLK)
++# else
++#  define S_ISBLK(m) 0
++# endif
++#endif
++
++#ifndef S_ISCHR
++# ifdef S_IFCHR
++#  define S_ISCHR(m) (((m) & S_IFMT) == S_IFCHR)
++# else
++#  define S_ISCHR(m) 0
++# endif
++#endif
++
++#ifndef S_ISDIR
++# ifdef S_IFDIR
++#  define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
++# else
++#  define S_ISDIR(m) 0
++# endif
++#endif
++
++#ifndef S_ISDOOR /* Solaris 2.5 and up */
++# define S_ISDOOR(m) 0
++#endif
++
++#ifndef S_ISFIFO
++# ifdef S_IFIFO
++#  define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
++# else
++#  define S_ISFIFO(m) 0
++# endif
++#endif
++
++#ifndef S_ISLNK
++# ifdef S_IFLNK
++#  define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
++# else
++#  define S_ISLNK(m) 0
++# endif
++#endif
++
++#ifndef S_ISMPB /* V7 */
++# ifdef S_IFMPB
++#  define S_ISMPB(m) (((m) & S_IFMT) == S_IFMPB)
++#  define S_ISMPC(m) (((m) & S_IFMT) == S_IFMPC)
++# else
++#  define S_ISMPB(m) 0
++#  define S_ISMPC(m) 0
++# endif
++#endif
++
++#ifndef S_ISNAM /* Xenix */
++# ifdef S_IFNAM
++#  define S_ISNAM(m) (((m) & S_IFMT) == S_IFNAM)
++# else
++#  define S_ISNAM(m) 0
++# endif
++#endif
++
++#ifndef S_ISNWK /* HP/UX */
++# ifdef S_IFNWK
++#  define S_ISNWK(m) (((m) & S_IFMT) == S_IFNWK)
++# else
++#  define S_ISNWK(m) 0
++# endif
++#endif
++
++#ifndef S_ISPORT /* Solaris 10 and up */
++# define S_ISPORT(m) 0
++#endif
++
++#ifndef S_ISREG
++# ifdef S_IFREG
++#  define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
++# else
++#  define S_ISREG(m) 0
++# endif
++#endif
++
++#ifndef S_ISSOCK
++# ifdef S_IFSOCK
++#  define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
++# else
++#  define S_ISSOCK(m) 0
++# endif
++#endif
++
++
++#ifndef S_TYPEISMQ
++# define S_TYPEISMQ(p) 0
++#endif
++
++#ifndef S_TYPEISTMO
++# define S_TYPEISTMO(p) 0
++#endif
++
++
++#ifndef S_TYPEISSEM
++# ifdef S_INSEM
++#  define S_TYPEISSEM(p) (S_ISNAM ((p)->st_mode) && (p)->st_rdev == S_INSEM)
++# else
++#  define S_TYPEISSEM(p) 0
++# endif
++#endif
++
++#ifndef S_TYPEISSHM
++# ifdef S_INSHD
++#  define S_TYPEISSHM(p) (S_ISNAM ((p)->st_mode) && (p)->st_rdev == S_INSHD)
++# else
++#  define S_TYPEISSHM(p) 0
++# endif
++#endif
++
++/* high performance ("contiguous data") */
++#ifndef S_ISCTG
++# define S_ISCTG(p) 0
++#endif
++
++/* Cray DMF (data migration facility): off line, with data  */
++#ifndef S_ISOFD
++# define S_ISOFD(p) 0
++#endif
++
++/* Cray DMF (data migration facility): off line, with no data  */
++#ifndef S_ISOFL
++# define S_ISOFL(p) 0
++#endif
++
++/* 4.4BSD whiteout */
++#ifndef S_ISWHT
++# define S_ISWHT(m) 0
++#endif
++
++/* If any of the following are undefined,
++   define them to their de facto standard values.  */
++#if !S_ISUID
++# define S_ISUID 04000
++#endif
++#if !S_ISGID
++# define S_ISGID 02000
++#endif
++
++/* S_ISVTX is a common extension to POSIX.  */
++#ifndef S_ISVTX
++# define S_ISVTX 01000
++#endif
++
++#if !S_IRUSR && S_IREAD
++# define S_IRUSR S_IREAD
++#endif
++#if !S_IRUSR
++# define S_IRUSR 00400
++#endif
++#if !S_IRGRP
++# define S_IRGRP (S_IRUSR >> 3)
++#endif
++#if !S_IROTH
++# define S_IROTH (S_IRUSR >> 6)
++#endif
++
++#if !S_IWUSR && S_IWRITE
++# define S_IWUSR S_IWRITE
++#endif
++#if !S_IWUSR
++# define S_IWUSR 00200
++#endif
++#if !S_IWGRP
++# define S_IWGRP (S_IWUSR >> 3)
++#endif
++#if !S_IWOTH
++# define S_IWOTH (S_IWUSR >> 6)
++#endif
++
++#if !S_IXUSR && S_IEXEC
++# define S_IXUSR S_IEXEC
++#endif
++#if !S_IXUSR
++# define S_IXUSR 00100
++#endif
++#if !S_IXGRP
++# define S_IXGRP (S_IXUSR >> 3)
++#endif
++#if !S_IXOTH
++# define S_IXOTH (S_IXUSR >> 6)
++#endif
++
++#if !S_IRWXU
++# define S_IRWXU (S_IRUSR | S_IWUSR | S_IXUSR)
++#endif
++#if !S_IRWXG
++# define S_IRWXG (S_IRGRP | S_IWGRP | S_IXGRP)
++#endif
++#if !S_IRWXO
++# define S_IRWXO (S_IROTH | S_IWOTH | S_IXOTH)
++#endif
++
++/* S_IXUGO is a common extension to POSIX.  */
++#if !S_IXUGO
++# define S_IXUGO (S_IXUSR | S_IXGRP | S_IXOTH)
++#endif
++
++#ifndef S_IRWXUGO
++# define S_IRWXUGO (S_IRWXU | S_IRWXG | S_IRWXO)
++#endif
++
++/* mingw does not support symlinks, therefore it does not have lstat.  But
++   without links, stat does just fine.  */
++#if ! HAVE_LSTAT
++# define lstat stat
++#endif
++
++/* mingw's _mkdir() function has 1 argument, but we pass 2 arguments.
++   Additionally, it declares _mkdir (and depending on compile flags, an
++   alias mkdir), only in the nonstandard io.h.  */
++#if ! HAVE_DECL_MKDIR && HAVE_IO_H
++# include <io.h>
++
++static inline int
++rpl_mkdir (char const *name, mode_t mode)
++{
++  return _mkdir (name);
++}
++
++# define mkdir rpl_mkdir
++#endif
++
++#endif /* _gl_SYS_STAT_H */
++struct passwd {
++	char *pw_name;
++	char *pw_gecos;
++	char *pw_dir;
++};
++#endif
+ 
+ /* Add an entry to the openfile openfilestruct.  This should only be
+  * called from open_buffer(). */
+@@ -2258,6 +2655,10 @@
+ 	    ;
+ 
+ 	/* Get the home directory. */
++#if defined(__MINGW32__)
++    get_homedir();
++    tilde_dir = mallocstrcpy(NULL, homedir);
++#else
+ 	if (i == 1) {
+ 	    get_homedir();
+ 	    tilde_dir = mallocstrcpy(NULL, homedir);
+@@ -2275,6 +2676,7 @@
+ 	    if (userdata != NULL)
+ 		tilde_dir = mallocstrcpy(tilde_dir, userdata->pw_dir);
+ 	}
++#endif
+ 
+ 	retval = charalloc(strlen(tilde_dir) + strlen(buf + i) + 1);
+ 	sprintf(retval, "%s%s", tilde_dir, buf + i);
+diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/nano.c nano-2.3.1/src/nano.c
+--- nano-2.3.1-orig/src/nano.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/nano.c	Sun Jan 15 02:58:58 2012
+@@ -36,7 +36,7 @@
+ #ifdef ENABLE_UTF8
+ #include <langinfo.h>
+ #endif
+-#include <termios.h>
++//#include <termios.h>
+ #ifdef HAVE_GETOPT_H
+ #include <getopt.h>
+ #endif
+@@ -52,9 +52,9 @@
+ static bool no_rcfiles = FALSE;
+ 	/* Should we ignore all rcfiles? */
+ #endif
+-static struct termios oldterm;
++//static struct termios oldterm;
+ 	/* The user's original terminal settings. */
+-static struct sigaction act;
++//static struct sigaction act;
+ 	/* Used to set up all our fun signal handlers. */
+ 
+ /* Create a new filestruct node.  Note that we do not set prevnode->next
+@@ -600,7 +600,7 @@
+     endwin();
+ 
+     /* Restore the old terminal settings. */
+-    tcsetattr(0, TCSANOW, &oldterm);
++//    tcsetattr(0, TCSANOW, &oldterm);
+ 
+ #if !defined(NANO_TINY) && defined(ENABLE_NANORC)
+     if (!no_rcfiles && ISSET(HISTORYLOG))
+@@ -627,7 +627,7 @@
+     endwin();
+ 
+     /* Restore the old terminal settings. */
+-    tcsetattr(0, TCSANOW, &oldterm);
++//    tcsetattr(0, TCSANOW, &oldterm);
+ 
+     va_start(ap, msg);
+     vfprintf(stderr, msg, ap);
+@@ -1077,7 +1077,7 @@
+     ;
+ }
+ 
+-static struct sigaction pager_oldaction, pager_newaction;  /* Original and temporary handlers for SIGINT. */
++//static struct sigaction pager_oldaction, pager_newaction;  /* Original and temporary handlers for SIGINT. */
+ static bool pager_sig_failed = FALSE; /* Did sigaction() fail without changing the signal handlers? */
+ static bool pager_input_aborted = FALSE; /* Did someone invoke the pager and abort it via ^C? */
+ 
+@@ -1101,10 +1101,10 @@
+ 
+     dup2(ttystdin,0);
+     close(ttystdin);
+-    if (!pager_input_aborted)
+-	tcgetattr(0, &oldterm);
+-    if (!pager_sig_failed && sigaction(SIGINT, &pager_oldaction, NULL) == -1)
+-        nperror("sigaction");
++//    if (!pager_input_aborted)
++//	tcgetattr(0, &oldterm);
++//    if (!pager_sig_failed && sigaction(SIGINT, &pager_oldaction, NULL) == -1)
++//        nperror("sigaction");
+     terminal_init();
+     doupdate();
+ }
+@@ -1121,8 +1121,8 @@
+ void stdin_pager(void)
+ {
+     endwin();
+-    if (!pager_input_aborted)
+-	tcsetattr(0, TCSANOW, &oldterm);
++//    if (!pager_input_aborted)
++//	tcsetattr(0, TCSANOW, &oldterm);
+     fprintf(stderr, _("Reading from stdin, ^C to abort\n"));
+ 
+     /* Set things up so that Ctrl-C will cancel the new process. */
+@@ -1132,26 +1132,26 @@
+     enable_signals();
+ #endif
+ 
+-    if (sigaction(SIGINT, NULL, &pager_newaction) == -1) {
+-	pager_sig_failed = TRUE;
+-	nperror("sigaction");
+-    } else {
+-	pager_newaction.sa_handler = cancel_stdin_pager;
+-	if (sigaction(SIGINT, &pager_newaction, &pager_oldaction) == -1) {
+-	    pager_sig_failed = TRUE;
+-	    nperror("sigaction");
+-	}
+-    }
++//    if (sigaction(SIGINT, NULL, &pager_newaction) == -1) {
++//	pager_sig_failed = TRUE;
++//	nperror("sigaction");
++//    } else {
++//	pager_newaction.sa_handler = cancel_stdin_pager;
++//	if (sigaction(SIGINT, &pager_newaction, &pager_oldaction) == -1) {
++//	    pager_sig_failed = TRUE;
++//	    nperror("sigaction");
++//	}
++//    }
+ 
+     open_buffer("", FALSE);
+     finish_stdin_pager();
+ }
+ 
+ 
+-
+ /* Initialize the signal handlers. */
+ void signal_init(void)
+ {
++#if 0
+     /* Trap SIGINT and SIGQUIT because we want them to do useful
+      * things. */
+     memset(&act, 0, sizeof(struct sigaction));
+@@ -1186,6 +1186,7 @@
+ 	act.sa_handler = do_continue;
+ 	sigaction(SIGCONT, &act, NULL);
+     }
++#endif
+ }
+ 
+ /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
+@@ -1217,16 +1218,20 @@
+     fflush(stdout);
+ 
+     /* Restore the old terminal settings. */
+-    tcsetattr(0, TCSANOW, &oldterm);
++//    tcsetattr(0, TCSANOW, &oldterm);
+ 
+     /* Trap SIGHUP and SIGTERM so we can properly deal with them while
+      * suspended. */
+-    act.sa_handler = handle_hupterm;
+-    sigaction(SIGHUP, &act, NULL);
+-    sigaction(SIGTERM, &act, NULL);
++//    act.sa_handler = handle_hupterm;
++//    sigaction(SIGHUP, &act, NULL);
++//    sigaction(SIGTERM, &act, NULL);
+ 
+     /* Do what mutt does: send ourselves a SIGSTOP. */
++#if defined(__MINGW32__)
++    exit(0);
++#else
+     kill(0, SIGSTOP);
++#endif
+ }
+ 
+ /* the subnfunc version */
+@@ -1410,23 +1415,23 @@
+  * settings. */
+ void disable_extended_io(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_lflag &= ~IEXTEN;
+-    term.c_oflag &= ~OPOST;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_lflag &= ~IEXTEN;
++//    term.c_oflag &= ~OPOST;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ /* Disable interpretation of the special control keys in our terminal
+  * settings. */
+ void disable_signals(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_lflag &= ~ISIG;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_lflag &= ~ISIG;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ #ifndef NANO_TINY
+@@ -1446,22 +1451,22 @@
+  * settings. */
+ void disable_flow_control(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_iflag &= ~IXON;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_iflag &= ~IXON;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ /* Enable interpretation of the flow control characters in our terminal
+  * settings. */
+ void enable_flow_control(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_iflag |= IXON;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_iflag |= IXON;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ /* Set up the terminal state.  Put the terminal in raw mode (read one
+@@ -2563,7 +2568,7 @@
+ 	tabsize = WIDTH_OF_TAB;
+ 
+     /* Back up the old terminal settings so that they can be restored. */
+-    tcgetattr(0, &oldterm);
++//    tcgetattr(0, &oldterm);
+ 
+     /* Initialize curses mode.  If this fails, get out. */
+     if (initscr() == NULL)
+diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/text.c nano-2.3.1/src/text.c
+--- nano-2.3.1-orig/src/text.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/text.c	Sun Jan 15 02:59:03 2012
+@@ -28,7 +28,7 @@
+ #include <unistd.h>
+ #include <string.h>
+ #include <fcntl.h>
+-#include <sys/wait.h>
++//#include <sys/wait.h>
+ #include <errno.h>
+ 
+ #ifndef NANO_TINY
+diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/utils.c nano-2.3.1/src/utils.c
+--- nano-2.3.1-orig/src/utils.c	Mon Feb  7 04:17:07 2011
++++ nano-2.3.1/src/utils.c	Sun Jan 15 03:20:09 2012
+@@ -26,7 +26,9 @@
+ #include <string.h>
+ #include <stdio.h>
+ #include <unistd.h>
++#if !defined(__MINGW32__)
+ #include <pwd.h>
++#endif
+ #include <ctype.h>
+ #include <errno.h>
+ 
+@@ -51,13 +53,14 @@
+ {
+     if (homedir == NULL) {
+ 	const char *homenv = getenv("HOME");
+-
++#if !defined(__MINGW32__)
+ 	if (homenv == NULL) {
+ 	    const struct passwd *userage = getpwuid(geteuid());
+ 
+ 	    if (userage != NULL)
+ 		homenv = userage->pw_dir;
+ 	}
++#endif
+ 	homedir = mallocstrcpy(NULL, homenv);
+     }
+ }
+--- nano-2.3.1-orig/src/nano.h	Sun Jan 15 03:34:14 2012
++++ nano-2.3.1/src/nano.h	Sun Jan 15 03:34:25 2012
+@@ -182,7 +182,7 @@
+ } update_type;
+ 
+ typedef enum {
+-    CONTROL, META, FKEY, RAWINPUT
++    CONTROL, META, FKEY, RAWINPUTNANO
+ }  function_type;
+ 
+ typedef enum {
+--- nano-2.3.1-orig/src/global.c	Sun Jan 15 03:34:46 2012
++++ nano-2.3.1/src/global.c	Sun Jan 15 03:35:43 2012
+@@ -269,7 +269,7 @@
+     else if (str[0] ==  'F' || str[0] == 'F')
+         return FKEY;
+     else
+-	return RAWINPUT;
++	return RAWINPUTNANO;
+ }
+ 
+ /* Add a string to the new function list strict.
+@@ -398,7 +398,7 @@
+     } else if (s->type == FKEY) {
+         assert(strlen(s->keystr) > 1);
+         s->seq = KEY_F0 + atoi(&s->keystr[1]);
+-    } else /* RAWINPUT */
++    } else /* RAWINPUTNANO */
+         s->seq = (int) s->keystr[0];
+ 
+     /* Override some keys which don't bind as nicely as we'd like */
+@@ -406,32 +406,32 @@
+ 	s->seq = 0;
+     else if (s->type == META && (!strcasecmp(&s->keystr[2], "space")))
+ 	s->seq = (int) ' ';
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kup")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kup")))
+ 	s->seq = KEY_UP;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kdown")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kdown")))
+ 	s->seq = KEY_DOWN;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kleft")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kleft")))
+ 	s->seq = KEY_LEFT;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kright")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kright")))
+ 	s->seq = KEY_RIGHT;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kinsert")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kinsert")))
+ 	s->seq = KEY_IC;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kdel")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kdel")))
+ 	s->seq = KEY_DC;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kbsp")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kbsp")))
+ 	s->seq = KEY_BACKSPACE;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kenter")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kenter")))
+ 	s->seq = KEY_ENTER;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kpup")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kpup")))
+ 	s->seq = KEY_PPAGE;
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kpdown")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kpdown")))
+ 	s->seq = KEY_NPAGE;
+ #ifdef KEY_HOME
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "khome")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "khome")))
+ 	s->seq = KEY_HOME;
+ #endif
+ #ifdef KEY_END
+-    else if (s->type == RAWINPUT && (!strcasecmp(s->keystr, "kend")))
++    else if (s->type == RAWINPUTNANO && (!strcasecmp(s->keystr, "kend")))
+ 	s->seq = KEY_END;
+ #endif
+ 
+--- nano-2.3.1-orig/src/help.c	Sun Jan 15 03:35:59 2012
++++ nano-2.3.1/src/help.c	Sun Jan 15 03:36:01 2012
+@@ -446,7 +446,7 @@
+             if (scsfound == 3)
+ 		continue;
+ 
+-            if (s->type == RAWINPUT)
++            if (s->type == RAWINPUTNANO)
+ 		continue;
+ 
+ 	    if ((s->menu & currmenu) == 0)
