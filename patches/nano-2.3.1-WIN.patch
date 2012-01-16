@@ -1,7 +1,382 @@
-diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.c
+diff -x *.orig -burN nano-2.3.1-orig/.nanorc nano-2.3.1/.nanorc
+--- nano-2.3.1-orig/.nanorc	Thu Jan  1 00:00:00 1970
++++ nano-2.3.1/.nanorc	Sun Jan 15 21:43:30 2012
+@@ -0,0 +1,334 @@
++## Sample initialization file for GNU nano.
++##
++## Please note that you must have configured nano with --enable-nanorc
++## for this file to be read!  Also note that this file should not be in
++## DOS or Mac format, and that characters specially interpreted by the
++## shell should not be escaped here.
++##
++## To make sure a value is disabled, use "unset <option>".
++##
++## For the options that take parameters, the default value is given.
++## Other options are unset by default.
++##
++## Quotes inside string parameters don't have to be escaped with
++## backslashes.  The last double quote in the string will be treated as
++## its end.  For example, for the "brackets" option, ""')>]}" will match
++## ", ', ), >, ], and }.
++
++## Use auto-indentation.
++# set autoindent
++
++## Backup files to filename~.
++# set backup
++
++## The directory to put unique backup files in.
++# set backupdir ""
++
++## Do backwards searches by default.
++# set backwards
++
++## Use bold text instead of reverse video text.
++set boldtext
++
++## The characters treated as closing brackets when justifying
++## paragraphs.  They cannot contain blank characters.  Only closing
++## punctuation, optionally followed by closing brackets, can end
++## sentences.
++##
++set brackets ""')>]}"
++
++## Do case sensitive searches by default.
++# set casesensitive
++
++## Constantly display the cursor position in the statusbar.  Note that
++## this overrides "quickblank".
++set const
++
++## Use cut to end of line by default.
++# set cut
++
++## Set the line length for wrapping text and justifying paragraphs.
++## If fill is 0 or less, the line length will be the screen width less
++## this number.
++##
++# set fill -8
++
++## Enable ~/.nano_history for saving and reading search/replace strings.
++set historylog
++
++## The opening and closing brackets that can be found by bracket
++## searches.  They cannot contain blank characters.  The former set must
++## come before the latter set, and both must be in the same order.
++##
++set matchbrackets "(<[{)>]}"
++
++## Use the blank line below the titlebar as extra editing space.
++# set morespace
++
++## Enable mouse support, if available for your system.  When enabled,
++## mouse clicks can be used to place the cursor, set the mark (with a
++## double click), and execute shortcuts.  The mouse will work in the X
++## Window System, and on the console when gpm is running.
++##
++# set mouse
++
++## Allow multiple file buffers (inserting a file will put it into a
++## separate buffer).  You must have configured with --enable-multibuffer
++## for this to work.
++##
++# set multibuffer
++
++## Don't convert files from DOS/Mac format.
++# set noconvert
++
++## Don't follow symlinks when writing files.
++# set nofollow
++
++## Don't display the helpful shortcut lists at the bottom of the screen.
++# set nohelp
++
++## Don't add newlines to the ends of files.
++# set nonewlines
++
++## Don't wrap text at all.
++# set nowrap
++
++## Set operating directory.  nano will not read or write files outside
++## this directory and its subdirectories.  Also, the current directory
++## is changed to here, so any files are inserted from this dir.  A blank
++## string means the operating directory feature is turned off.
++##
++# set operatingdir ""
++
++## Preserve the XON and XOFF keys (^Q and ^S).
++# set preserve
++
++## The characters treated as closing punctuation when justifying
++## paragraphs.  They cannot contain blank characters.  Only closing
++## punctuation, optionally followed by closing brackets, can end
++## sentences.
++##
++# set punct "!.?"
++
++## Do quick statusbar blanking.  Statusbar messages will disappear after
++## 1 keystroke instead of 26.  Note that "const" overrides this.
++##
++# set quickblank
++
++## The email-quote string, used to justify email-quoted paragraphs.
++## This is an extended regular expression if your system supports them,
++## otherwise a literal string.  Default:
++# set quotestr "^([ 	]*[#:>\|}])+"
++## if you have extended regular expression support, otherwise:
++# set quotestr "> "
++
++## Fix Backspace/Delete confusion problem.
++# set rebinddelete
++
++## Fix numeric keypad key confusion problem.
++# set rebindkeypad
++
++## Do extended regular expression searches by default.
++set regexp
++
++## Make the Home key smarter.  When Home is pressed anywhere but at the
++## very beginning of non-whitespace characters on a line, the cursor
++## will jump to that beginning (either forwards or backwards).  If the
++## cursor is already at that position, it will jump to the true
++## beginning of the line.
++# set smarthome
++
++## Use smooth scrolling as the default.
++# set smooth
++
++## Use this spelling checker instead of the internal one.  This option
++## does not properly have a default value.
++##
++set speller "aspell -x -c"
++
++## Allow nano to be suspended.
++set suspend
++
++## Use this tab size instead of the default; it must be greater than 0.
++set tabsize 4
++
++## Convert typed tabs to spaces.
++# set tabstospaces
++
++## Save automatically on exit, don't prompt.
++# set tempfile
++
++## Disallow file modification; why would you want this in an rcfile? ;)
++# set view
++
++## The two single-column characters used to display the first characters
++## of tabs and spaces.  187 in ISO 8859-1 (0000BB in Unicode) and 183 in
++## ISO-8859-1 (0000B7 in Unicode) seem to be good values for these.
++set whitespace ". "
++
++## Detect word boundaries more accurately by treating punctuation
++## characters as part of a word.
++# set wordbounds
++
++
++## Color setup
++##
++## Format:
++##
++## syntax "short description" ["filename regex" ...]
++##
++## The "none" syntax is reserved; specifying it on the command line is
++## the same as not having a syntax at all.  The "default" syntax is
++## special: it takes no filename regexes, and applies to files that
++## don't match any other syntax's filename regexes.
++##
++## color foreground,background "regex" ["regex"...]
++## or
++## icolor foreground,background "regex" ["regex"...]
++##
++## "color" will do case sensitive matches, while "icolor" will do case
++## insensitive matches.
++##
++## Valid colors: white, black, red, blue, green, yellow, magenta, cyan.
++## For foreground colors, you may use the prefix "bright" to get a
++## stronger highlight.
++##
++## To use multi-line regexes, use the start="regex" end="regex"
++## [start="regex" end="regex"...] format.
++##
++## If your system supports transparency, not specifying a background
++## color will use a transparent color.  If you don't want this, be sure
++## to set the background color to black or white.
++##
++## If you wish, you may put your syntaxes in separate files.  You can
++## make use of such files (which can only include "syntax", "color", and
++## "icolor" commands) as follows:
++##
++## include "/path/to/syntax_file.nanorc"
++##
++## Unless otherwise noted, the name of the syntax file (without the
++## ".nanorc" extension) should be the same as the "short description"
++## name inside that file.  These names are kept fairly short to make
++## them easier to remember and faster to type using nano's -Y option.
++##
++## All regexes should be extended regular expressions.
++
++
++## Nanorc files
++include "/usr/local/share/nano/nanorc.nanorc"
++
++## C/C++
++include "/usr/local/share/nano/c.nanorc"
++
++## HTML
++include "/usr/local/share/nano/html.nanorc"
++
++## TeX
++include "/usr/local/share/nano/tex.nanorc"
++
++## Quoted emails (under e.g. mutt)
++include "/usr/local/share/nano/mutt.nanorc"
++
++## Patch files
++include "/usr/local/share/nano/patch.nanorc"
++
++## Manpages
++include "/usr/local/share/nano/man.nanorc"
++
++## Groff
++include "/usr/local/share/nano/groff.nanorc"
++
++## Perl
++include "/usr/local/share/nano/perl.nanorc"
++
++## Python
++include "/usr/local/share/nano/python.nanorc"
++
++## Ruby
++include "/usr/local/share/nano/ruby.nanorc"
++
++## Java
++include "/usr/local/share/nano/java.nanorc"
++
++## Assembler
++include "/usr/local/share/nano/asm.nanorc"
++
++## Bourne shell scripts
++include "/usr/local/share/nano/sh.nanorc"
++
++
++## syntax highlighting in xorg.conf
++##
++syntax "xorg" "xorg\.conf$"
++color brightwhite "(Section|EndSection|Sub[sS]ection|EndSub[sS]ection)"
++# keywords
++color yellow "[^A-Za-z0-9](Identifier|Screen|InputDevice|Option|RightOf|LeftOf|Driver|RgbPath|FontPath|ModulePath|Load|VendorName|ModelName|BoardName|BusID|Device|Monitor|DefaultDepth|View[pP]ort|Depth|Virtual|Modes|Mode|DefaultColorDepth|Modeline|\+vsync|\+hsync|HorizSync|VertRefresh)[^A-Za-z0-9]"
++# numbers
++color magenta "[0-9]"
++# strings
++color green ""(\\.|[^\"])*""
++# comments
++color blue "#.*"
++
++
++##############################################################################
++#
++# Syntax highlighting for XML files
++#
++# Author:  Josef 'Jupp' Schugt, jupp(a)rubyforge.org
++# License: GPL 2  or later
++#
++# Version: 2004-02-25
++#
++##############################################################################
++
++syntax "ml" ".*\.([jrs]?html?|xml|sgml?)$"
++color white "^.+$"
++color green  start="<" end=">"
++color cyan   "<[^> ]+"
++color cyan   ">"
++color yellow start="<!DOCTYPE" end="[/]?>"
++color yellow start="<!--" end="-->"
++color red    "&[^;]*;"
++
++
++
++##############################################################################
++#
++# Syntax highlighting for HTTP codes
++#
++# Author:  Josef 'Jupp' Schugt, jupp(a)rubyforge.org
++# License: GPL 2  or later
++#
++# Version: 2004-02-25
++#
++##############################################################################
++
++syntax "urls"
++color brightmagenta   "^.*$"
++color cyan      "^(1[0-9][0-9]|20[256]|30[45]).*$"
++color green      "^20[03].*$"
++color brightyellow   "^(201|30[0-37]).*$"
++color brightred      "^(204|[45][0-9][0-9]|666).*$"
++
++
++
++
++##############################################################################
++#
++# Syntax highlighting for CSS files
++#  
++# Author:  Simon Rupf, simon.rupf(a)int-ag.ch
++# License: GPL 2  or later
++#
++# Version: 2005-02-14
++#
++##############################################################################
++
++syntax "css" "\.css$"
++color brightred     "."
++color brightyellow  start="\{" end="\}"
++color brightwhite           start=":" end="[;^\{]"
++color brightblue    ":active|:focus|:hover|:link|:visited|:link|:after|:before|$"
++color brightblue    start="\/\*" end="\\*/"
++color green         ";|:|\{|\}"
+diff -x *.orig -burN nano-2.3.1-orig/src/Makefile.in nano-2.3.1/src/Makefile.in
+--- nano-2.3.1-orig/src/Makefile.in	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/Makefile.in	Sun Jan 15 21:41:05 2012
+@@ -527,9 +527,9 @@
+ 
+ 
+ install-exec-hook:
+-	cd $(DESTDIR)$(bindir) && rm -f rnano && $(LN_S) nano rnano
++	cd $(DESTDIR)$(bindir) && rm -f rnano$(EXEEXT) && $(LN_S) nano$(EXEEXT) rnano$(EXEEXT)
+ uninstall-hook:
+-	cd $(DESTDIR)$(bindir) && rm -f rnano
++	cd $(DESTDIR)$(bindir) && rm -f rnano$(EXEEXT)
+ 
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+diff -x *.orig -burN nano-2.3.1-orig/src/browser.c nano-2.3.1/src/browser.c
+--- nano-2.3.1-orig/src/browser.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/browser.c	Sun Jan 15 21:41:05 2012
+@@ -651,6 +651,7 @@
+ 
+ 	/* Show information about the file.  We don't want to report
+ 	 * file sizes for links, so we use lstat(). */
++#if !defined(__MINGW32__)
+ 	if (lstat(filelist[i], &st) == -1 || S_ISLNK(st.st_mode)) {
+ 	    /* If the file doesn't exist (i.e. it's been deleted while
+ 	     * the file browser is open), or it's a symlink that doesn't
+@@ -663,7 +664,9 @@
+ 		/* TRANSLATORS: Try to keep this at most 7
+ 		 * characters. */
+ 		foo = mallocstrcpy(NULL, _("(dir)"));
+-	} else if (S_ISDIR(st.st_mode)) {
++	} else
++#endif
++	if (S_ISDIR(st.st_mode)) {
+ 	    /* If the file is a directory, display it as such. */
+ 	    if (strcmp(filetail, "..") == 0) {
+ 		/* TRANSLATORS: Try to keep this at most 12
+diff -x *.orig -burN nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.c
 --- nano-2.3.1-orig/src/files.c	Sun Jan 15 01:17:55 2012
-+++ nano-2.3.1/src/files.c	Sun Jan 15 02:59:09 2012
-@@ -21,16 +21,413 @@
++++ nano-2.3.1/src/files.c	Sun Jan 15 21:41:05 2012
+@@ -21,16 +21,411 @@
   *                                                                        *
   **************************************************************************/
  
@@ -393,7 +768,6 @@ diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.
 +/* mingw's _mkdir() function has 1 argument, but we pass 2 arguments.
 +   Additionally, it declares _mkdir (and depending on compile flags, an
 +   alias mkdir), only in the nonstandard io.h.  */
-+#if ! HAVE_DECL_MKDIR && HAVE_IO_H
 +# include <io.h>
 +
 +static inline int
@@ -403,7 +777,6 @@ diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.
 +}
 +
 +# define mkdir rpl_mkdir
-+#endif
 +
 +#endif /* _gl_SYS_STAT_H */
 +struct passwd {
@@ -415,6 +788,22 @@ diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.
  
  /* Add an entry to the openfile openfilestruct.  This should only be
   * called from open_buffer(). */
+@@ -1647,6 +2042,7 @@
+ 	    goto cleanup_and_exit;
+ 	}
+ 
++#if !defined(__MINGW32__)
+         /* We shouldn't worry about chown()ing something if we're not
+ 	   root, since it's likely to fail! */
+ 	if (geteuid() == NANO_ROOT_UID && fchown(backup_fd,
+@@ -1675,6 +2071,7 @@
+ 	       means we could lose both the backup and the original! */
+ 	    goto cleanup_and_exit;
+ 	}
++#endif
+ 
+ #ifdef DEBUG
+ 	fprintf(stderr, "Backing up %s to %s\n", realname, backupname);
 @@ -2258,6 +2655,10 @@
  	    ;
  
@@ -434,281 +823,31 @@ diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/files.c nano-2.3.1/src/files.
  
  	retval = charalloc(strlen(tilde_dir) + strlen(buf + i) + 1);
  	sprintf(retval, "%s%s", tilde_dir, buf + i);
-diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/nano.c nano-2.3.1/src/nano.c
---- nano-2.3.1-orig/src/nano.c	Sun Jan 15 01:17:55 2012
-+++ nano-2.3.1/src/nano.c	Sun Jan 15 02:58:58 2012
-@@ -36,7 +36,7 @@
- #ifdef ENABLE_UTF8
- #include <langinfo.h>
- #endif
--#include <termios.h>
-+//#include <termios.h>
- #ifdef HAVE_GETOPT_H
- #include <getopt.h>
- #endif
-@@ -52,9 +52,9 @@
- static bool no_rcfiles = FALSE;
- 	/* Should we ignore all rcfiles? */
- #endif
--static struct termios oldterm;
-+//static struct termios oldterm;
- 	/* The user's original terminal settings. */
--static struct sigaction act;
-+//static struct sigaction act;
- 	/* Used to set up all our fun signal handlers. */
+@@ -2370,12 +2772,11 @@
+     assert(buf != NULL && num_matches != NULL && buf_len > 0);
  
- /* Create a new filestruct node.  Note that we do not set prevnode->next
-@@ -600,7 +600,7 @@
-     endwin();
- 
-     /* Restore the old terminal settings. */
--    tcsetattr(0, TCSANOW, &oldterm);
-+//    tcsetattr(0, TCSANOW, &oldterm);
- 
- #if !defined(NANO_TINY) && defined(ENABLE_NANORC)
-     if (!no_rcfiles && ISSET(HISTORYLOG))
-@@ -627,7 +627,7 @@
-     endwin();
- 
-     /* Restore the old terminal settings. */
--    tcsetattr(0, TCSANOW, &oldterm);
-+//    tcsetattr(0, TCSANOW, &oldterm);
- 
-     va_start(ap, msg);
-     vfprintf(stderr, msg, ap);
-@@ -1077,7 +1077,7 @@
-     ;
- }
- 
--static struct sigaction pager_oldaction, pager_newaction;  /* Original and temporary handlers for SIGINT. */
-+//static struct sigaction pager_oldaction, pager_newaction;  /* Original and temporary handlers for SIGINT. */
- static bool pager_sig_failed = FALSE; /* Did sigaction() fail without changing the signal handlers? */
- static bool pager_input_aborted = FALSE; /* Did someone invoke the pager and abort it via ^C? */
- 
-@@ -1101,10 +1101,10 @@
- 
-     dup2(ttystdin,0);
-     close(ttystdin);
--    if (!pager_input_aborted)
--	tcgetattr(0, &oldterm);
--    if (!pager_sig_failed && sigaction(SIGINT, &pager_oldaction, NULL) == -1)
--        nperror("sigaction");
-+//    if (!pager_input_aborted)
-+//	tcgetattr(0, &oldterm);
-+//    if (!pager_sig_failed && sigaction(SIGINT, &pager_oldaction, NULL) == -1)
-+//        nperror("sigaction");
-     terminal_init();
-     doupdate();
- }
-@@ -1121,8 +1121,8 @@
- void stdin_pager(void)
- {
-     endwin();
--    if (!pager_input_aborted)
--	tcsetattr(0, TCSANOW, &oldterm);
-+//    if (!pager_input_aborted)
-+//	tcsetattr(0, TCSANOW, &oldterm);
-     fprintf(stderr, _("Reading from stdin, ^C to abort\n"));
- 
-     /* Set things up so that Ctrl-C will cancel the new process. */
-@@ -1132,26 +1132,26 @@
-     enable_signals();
- #endif
- 
--    if (sigaction(SIGINT, NULL, &pager_newaction) == -1) {
--	pager_sig_failed = TRUE;
--	nperror("sigaction");
--    } else {
--	pager_newaction.sa_handler = cancel_stdin_pager;
--	if (sigaction(SIGINT, &pager_newaction, &pager_oldaction) == -1) {
--	    pager_sig_failed = TRUE;
--	    nperror("sigaction");
--	}
--    }
-+//    if (sigaction(SIGINT, NULL, &pager_newaction) == -1) {
-+//	pager_sig_failed = TRUE;
-+//	nperror("sigaction");
-+//    } else {
-+//	pager_newaction.sa_handler = cancel_stdin_pager;
-+//	if (sigaction(SIGINT, &pager_newaction, &pager_oldaction) == -1) {
-+//	    pager_sig_failed = TRUE;
-+//	    nperror("sigaction");
-+//	}
-+//    }
- 
-     open_buffer("", FALSE);
-     finish_stdin_pager();
- }
- 
- 
--
- /* Initialize the signal handlers. */
- void signal_init(void)
- {
-+#if 0
-     /* Trap SIGINT and SIGQUIT because we want them to do useful
-      * things. */
-     memset(&act, 0, sizeof(struct sigaction));
-@@ -1186,6 +1186,7 @@
- 	act.sa_handler = do_continue;
- 	sigaction(SIGCONT, &act, NULL);
-     }
-+#endif
- }
- 
- /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
-@@ -1217,16 +1218,20 @@
-     fflush(stdout);
- 
-     /* Restore the old terminal settings. */
--    tcsetattr(0, TCSANOW, &oldterm);
-+//    tcsetattr(0, TCSANOW, &oldterm);
- 
-     /* Trap SIGHUP and SIGTERM so we can properly deal with them while
-      * suspended. */
--    act.sa_handler = handle_hupterm;
--    sigaction(SIGHUP, &act, NULL);
--    sigaction(SIGTERM, &act, NULL);
-+//    act.sa_handler = handle_hupterm;
-+//    sigaction(SIGHUP, &act, NULL);
-+//    sigaction(SIGTERM, &act, NULL);
- 
-     /* Do what mutt does: send ourselves a SIGSTOP. */
-+#if defined(__MINGW32__)
-+    exit(0);
-+#else
-     kill(0, SIGSTOP);
-+#endif
- }
- 
- /* the subnfunc version */
-@@ -1410,23 +1415,23 @@
-  * settings. */
- void disable_extended_io(void)
- {
--    struct termios term;
-+//    struct termios term;
- 
--    tcgetattr(0, &term);
--    term.c_lflag &= ~IEXTEN;
--    term.c_oflag &= ~OPOST;
--    tcsetattr(0, TCSANOW, &term);
-+//    tcgetattr(0, &term);
-+//    term.c_lflag &= ~IEXTEN;
-+//    term.c_oflag &= ~OPOST;
-+//    tcsetattr(0, TCSANOW, &term);
- }
- 
- /* Disable interpretation of the special control keys in our terminal
-  * settings. */
- void disable_signals(void)
- {
--    struct termios term;
-+//    struct termios term;
- 
--    tcgetattr(0, &term);
--    term.c_lflag &= ~ISIG;
--    tcsetattr(0, TCSANOW, &term);
-+//    tcgetattr(0, &term);
-+//    term.c_lflag &= ~ISIG;
-+//    tcsetattr(0, TCSANOW, &term);
- }
- 
- #ifndef NANO_TINY
-@@ -1446,22 +1451,22 @@
-  * settings. */
- void disable_flow_control(void)
- {
--    struct termios term;
-+//    struct termios term;
- 
--    tcgetattr(0, &term);
--    term.c_iflag &= ~IXON;
--    tcsetattr(0, TCSANOW, &term);
-+//    tcgetattr(0, &term);
-+//    term.c_iflag &= ~IXON;
-+//    tcsetattr(0, TCSANOW, &term);
- }
- 
- /* Enable interpretation of the flow control characters in our terminal
-  * settings. */
- void enable_flow_control(void)
- {
--    struct termios term;
-+//    struct termios term;
- 
--    tcgetattr(0, &term);
--    term.c_iflag |= IXON;
--    tcsetattr(0, TCSANOW, &term);
-+//    tcgetattr(0, &term);
-+//    term.c_iflag |= IXON;
-+//    tcsetattr(0, TCSANOW, &term);
- }
- 
- /* Set up the terminal state.  Put the terminal in raw mode (read one
-@@ -2563,7 +2568,7 @@
- 	tabsize = WIDTH_OF_TAB;
- 
-     /* Back up the old terminal settings so that they can be restored. */
--    tcgetattr(0, &oldterm);
-+//    tcgetattr(0, &oldterm);
- 
-     /* Initialize curses mode.  If this fails, get out. */
-     if (initscr() == NULL)
-diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/text.c nano-2.3.1/src/text.c
---- nano-2.3.1-orig/src/text.c	Sun Jan 15 01:17:55 2012
-+++ nano-2.3.1/src/text.c	Sun Jan 15 02:59:03 2012
-@@ -28,7 +28,7 @@
- #include <unistd.h>
- #include <string.h>
- #include <fcntl.h>
--#include <sys/wait.h>
-+//#include <sys/wait.h>
- #include <errno.h>
- 
- #ifndef NANO_TINY
-diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/utils.c nano-2.3.1/src/utils.c
---- nano-2.3.1-orig/src/utils.c	Mon Feb  7 04:17:07 2011
-+++ nano-2.3.1/src/utils.c	Sun Jan 15 03:20:09 2012
-@@ -26,7 +26,9 @@
- #include <string.h>
- #include <stdio.h>
- #include <unistd.h>
-+#if !defined(__MINGW32__)
- #include <pwd.h>
-+#endif
- #include <ctype.h>
- #include <errno.h>
- 
-@@ -51,13 +53,14 @@
- {
-     if (homedir == NULL) {
- 	const char *homenv = getenv("HOME");
+     *num_matches = 0;
 -
 +#if !defined(__MINGW32__)
- 	if (homenv == NULL) {
- 	    const struct passwd *userage = getpwuid(geteuid());
- 
- 	    if (userage != NULL)
- 		homenv = userage->pw_dir;
+     while ((userdata = getpwent()) != NULL) {
+ 	if (strncmp(userdata->pw_name, buf + 1, buf_len - 1) == 0) {
+ 	    /* Cool, found a match.  Add it to the list.  This makes a
+ 	     * lot more sense to me (Chris) this way... */
+-
+ #ifndef DISABLE_OPERATINGDIR
+ 	    /* ...unless the match exists outside the operating
+ 	     * directory, in which case just go to the next match. */
+@@ -2392,6 +2793,7 @@
  	}
-+#endif
- 	homedir = mallocstrcpy(NULL, homenv);
      }
+     endpwent();
++#endif
+ 
+     return matches;
  }
---- nano-2.3.1-orig/src/nano.h	Sun Jan 15 03:34:14 2012
-+++ nano-2.3.1/src/nano.h	Sun Jan 15 03:34:25 2012
-@@ -182,7 +182,7 @@
- } update_type;
- 
- typedef enum {
--    CONTROL, META, FKEY, RAWINPUT
-+    CONTROL, META, FKEY, RAWINPUTNANO
- }  function_type;
- 
- typedef enum {
---- nano-2.3.1-orig/src/global.c	Sun Jan 15 03:34:46 2012
-+++ nano-2.3.1/src/global.c	Sun Jan 15 03:35:43 2012
+diff -x *.orig -burN nano-2.3.1-orig/src/global.c nano-2.3.1/src/global.c
+--- nano-2.3.1-orig/src/global.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/global.c	Sun Jan 15 21:41:05 2012
 @@ -269,7 +269,7 @@
      else if (str[0] ==  'F' || str[0] == 'F')
          return FKEY;
@@ -772,8 +911,9 @@ diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/utils.c nano-2.3.1/src/utils.
  	s->seq = KEY_END;
  #endif
  
---- nano-2.3.1-orig/src/help.c	Sun Jan 15 03:35:59 2012
-+++ nano-2.3.1/src/help.c	Sun Jan 15 03:36:01 2012
+diff -x *.orig -burN nano-2.3.1-orig/src/help.c nano-2.3.1/src/help.c
+--- nano-2.3.1-orig/src/help.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/help.c	Sun Jan 15 21:41:05 2012
 @@ -446,7 +446,7 @@
              if (scsfound == 3)
  		continue;
@@ -783,3 +923,430 @@ diff -burN -x Makefile -x *.Po nano-2.3.1-orig/src/utils.c nano-2.3.1/src/utils.
  		continue;
  
  	    if ((s->menu & currmenu) == 0)
+diff -x *.orig -burN nano-2.3.1-orig/src/nano.c nano-2.3.1/src/nano.c
+--- nano-2.3.1-orig/src/nano.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/nano.c	Sun Jan 15 21:41:05 2012
+@@ -36,13 +36,18 @@
+ #ifdef ENABLE_UTF8
+ #include <langinfo.h>
+ #endif
+-#include <termios.h>
++//#include <termios.h>
+ #ifdef HAVE_GETOPT_H
+ #include <getopt.h>
+ #endif
+ #ifndef NANO_TINY
++#if defined(__MINGW32__)
++#include <io.h>
++#include <pthread.h>
++#else
+ #include <sys/ioctl.h>
+ #endif
++#endif
+ 
+ #ifndef DISABLE_MOUSE
+ static int oldinterval = -1;
+@@ -52,9 +57,9 @@
+ static bool no_rcfiles = FALSE;
+ 	/* Should we ignore all rcfiles? */
+ #endif
+-static struct termios oldterm;
++//static struct termios oldterm;
+ 	/* The user's original terminal settings. */
+-static struct sigaction act;
++//static struct sigaction act;
+ 	/* Used to set up all our fun signal handlers. */
+ 
+ /* Create a new filestruct node.  Note that we do not set prevnode->next
+@@ -600,7 +605,7 @@
+     endwin();
+ 
+     /* Restore the old terminal settings. */
+-    tcsetattr(0, TCSANOW, &oldterm);
++//    tcsetattr(0, TCSANOW, &oldterm);
+ 
+ #if !defined(NANO_TINY) && defined(ENABLE_NANORC)
+     if (!no_rcfiles && ISSET(HISTORYLOG))
+@@ -627,7 +632,7 @@
+     endwin();
+ 
+     /* Restore the old terminal settings. */
+-    tcsetattr(0, TCSANOW, &oldterm);
++//    tcsetattr(0, TCSANOW, &oldterm);
+ 
+     va_start(ap, msg);
+     vfprintf(stderr, msg, ap);
+@@ -711,7 +716,9 @@
+     if (die_stat) {
+ 	int shush;
+ 	shush = chmod(retval, die_stat->st_mode);
++#if !defined(__MINGW32__)
+ 	shush = chown(retval, die_stat->st_uid, die_stat->st_gid);
++#endif
+     }
+ #endif
+ 
+@@ -1077,7 +1084,7 @@
+     ;
+ }
+ 
+-static struct sigaction pager_oldaction, pager_newaction;  /* Original and temporary handlers for SIGINT. */
++//static struct sigaction pager_oldaction, pager_newaction;  /* Original and temporary handlers for SIGINT. */
+ static bool pager_sig_failed = FALSE; /* Did sigaction() fail without changing the signal handlers? */
+ static bool pager_input_aborted = FALSE; /* Did someone invoke the pager and abort it via ^C? */
+ 
+@@ -1101,10 +1108,10 @@
+ 
+     dup2(ttystdin,0);
+     close(ttystdin);
+-    if (!pager_input_aborted)
+-	tcgetattr(0, &oldterm);
+-    if (!pager_sig_failed && sigaction(SIGINT, &pager_oldaction, NULL) == -1)
+-        nperror("sigaction");
++//    if (!pager_input_aborted)
++//	tcgetattr(0, &oldterm);
++//    if (!pager_sig_failed && sigaction(SIGINT, &pager_oldaction, NULL) == -1)
++//        nperror("sigaction");
+     terminal_init();
+     doupdate();
+ }
+@@ -1121,8 +1128,8 @@
+ void stdin_pager(void)
+ {
+     endwin();
+-    if (!pager_input_aborted)
+-	tcsetattr(0, TCSANOW, &oldterm);
++//    if (!pager_input_aborted)
++//	tcsetattr(0, TCSANOW, &oldterm);
+     fprintf(stderr, _("Reading from stdin, ^C to abort\n"));
+ 
+     /* Set things up so that Ctrl-C will cancel the new process. */
+@@ -1132,26 +1139,26 @@
+     enable_signals();
+ #endif
+ 
+-    if (sigaction(SIGINT, NULL, &pager_newaction) == -1) {
+-	pager_sig_failed = TRUE;
+-	nperror("sigaction");
+-    } else {
+-	pager_newaction.sa_handler = cancel_stdin_pager;
+-	if (sigaction(SIGINT, &pager_newaction, &pager_oldaction) == -1) {
+-	    pager_sig_failed = TRUE;
+-	    nperror("sigaction");
+-	}
+-    }
++//    if (sigaction(SIGINT, NULL, &pager_newaction) == -1) {
++//	pager_sig_failed = TRUE;
++//	nperror("sigaction");
++//    } else {
++//	pager_newaction.sa_handler = cancel_stdin_pager;
++//	if (sigaction(SIGINT, &pager_newaction, &pager_oldaction) == -1) {
++//	    pager_sig_failed = TRUE;
++//	    nperror("sigaction");
++//	}
++//    }
+ 
+     open_buffer("", FALSE);
+     finish_stdin_pager();
+ }
+ 
+ 
+-
+ /* Initialize the signal handlers. */
+ void signal_init(void)
+ {
++#if 0
+     /* Trap SIGINT and SIGQUIT because we want them to do useful
+      * things. */
+     memset(&act, 0, sizeof(struct sigaction));
+@@ -1186,6 +1193,7 @@
+ 	act.sa_handler = do_continue;
+ 	sigaction(SIGCONT, &act, NULL);
+     }
++#endif
+ }
+ 
+ /* Handler for SIGHUP (hangup) and SIGTERM (terminate). */
+@@ -1217,16 +1225,20 @@
+     fflush(stdout);
+ 
+     /* Restore the old terminal settings. */
+-    tcsetattr(0, TCSANOW, &oldterm);
++//    tcsetattr(0, TCSANOW, &oldterm);
+ 
+     /* Trap SIGHUP and SIGTERM so we can properly deal with them while
+      * suspended. */
+-    act.sa_handler = handle_hupterm;
+-    sigaction(SIGHUP, &act, NULL);
+-    sigaction(SIGTERM, &act, NULL);
++//    act.sa_handler = handle_hupterm;
++//    sigaction(SIGHUP, &act, NULL);
++//    sigaction(SIGTERM, &act, NULL);
+ 
+     /* Do what mutt does: send ourselves a SIGSTOP. */
++#if defined(__MINGW32__)
++    exit(0);
++#else
+     kill(0, SIGSTOP);
++#endif
+ }
+ 
+ /* the subnfunc version */
+@@ -1268,8 +1280,9 @@
+ /* Handler for SIGWINCH (window size change). */
+ RETSIGTYPE handle_sigwinch(int signal)
+ {
+-    const char *tty = ttyname(0);
+     int fd, result = 0;
++#if !defined(__MINGW32__)
++    const char *tty = ttyname(0);
+     struct winsize win;
+ 
+     if (tty == NULL)
+@@ -1290,6 +1303,7 @@
+     COLS = win.ws_col;
+     LINES = win.ws_row;
+ #endif
++#endif
+ 
+     /* If we've partitioned the filestruct, unpartition it now. */
+     if (filepart != NULL)
+@@ -1326,9 +1340,11 @@
+     currmenu = MMAIN;
+     total_refresh();
+ 
++#if !defined(__MINGW32__)
+     /* Jump back to either main() or the unjustify routine in
+      * do_justify(). */
+     siglongjmp(jump_buf, 1);
++#endif
+ }
+ 
+ /* If allow is TRUE, block any SIGWINCH signals that we get, so that we
+@@ -1336,10 +1352,12 @@
+  * signals that we have, so that we can deal with them now. */
+ void allow_pending_sigwinch(bool allow)
+ {
++#if !defined(__MINGW32__)
+     sigset_t winch;
+     sigemptyset(&winch);
+     sigaddset(&winch, SIGWINCH);
+     sigprocmask(allow ? SIG_UNBLOCK : SIG_BLOCK, &winch, NULL);
++#endif
+ }
+ #endif /* !NANO_TINY */
+ 
+@@ -1410,23 +1428,23 @@
+  * settings. */
+ void disable_extended_io(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_lflag &= ~IEXTEN;
+-    term.c_oflag &= ~OPOST;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_lflag &= ~IEXTEN;
++//    term.c_oflag &= ~OPOST;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ /* Disable interpretation of the special control keys in our terminal
+  * settings. */
+ void disable_signals(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_lflag &= ~ISIG;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_lflag &= ~ISIG;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ #ifndef NANO_TINY
+@@ -1434,11 +1452,13 @@
+  * settings. */
+ void enable_signals(void)
+ {
++#if !defined(__MINGW32__)
+     struct termios term;
+ 
+     tcgetattr(0, &term);
+     term.c_lflag |= ISIG;
+     tcsetattr(0, TCSANOW, &term);
++#endif
+ }
+ #endif
+ 
+@@ -1446,22 +1466,22 @@
+  * settings. */
+ void disable_flow_control(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_iflag &= ~IXON;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_iflag &= ~IXON;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ /* Enable interpretation of the flow control characters in our terminal
+  * settings. */
+ void enable_flow_control(void)
+ {
+-    struct termios term;
++//    struct termios term;
+ 
+-    tcgetattr(0, &term);
+-    term.c_iflag |= IXON;
+-    tcsetattr(0, TCSANOW, &term);
++//    tcgetattr(0, &term);
++//    term.c_iflag |= IXON;
++//    tcsetattr(0, TCSANOW, &term);
+ }
+ 
+ /* Set up the terminal state.  Put the terminal in raw mode (read one
+@@ -2563,7 +2583,7 @@
+ 	tabsize = WIDTH_OF_TAB;
+ 
+     /* Back up the old terminal settings so that they can be restored. */
+-    tcgetattr(0, &oldterm);
++//    tcgetattr(0, &oldterm);
+ 
+     /* Initialize curses mode.  If this fails, get out. */
+     if (initscr() == NULL)
+diff -x *.orig -burN nano-2.3.1-orig/src/nano.h nano-2.3.1/src/nano.h
+--- nano-2.3.1-orig/src/nano.h	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/nano.h	Sun Jan 15 21:41:05 2012
+@@ -182,7 +182,7 @@
+ } update_type;
+ 
+ typedef enum {
+-    CONTROL, META, FKEY, RAWINPUT
++    CONTROL, META, FKEY, RAWINPUTNANO
+ }  function_type;
+ 
+ typedef enum {
+@@ -790,5 +790,10 @@
+ 
+ /* The maximum number of bytes buffered at one time. */
+ #define MAX_BUF_SIZE 128
++
++#if defined(__MINGW32__)
++#define sigsetjmp(jbuf, flag)  setjmp(jbuf)
++#define sigjmp_buf jmp_buf
++#endif
+ 
+ #endif /* !NANO_H */
+diff -x *.orig -burN nano-2.3.1-orig/src/text.c nano-2.3.1/src/text.c
+--- nano-2.3.1-orig/src/text.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/text.c	Sun Jan 15 21:41:05 2012
+@@ -28,7 +28,9 @@
+ #include <unistd.h>
+ #include <string.h>
+ #include <fcntl.h>
++#if !defined(__MINGW32__)
+ #include <sys/wait.h>
++#endif
+ #include <errno.h>
+ 
+ #ifndef NANO_TINY
+@@ -751,13 +753,16 @@
+  * execute_command(). */
+ RETSIGTYPE cancel_command(int signal)
+ {
++#if !defined(__MINGW32__)
+     if (kill(pid, SIGKILL) == -1)
+ 	nperror("kill");
++#endif
+ }
+ 
+ /* Execute command in a shell.  Return TRUE on success. */
+ bool execute_command(const char *command)
+ {
++#if !defined(__MINGW32__)
+     int fd[2];
+     FILE *f;
+     char *shellenv;
+@@ -838,6 +843,9 @@
+     terminal_init();
+ 
+     return TRUE;
++#else
++    return FALSE;
++#endif
+ }
+ 
+ /* Add a new undo struct to the top of the current pile */
+@@ -2541,6 +2549,9 @@
+  * termination, and the error string otherwise. */
+ const char *do_int_speller(const char *tempfile_name)
+ {
++#if defined(__MINGW32__)
++    return NULL;
++#else
+     char *read_buff, *read_buff_ptr, *read_buff_word;
+     size_t pipe_buff_size, read_buff_size, read_buff_read, bytesread;
+     int spell_fd[2], sort_fd[2], uniq_fd[2], tempfile_fd = -1;
+@@ -2716,12 +2727,16 @@
+     close(uniq_fd[0]);
+     close(uniq_fd[1]);
+     exit(1);
++#endif
+ }
+ 
+ /* External (alternate) spell checking.  Return NULL for normal
+  * termination, and the error string otherwise. */
+ const char *do_alt_speller(char *tempfile_name)
+ {
++#if defined(__MINGW32__)
++    return NULL;
++#else
+     int alt_spell_status;
+     size_t current_x_save = openfile->current_x;
+     size_t pww_save = openfile->placewewant;
+@@ -2914,6 +2929,7 @@
+ #endif
+ 
+     return NULL;
++#endif
+ }
+ 
+ /* Spell check the current file.  If an alternate spell checker is
+diff -x *.orig -burN nano-2.3.1-orig/src/utils.c nano-2.3.1/src/utils.c
+--- nano-2.3.1-orig/src/utils.c	Sun Jan 15 01:17:55 2012
++++ nano-2.3.1/src/utils.c	Sun Jan 15 21:41:05 2012
+@@ -26,7 +26,9 @@
+ #include <string.h>
+ #include <stdio.h>
+ #include <unistd.h>
++#if !defined(__MINGW32__)
+ #include <pwd.h>
++#endif
+ #include <ctype.h>
+ #include <errno.h>
+ 
+@@ -51,13 +53,14 @@
+ {
+     if (homedir == NULL) {
+ 	const char *homenv = getenv("HOME");
+-
++#if !defined(__MINGW32__)
+ 	if (homenv == NULL) {
+ 	    const struct passwd *userage = getpwuid(geteuid());
+ 
+ 	    if (userage != NULL)
+ 		homenv = userage->pw_dir;
+ 	}
++#endif
+ 	homedir = mallocstrcpy(NULL, homenv);
+     }
+ }

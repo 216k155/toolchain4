@@ -1,385 +1,6 @@
---- ./lib/util.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./lib/util.c	Sat Jan 14 23:24:04 2012
-@@ -38,7 +38,11 @@
- #include <stdio.h>
- #include <stdint.h>
- #include <sys/types.h>
-+#if defined(__MINGW32__)
-+#include "inet_win.h"
-+#else
- #include <arpa/inet.h>
-+#endif
- #include <string.h>
- #include <unistd.h>
- #include <errno.h>
---- ./lib/macho.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./lib/macho.c	Sat Jan 14 23:04:31 2012
-@@ -36,7 +36,9 @@
- #include <string.h>
- #include <sys/types.h>
- #include <sys/stat.h>
-+#if !defined(__MINGW32__)
- #include <arpa/inet.h>
-+#endif
- 
- #include "config.h"
- #ifndef HAVE_ASPRINTF
---- ./src/xar.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./src/xar.c	Sat Jan 14 23:23:37 2012
-@@ -36,11 +36,22 @@
- #include <string.h>
- #include <sys/types.h>
- #include <sys/stat.h>
-+#if defined(__MINGW32__)
-+ int fts_open(char *args[], int flags, void* other)
-+ {
-+    return 0;
-+ }
-+#else
- #include <fts.h>
-+#endif
- #include <unistd.h>
- #include <fcntl.h>
- #include <inttypes.h>
-+#if defined(__MINGW32__)
-+#include "../lib/inet_win.h"
-+#else
- #include <netinet/in.h>
-+#endif
- #include <libxml/xmlreader.h>
- #include <libxml/xmlwriter.h>
- #include <libxml/xmlstring.h>
-@@ -50,6 +61,9 @@
- #include <errno.h>
- #include "xar.h"
- #include "config.h"
-+#ifndef HAVE_ASPRINTF
-+#include "../lib/asprintf.h"
-+#endif
- 
- #define SYMBOLIC 1
- #define NUMERIC  2
-@@ -140,6 +154,11 @@
- }
- 
- static int archive(const char *filename, int arglen, char *args[]) {
-+#if defined(__MINGW32__)
-+    fprintf(stderr, "<fts.h> - fts_open() not available for MinGW. Can't create archive %s\n", filename);
-+    exit(1);
-+    return 1;
-+#else
- 	xar_t x;
- 	FTS *fts;
- 	FTSENT *ent;
-@@ -256,6 +275,7 @@
- 	}
- 
- 	return Err;
-+#endif
- }
- 
- static int extract(const char *filename, int arglen, char *args[]) {
---- ./lib/archive.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./lib/archive.c	Sat Jan 14 23:25:30 2012
-@@ -46,7 +46,11 @@
- #include <errno.h>
- #include <limits.h>
- #include <sys/stat.h>
-+#if defined(__MINGW32__)
-+#include "inet_win.h"
-+#else
- #include <arpa/inet.h> /* for ntoh{l,s} */
-+#endif
- #include <inttypes.h>  /* for PRIu64 */
- #include <libxml/xmlwriter.h>
- #include <libxml/xmlreader.h>
---- ./lib/darwinattr.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./lib/darwinattr.c	Sat Jan 14 23:23:02 2012
-@@ -36,13 +36,20 @@
- */
- 
- #include "config.h"
-+#ifndef HAVE_ASPRINTF
-+#include "asprintf.h"
-+#endif
- #include <stdio.h>
- #include <unistd.h>
- #include <string.h>
- #include <libgen.h>
- #include <sys/fcntl.h>
- #include <sys/stat.h>
-+#if defined(__MINGW32__)
-+#include "inet_win.h"
-+#else
- #include <arpa/inet.h>
-+#endif
- #include "xar.h"
- #include "arcmod.h"
- #include "b64.h"
---- ./lib/ext2.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./lib/ext2.c	Sat Jan 14 23:04:31 2012
-@@ -48,7 +48,10 @@
- #include <string.h>
- #include <fcntl.h>
- #include <sys/types.h>
--#include <sys/ioctl.h>
-+#if !defined(__MINGW32__)
-+ #include <sys/ioctl.h>
-+#else
-+#endif
- #include "ext2.h"
- 
- #ifdef HAVE_EXT2FS_EXT2_FS_H
---- ./lib/stat.c.orig	Sat Dec 29 18:49:57 2007
-+++ ./lib/stat.c	Sun Jan 15 00:19:08 2012
-@@ -55,8 +55,10 @@
- #include <sys/time.h>
- #include <sys/fcntl.h>
- #include <time.h>
-+#if !defined(__MINGW32__)
- #include <pwd.h>
- #include <grp.h>
-+#endif
- #include <string.h>
- #include <unistd.h>
- #include <limits.h>
-@@ -71,6 +73,181 @@
- #include "archive.h"
- #include "util.h"
- 
-+#if defined(__MINGW32__)
-+#define _WIN32_WINNT 0x0600
-+#include <windows.h>
-+#include <direct.h>
-+#define DIRSEP '\\'
-+#define S_IFDIR _S_IFDIR
-+int link(const char *path1, const char *path2)
-+{
-+ 	return CreateHardLinkA(path2, path1, NULL) ? 0 : -1;
-+}
-+int symlink(char const *path1, char const *path2)
-+{
-+ 	return CreateSymbolicLinkA(path2, path1, 0) ? 0 : -1;
-+}
-+int mkdir_new(const char *path, int mode)
-+{
-+    return mkdir(path);
-+}
-+/* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
-+   (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.
-+
-+   The GNU C Library is free software; you can redistribute it and/or
-+   modify it under the terms of the GNU Lesser General Public
-+   License as published by the Free Software Foundation; either
-+   version 2.1 of the License, or (at your option) any later version.  */
-+
-+static const char letters[] =
-+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-+
-+/* Generate a temporary file name based on TMPL.  TMPL must match the
-+   rules for mk[s]temp (i.e. end in "XXXXXX").  The name constructed
-+   does not exist at the time of the call to mkstemp.  TMPL is
-+   overwritten with the result.  */
-+int
-+mkstemp (char *tmpl)
-+{
-+  int len;
-+  char *XXXXXX;
-+  static unsigned long long value;
-+  unsigned long long random_time_bits;
-+  unsigned int count;
-+  int fd = -1;
-+  int save_errno = errno;
-+
-+  /* A lower bound on the number of temporary files to attempt to
-+     generate.  The maximum total number of temporary file names that
-+     can exist for a given template is 62**6.  It should never be
-+     necessary to try all these combinations.  Instead if a reasonable
-+     number of names is tried (we define reasonable as 62**3) fail to
-+     give the system administrator the chance to remove the problems.  */
-+#define ATTEMPTS_MIN (62 * 62 * 62)
-+
-+  /* The number of times to attempt to generate a temporary file.  To
-+     conform to POSIX, this must be no smaller than TMP_MAX.  */
-+#if ATTEMPTS_MIN < TMP_MAX
-+  unsigned int attempts = TMP_MAX;
-+#else
-+  unsigned int attempts = ATTEMPTS_MIN;
-+#endif
-+
-+  len = strlen (tmpl);
-+  if (len < 6 || strcmp (&tmpl[len - 6], "XXXXXX"))
-+    {
-+      errno = EINVAL;
-+      return -1;
-+    }
-+
-+/* This is where the Xs start.  */
-+  XXXXXX = &tmpl[len - 6];
-+
-+  /* Get some more or less random data.  */
-+  {
-+    SYSTEMTIME      stNow;
-+    FILETIME ftNow;
-+
-+    // get system time
-+    GetSystemTime(&stNow);
-+    stNow.wMilliseconds = 500;
-+    if (!SystemTimeToFileTime(&stNow, &ftNow))
-+    {
-+        errno = -1;
-+        return -1;
-+    }
-+
-+    random_time_bits = (((unsigned long long)ftNow.dwHighDateTime << 32)
-+                        | (unsigned long long)ftNow.dwLowDateTime);
-+  }
-+  value += random_time_bits ^ (unsigned long long)GetCurrentThreadId ();
-+
-+  for (count = 0; count < attempts; value += 7777, ++count)
-+    {
-+      unsigned long long v = value;
-+
-+      /* Fill in the random bits.  */
-+      XXXXXX[0] = letters[v % 62];
-+      v /= 62;
-+      XXXXXX[1] = letters[v % 62];
-+      v /= 62;
-+      XXXXXX[2] = letters[v % 62];
-+      v /= 62;
-+      XXXXXX[3] = letters[v % 62];
-+      v /= 62;
-+      XXXXXX[4] = letters[v % 62];
-+      v /= 62;
-+      XXXXXX[5] = letters[v % 62];
-+
-+      fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, _S_IREAD | _S_IWRITE);
-+      if (fd >= 0)
-+    {
-+      errno = save_errno;
-+      return fd;
-+    }
-+      else if (errno != EEXIST)
-+    return -1;
-+    }
-+
-+  /* We got out of the loop because we ran out of combinations to try.  */
-+  errno = EEXIST;
-+  return -1;
-+}
-+
-+char* strsep(char** stringp, const char* delim)
-+{
-+  char* start = *stringp;
-+  char* p;
-+
-+  p = (start != NULL) ? strpbrk(start, delim) : NULL;
-+
-+  if (p == NULL)
-+  {
-+    *stringp = NULL;
-+  }
-+  else
-+  {
-+    *p = '\0';
-+    *stringp = p + 1;
-+  }
-+
-+  return start;
-+}
-+
-+struct tm *localtime_r (const time_t *, struct tm *); 
-+struct tm *gmtime_r (const time_t *, struct tm *); 
-+
-+struct tm * 
-+localtime_r (const time_t *timer, struct tm *result) 
-+{ 
-+   struct tm *local_result; 
-+   local_result = localtime (timer); 
-+
-+   if (local_result == NULL || result == NULL) 
-+     return NULL; 
-+
-+   memcpy (result, local_result, sizeof (result)); 
-+   return result; 
-+} 
-+
-+struct tm * 
-+gmtime_r (const time_t *timer, struct tm *result) 
-+{ 
-+   struct tm *local_result; 
-+   local_result = gmtime (timer); 
-+
-+   if (local_result == NULL || result == NULL) 
-+     return NULL; 
-+
-+   memcpy (result, local_result, sizeof (result)); 
-+   return result; 
-+} 
-+
-+#define mkdir mkdir_new
-+#define S_IFLNK 40960
-+#define S_IFSOCK 49152
-+#endif
-+
- #ifndef LLONG_MIN
- #define LLONG_MIN LONG_LONG_MIN
- #endif
-@@ -454,17 +631,21 @@
- 	xar_prop_set(f, "uid", tmpstr);
- 	free(tmpstr);
- 
-+#if !defined(__MINGW32__)
- 	pw = getpwuid(XAR(x)->sbcache.st_uid);
- 	if( pw )
- 		xar_prop_set(f, "user", pw->pw_name);
-+#endif
- 
- 	asprintf(&tmpstr, "%"PRIu64, (uint64_t)XAR(x)->sbcache.st_gid);
- 	xar_prop_set(f, "gid", tmpstr);
- 	free(tmpstr);
- 
-+#if !defined(__MINGW32__)
- 	gr = getgrgid(XAR(x)->sbcache.st_gid);
- 	if( gr )
- 		xar_prop_set(f, "group", gr->gr_name);
-+#endif
- 
- 	gmtime_r(&XAR(x)->sbcache.st_atime, &t);
- 	memset(time, 0, sizeof(time));
-@@ -509,6 +690,7 @@
- 	u = geteuid();
- 	g = getegid();
- 
-+#if !defined(__MINGW32__)
- 	opt = xar_opt_get(x, XAR_OPT_OWNERSHIP);
- 	if( opt && (strcmp(opt, XAR_OPT_VAL_SYMBOLIC) == 0) ) {
- 		struct passwd *pw;
-@@ -529,6 +711,7 @@
- 			}
- 		}
- 	}
-+#endif
- 	if( opt && (strcmp(opt, XAR_OPT_VAL_NUMERIC) == 0) ) {
- 		xar_prop_get(f, "uid", &opt);
- 		if( opt ) {
---- ./configure.ac.orig	Sat Dec 29 18:49:57 2007
-+++ ./configure.ac	Sat Jan 14 23:04:31 2012
-@@ -226,7 +226,11 @@
- fi
- 
- AC_CHECK_SIZEOF(ino_t)
--if test $ac_cv_sizeof_ino_t = "4"; then
-+if test $ac_cv_sizeof_ino_t = "2"; then
-+AC_DEFINE(INO_STRING, PRId16)
-+AC_DEFINE(INO_HEXSTRING, PRIx16)
-+AC_DEFINE(INO_CAST, (uint16_t))
-+elif test $ac_cv_sizeof_ino_t = "4"; then
- AC_DEFINE(INO_STRING, PRId32)
- AC_DEFINE(INO_HEXSTRING, PRIx32)
- AC_DEFINE(INO_CAST, (uint32_t))
---- ./configure.orig	Sat Dec 29 18:49:57 2007
-+++ ./configure	Sat Jan 14 23:04:31 2012
+diff -x *.orig -burN xar-1.5.2-orig/configure xar-1.5.2/configure
+--- xar-1.5.2-orig/configure	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/configure	Sun Jan 15 23:51:40 2012
 @@ -1,83 +1,418 @@
  #! /bin/sh
  # Guess values for system-dependent variables and create Makefiles.
@@ -12909,3 +12530,409 @@
 +$as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
  fi
  
+diff -x *.orig -burN xar-1.5.2-orig/configure.ac xar-1.5.2/configure.ac
+--- xar-1.5.2-orig/configure.ac	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/configure.ac	Sun Jan 15 23:51:40 2012
+@@ -226,7 +226,11 @@
+ fi
+ 
+ AC_CHECK_SIZEOF(ino_t)
+-if test $ac_cv_sizeof_ino_t = "4"; then
++if test $ac_cv_sizeof_ino_t = "2"; then
++AC_DEFINE(INO_STRING, PRId16)
++AC_DEFINE(INO_HEXSTRING, PRIx16)
++AC_DEFINE(INO_CAST, (uint16_t))
++elif test $ac_cv_sizeof_ino_t = "4"; then
+ AC_DEFINE(INO_STRING, PRId32)
+ AC_DEFINE(INO_HEXSTRING, PRIx32)
+ AC_DEFINE(INO_CAST, (uint32_t))
+diff -x *.orig -burN xar-1.5.2-orig/lib/archive.c xar-1.5.2/lib/archive.c
+--- xar-1.5.2-orig/lib/archive.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/lib/archive.c	Sun Jan 15 23:51:40 2012
+@@ -46,7 +46,11 @@
+ #include <errno.h>
+ #include <limits.h>
+ #include <sys/stat.h>
++#if defined(__MINGW32__)
++#include "inet_win.h"
++#else
+ #include <arpa/inet.h> /* for ntoh{l,s} */
++#endif
+ #include <inttypes.h>  /* for PRIu64 */
+ #include <libxml/xmlwriter.h>
+ #include <libxml/xmlreader.h>
+diff -x *.orig -burN xar-1.5.2-orig/lib/darwinattr.c xar-1.5.2/lib/darwinattr.c
+--- xar-1.5.2-orig/lib/darwinattr.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/lib/darwinattr.c	Sun Jan 15 23:51:40 2012
+@@ -36,13 +36,20 @@
+ */
+ 
+ #include "config.h"
++#ifndef HAVE_ASPRINTF
++#include "asprintf.h"
++#endif
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <string.h>
+ #include <libgen.h>
+ #include <sys/fcntl.h>
+ #include <sys/stat.h>
++#if defined(__MINGW32__)
++#include "inet_win.h"
++#else
+ #include <arpa/inet.h>
++#endif
+ #include "xar.h"
+ #include "arcmod.h"
+ #include "b64.h"
+diff -x *.orig -burN xar-1.5.2-orig/lib/ext2.c xar-1.5.2/lib/ext2.c
+--- xar-1.5.2-orig/lib/ext2.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/lib/ext2.c	Sun Jan 15 23:51:40 2012
+@@ -48,7 +48,10 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <sys/types.h>
+-#include <sys/ioctl.h>
++#if !defined(__MINGW32__)
++ #include <sys/ioctl.h>
++#else
++#endif
+ #include "ext2.h"
+ 
+ #ifdef HAVE_EXT2FS_EXT2_FS_H
+diff -x *.orig -burN xar-1.5.2-orig/lib/inet_win.h xar-1.5.2/lib/inet_win.h
+--- xar-1.5.2-orig/lib/inet_win.h	Thu Jan  1 00:00:00 1970
++++ xar-1.5.2/lib/inet_win.h	Sun Jan 15 23:55:32 2012
+@@ -0,0 +1,14 @@
++#if !defined(INET_WIN_H_INCLUDED)
++#define INET_WIN_H_INCLUDED
++
++#if defined(__MINGW32__)
++#define htonl(_x) ((((uint32_t)(_x) & 0xff000000) >> 24) | \
++                   (((uint32_t)(_x) & 0x00ff0000) >> 8)  | \
++                   (((uint32_t)(_x) & 0x0000ff00) << 8)  | \
++                   (((uint32_t)(_x) & 0x000000ff) << 24))
++#define ntohl(_x) htonl(_x)
++#define ntohs(x) ((uint16_t)((((uint16_t)(x) & 0xff00) >> 8) | (((uint16_t)(x) & 0x00ff) << 8)))
++#define htons(x) ntohs(x)
++#endif
++
++#endif /*INET_WIN_H_INCLUDED*/
+diff -x *.orig -burN xar-1.5.2-orig/lib/macho.c xar-1.5.2/lib/macho.c
+--- xar-1.5.2-orig/lib/macho.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/lib/macho.c	Sun Jan 15 23:51:40 2012
+@@ -36,7 +36,9 @@
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#if !defined(__MINGW32__)
+ #include <arpa/inet.h>
++#endif
+ 
+ #include "config.h"
+ #ifndef HAVE_ASPRINTF
+diff -x *.orig -burN xar-1.5.2-orig/lib/stat.c xar-1.5.2/lib/stat.c
+--- xar-1.5.2-orig/lib/stat.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/lib/stat.c	Sun Jan 15 23:51:40 2012
+@@ -55,8 +55,10 @@
+ #include <sys/time.h>
+ #include <sys/fcntl.h>
+ #include <time.h>
++#if !defined(__MINGW32__)
+ #include <pwd.h>
+ #include <grp.h>
++#endif
+ #include <string.h>
+ #include <unistd.h>
+ #include <limits.h>
+@@ -71,6 +73,181 @@
+ #include "archive.h"
+ #include "util.h"
+ 
++#if defined(__MINGW32__)
++#define _WIN32_WINNT 0x0600
++#include <windows.h>
++#include <direct.h>
++#define DIRSEP '\\'
++#define S_IFDIR _S_IFDIR
++int link(const char *path1, const char *path2)
++{
++ 	return CreateHardLinkA(path2, path1, NULL) ? 0 : -1;
++}
++int symlink(char const *path1, char const *path2)
++{
++ 	return CreateSymbolicLinkA(path2, path1, 0) ? 0 : -1;
++}
++int mkdir_new(const char *path, int mode)
++{
++    return mkdir(path);
++}
++/* mkstemp extracted from libc/sysdeps/posix/tempname.c.  Copyright
++   (C) 1991-1999, 2000, 2001, 2006 Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.  */
++
++static const char letters[] =
++"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
++
++/* Generate a temporary file name based on TMPL.  TMPL must match the
++   rules for mk[s]temp (i.e. end in "XXXXXX").  The name constructed
++   does not exist at the time of the call to mkstemp.  TMPL is
++   overwritten with the result.  */
++int
++mkstemp (char *tmpl)
++{
++  int len;
++  char *XXXXXX;
++  static unsigned long long value;
++  unsigned long long random_time_bits;
++  unsigned int count;
++  int fd = -1;
++  int save_errno = errno;
++
++  /* A lower bound on the number of temporary files to attempt to
++     generate.  The maximum total number of temporary file names that
++     can exist for a given template is 62**6.  It should never be
++     necessary to try all these combinations.  Instead if a reasonable
++     number of names is tried (we define reasonable as 62**3) fail to
++     give the system administrator the chance to remove the problems.  */
++#define ATTEMPTS_MIN (62 * 62 * 62)
++
++  /* The number of times to attempt to generate a temporary file.  To
++     conform to POSIX, this must be no smaller than TMP_MAX.  */
++#if ATTEMPTS_MIN < TMP_MAX
++  unsigned int attempts = TMP_MAX;
++#else
++  unsigned int attempts = ATTEMPTS_MIN;
++#endif
++
++  len = strlen (tmpl);
++  if (len < 6 || strcmp (&tmpl[len - 6], "XXXXXX"))
++    {
++      errno = EINVAL;
++      return -1;
++    }
++
++/* This is where the Xs start.  */
++  XXXXXX = &tmpl[len - 6];
++
++  /* Get some more or less random data.  */
++  {
++    SYSTEMTIME      stNow;
++    FILETIME ftNow;
++
++    // get system time
++    GetSystemTime(&stNow);
++    stNow.wMilliseconds = 500;
++    if (!SystemTimeToFileTime(&stNow, &ftNow))
++    {
++        errno = -1;
++        return -1;
++    }
++
++    random_time_bits = (((unsigned long long)ftNow.dwHighDateTime << 32)
++                        | (unsigned long long)ftNow.dwLowDateTime);
++  }
++  value += random_time_bits ^ (unsigned long long)GetCurrentThreadId ();
++
++  for (count = 0; count < attempts; value += 7777, ++count)
++    {
++      unsigned long long v = value;
++
++      /* Fill in the random bits.  */
++      XXXXXX[0] = letters[v % 62];
++      v /= 62;
++      XXXXXX[1] = letters[v % 62];
++      v /= 62;
++      XXXXXX[2] = letters[v % 62];
++      v /= 62;
++      XXXXXX[3] = letters[v % 62];
++      v /= 62;
++      XXXXXX[4] = letters[v % 62];
++      v /= 62;
++      XXXXXX[5] = letters[v % 62];
++
++      fd = open (tmpl, O_RDWR | O_CREAT | O_EXCL, _S_IREAD | _S_IWRITE);
++      if (fd >= 0)
++    {
++      errno = save_errno;
++      return fd;
++    }
++      else if (errno != EEXIST)
++    return -1;
++    }
++
++  /* We got out of the loop because we ran out of combinations to try.  */
++  errno = EEXIST;
++  return -1;
++}
++
++char* strsep(char** stringp, const char* delim)
++{
++  char* start = *stringp;
++  char* p;
++
++  p = (start != NULL) ? strpbrk(start, delim) : NULL;
++
++  if (p == NULL)
++  {
++    *stringp = NULL;
++  }
++  else
++  {
++    *p = '\0';
++    *stringp = p + 1;
++  }
++
++  return start;
++}
++
++struct tm *localtime_r (const time_t *, struct tm *); 
++struct tm *gmtime_r (const time_t *, struct tm *); 
++
++struct tm * 
++localtime_r (const time_t *timer, struct tm *result) 
++{ 
++   struct tm *local_result; 
++   local_result = localtime (timer); 
++
++   if (local_result == NULL || result == NULL) 
++     return NULL; 
++
++   memcpy (result, local_result, sizeof (result)); 
++   return result; 
++} 
++
++struct tm * 
++gmtime_r (const time_t *timer, struct tm *result) 
++{ 
++   struct tm *local_result; 
++   local_result = gmtime (timer); 
++
++   if (local_result == NULL || result == NULL) 
++     return NULL; 
++
++   memcpy (result, local_result, sizeof (result)); 
++   return result; 
++} 
++
++#define mkdir mkdir_new
++#define S_IFLNK 40960
++#define S_IFSOCK 49152
++#endif
++
+ #ifndef LLONG_MIN
+ #define LLONG_MIN LONG_LONG_MIN
+ #endif
+@@ -454,17 +631,21 @@
+ 	xar_prop_set(f, "uid", tmpstr);
+ 	free(tmpstr);
+ 
++#if !defined(__MINGW32__)
+ 	pw = getpwuid(XAR(x)->sbcache.st_uid);
+ 	if( pw )
+ 		xar_prop_set(f, "user", pw->pw_name);
++#endif
+ 
+ 	asprintf(&tmpstr, "%"PRIu64, (uint64_t)XAR(x)->sbcache.st_gid);
+ 	xar_prop_set(f, "gid", tmpstr);
+ 	free(tmpstr);
+ 
++#if !defined(__MINGW32__)
+ 	gr = getgrgid(XAR(x)->sbcache.st_gid);
+ 	if( gr )
+ 		xar_prop_set(f, "group", gr->gr_name);
++#endif
+ 
+ 	gmtime_r(&XAR(x)->sbcache.st_atime, &t);
+ 	memset(time, 0, sizeof(time));
+@@ -509,6 +690,7 @@
+ 	u = geteuid();
+ 	g = getegid();
+ 
++#if !defined(__MINGW32__)
+ 	opt = xar_opt_get(x, XAR_OPT_OWNERSHIP);
+ 	if( opt && (strcmp(opt, XAR_OPT_VAL_SYMBOLIC) == 0) ) {
+ 		struct passwd *pw;
+@@ -529,6 +711,7 @@
+ 			}
+ 		}
+ 	}
++#endif
+ 	if( opt && (strcmp(opt, XAR_OPT_VAL_NUMERIC) == 0) ) {
+ 		xar_prop_get(f, "uid", &opt);
+ 		if( opt ) {
+diff -x *.orig -burN xar-1.5.2-orig/lib/util.c xar-1.5.2/lib/util.c
+--- xar-1.5.2-orig/lib/util.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/lib/util.c	Sun Jan 15 23:51:40 2012
+@@ -38,7 +38,11 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <sys/types.h>
++#if defined(__MINGW32__)
++#include "inet_win.h"
++#else
+ #include <arpa/inet.h>
++#endif
+ #include <string.h>
+ #include <unistd.h>
+ #include <errno.h>
+diff -x *.orig -burN xar-1.5.2-orig/src/xar.c xar-1.5.2/src/xar.c
+--- xar-1.5.2-orig/src/xar.c	Sat Dec 29 18:49:57 2007
++++ xar-1.5.2/src/xar.c	Sun Jan 15 23:51:40 2012
+@@ -36,11 +36,22 @@
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#if defined(__MINGW32__)
++ int fts_open(char *args[], int flags, void* other)
++ {
++    return 0;
++ }
++#else
+ #include <fts.h>
++#endif
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
++#if defined(__MINGW32__)
++#include "../lib/inet_win.h"
++#else
+ #include <netinet/in.h>
++#endif
+ #include <libxml/xmlreader.h>
+ #include <libxml/xmlwriter.h>
+ #include <libxml/xmlstring.h>
+@@ -50,6 +61,9 @@
+ #include <errno.h>
+ #include "xar.h"
+ #include "config.h"
++#ifndef HAVE_ASPRINTF
++#include "../lib/asprintf.h"
++#endif
+ 
+ #define SYMBOLIC 1
+ #define NUMERIC  2
+@@ -140,6 +154,11 @@
+ }
+ 
+ static int archive(const char *filename, int arglen, char *args[]) {
++#if defined(__MINGW32__)
++    fprintf(stderr, "<fts.h> - fts_open() not available for MinGW. Can't create archive %s\n", filename);
++    exit(1);
++    return 1;
++#else
+ 	xar_t x;
+ 	FTS *fts;
+ 	FTSENT *ent;
+@@ -256,6 +275,7 @@
+ 	}
+ 
+ 	return Err;
++#endif
+ }
+ 
+ static int extract(const char *filename, int arglen, char *args[]) {

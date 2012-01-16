@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Another reference, this time cctools version 809 from gentoo:
+# http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/sys-devel/binutils-apple/binutils-apple-4.2.ebuild?revision=1.2
+
 # Keeps a cache of the mounted DMG file in $(dirname $0)/.dmgtools.mounted
 #  to avoid re-mount un-necessarily.
 # Keeps a cache of copied-from-dmg files to avoid mounting un-necessarily.
@@ -55,8 +58,24 @@ build_tools_dmg() {
 	mkdir -p $_TMP_DIR
 	pushd $_TMP_DIR
 
-	if [ -z $(which nano) ] ; then
-		message_status "Retrieving and building nano 2.3.1 (tiny) ..."
+	if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
+		if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
+			error "Failed to get and extract mingw-regex-2.5.1 Check errors."
+		fi
+		pushd mingw-libgnurx-2.5.1
+		patch --backup -p0 < ../../patches/mingw-libgnurx-2.5.1-static.patch
+		./configure --prefix=/usr/local --enable-static --disable-shared
+		if ! make ; then
+			error "Failed to make mingw-libgnurx-2.5.1"
+			popd
+			exit 1
+		fi
+		make install
+		popd
+	fi
+
+#	if [ -z $(which nano) ] ; then
+		message_status "Retrieving and building nano 2.3.1 ..."
 		if ! wget -O - http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz | tar -zx; then
 				error "Failed to get and extract nano-2.3.1 Check errors."
 				popd
@@ -65,13 +84,15 @@ build_tools_dmg() {
 
 		pushd nano-2.3.1
 		patch --backup -p1 < ../../patches/nano-2.3.1-WIN.patch
-		CFLAGS="-I/usr/local/include -DENOTSUP=48 -D_POSIX_SOURCE" LDFLAGS="-L/usr/local/lib" LIBS="-lregex" ./configure --prefix=/usr/local --enable-tiny
+		CFLAGS="-I/usr/local/include -DENOTSUP=48 -D_POSIX_SOURCE" LDFLAGS="-L/usr/local/lib" LIBS="-lregex" ./configure --prefix=/usr/local --enable-color
 		if ! make install; then
 			error "Failed to make nano-2.3.1"
 			exit 1
 		fi
+		cp .nanorc ~/.nanorc
 		popd
-	fi
+		message_status "nano is ready!"
+#	fi
 
 	if [ -z $(which dmg2img) ] ; then
 		if [[ 1 == 1 ]] && [[ "$(uname-bt)" == "Windows" ]] ; then
@@ -154,7 +175,6 @@ build_tools_dmg() {
 		popd
 	fi
 
-
 	if [ -z $(which xar) ] ; then
 		pushd $_TMP_DIR
 	
@@ -165,20 +185,6 @@ build_tools_dmg() {
 		cp lns.exe /usr/local/bin
 		popd
 
-#if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
-		if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
-			error "Failed to get and extract mingw-regex-2.5.1 Check errors."
-		fi
-		pushd mingw-libgnurx-2.5.1
-		./configure --prefix=/usr/local --enable-static --disable-shared
-		if ! make install; then
-			error "Failed to make mingw-libgnurx-2.5.1"
-			popd
-			exit 1
-		fi
-		popd
-#fi
-
 #if [[ ! -d xar-1.5.2 ]] ; then
 		if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
 			error "Failed to get and extract xar-1.5.2 Check errors."
@@ -187,7 +193,7 @@ build_tools_dmg() {
 		fi
 #fi
 		pushd xar-1.5.2
-		patch --backup -p0 < ../../patches/xar-1.5.2-WIN.patch
+		patch --backup -p1 < ../../patches/xar-1.5.2-WIN.patch
 		
 		if ! CFLAGS="-I/usr/local/include -DENOTSUP=48" LDFLAGS="-L/usr/local/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=/usr/local --disable-shared --enable-static; then
 			error "Failed to configure xar-1.5.2"
