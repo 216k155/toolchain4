@@ -1,0 +1,13 @@
+--- Makefile.in.orig	Sun Jan 15 22:12:20 2012
++++ Makefile.in	Sun Jan 15 22:13:04 2012
+@@ -69,8 +69,8 @@
+ libgnurx-$(DLLVERSION).dll libgnurx.dll.a: $(OBJECTS)
+ 	$(CC) $(CFLAGS) -shared -o libgnurx-$(DLLVERSION).dll $(LDFLAGS) $(OBJECTS)
+ 
+-libregex.a: libgnurx.dll.a
+-	cp -p libgnurx.dll.a $@
++libregex.a: $(OBJECTS)
++	ar cru $@ $(OBJECTS)
+ 
+ gnurx.lib: libgnurx-$(DLLVERSION).dll
+ 	$(MSVCLIB) -def:libgnurx.def -out:gnurx.lib
