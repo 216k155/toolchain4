@@ -14,14 +14,14 @@ MNT_CACHE=$(dirname $0)/.dmgtools.mounted
 
 UNAME=$(uname-bt)
 
-if [[ "$(uname-bt)" == "Windows" ]] ; then
+if [[ "$UNAME" == "Windows" ]] ; then
 	SUDO=
 else
 	SUDO=sudo
 fi
 
 patch_mingw_types_h() {
-	if [[ "$(uname-bt)" == "Windows" ]] ; then
+	if [[ "$UNAME" == "Windows" ]] ; then
 		if [[ ! $(egrep uid_t /usr/include/sys/types.h) ]] ; then
 			printf %s \
 '--- sys/types.h-orig	2012-01-13 00:17:02 +0000
@@ -31,7 +31,7 @@ patch_mingw_types_h() {
  #include <_mingw.h>
  
 +/* Added by Ray Donnelly (mingw.android@gmail.com). libgcc build fails for Android 
-+   cross gcc or dmg2img without this. I should find another way as this is a horrible
++   cross gcc and dmg2img without this. I should find another way as this is a horrible
 +   thing to do. */
 +typedef        int     uid_t;
 +typedef        int     gid_t;
@@ -55,16 +55,61 @@ patch_mingw_types_h() {
 build_tools_dmg() {
 	patch_mingw_types_h
 	local _TMP_DIR=$1
+	local _PREFIX=$2
 	mkdir -p $_TMP_DIR
 	pushd $_TMP_DIR
+	mkdir -p $_PREFIX/include
+	mkdir -p $_PREFIX/lib
 
+	if [[ ! -d pthreads ]] ; then
+		cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
+		pushd pthreads
+		make clean GC-static
+		cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
+		make clean GCE-shared
+		cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
+		cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
+		# For GOMP. The usual linux/vs-mingw -l<lib> issue... -> TODORMD :: This may not be needed!
+	 	cp libpthreadGC2.a $_PREFIX/lib/libpthread.a
+		cp pthread.h sched.h semaphore.h $_PREFIX/include/
+		popd
+	fi
+
+	if [[ ! -d libiconv-1.14 ]] ; then
+		if ! wget -O - libiconv-1.14.tar.gz http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz | tar -zx; then
+			error "Failed to get and extract libiconv-1.14 Check errors."
+		fi
+		pushd libiconv-1.14
+		CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=$_PREFIX  CFLAGS=-O2
+		if ! make install-lib ; then
+			error "Failed to make libiconv-1.14"
+		fi
+		do-sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" $_PREFIX/include/iconv.h
+		popd
+	fi
+
+	if [[ ! -d gettext-0.18.1.1 ]] ; then
+		if ! wget -O - http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz | tar -zx; then
+			error "Failed to get and extract gettext-0.18.1.1 Check errors."
+		fi
+		pushd gettext-0.18.1.1
+		patch --backup -p0 < ../../patches/gettext-0.18.1.1-win-pthreads.patch
+		# Without NM=... gettext-tools\libgettextpo\exported.sh ends up with /bin/nm and that fails to eval:
+		# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
+		# eval $nm_cmd
+		NM="C:/usr/bin/nm.exe" ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=$_PREFIX --enable-multibyte --prefix=$_PREFIX CFLAGS="-O3 -DPTW32_STATIC_LIB"
+		if ! make install ; then
+			error "Failed to make gettext-0.18.1.1"
+		fi
+		popd
+	fi
 	if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
 		if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
 			error "Failed to get and extract mingw-regex-2.5.1 Check errors."
 		fi
 		pushd mingw-libgnurx-2.5.1
 		patch --backup -p0 < ../../patches/mingw-libgnurx-2.5.1-static.patch
-		./configure --prefix=/usr/local --enable-static --disable-shared
+		./configure --prefix=$_PREFIX --enable-static --disable-shared
 		if ! make ; then
 			error "Failed to make mingw-libgnurx-2.5.1"
 			popd
@@ -74,7 +119,22 @@ build_tools_dmg() {
 		popd
 	fi
 
-#	if [ -z $(which nano) ] ; then
+	# Needed by both dmg2img and xar.
+	if [[ ! -d openssl-1.0.0f ]] ; then
+		if ! wget -O - http://www.openssl.org/source/openssl-1.0.0f.tar.gz | tar -zx; then
+				error "Failed to get and extract openssl-1.0.0f Check errors."
+				popd
+				exit 1
+		fi
+
+		pushd openssl-1.0.0f
+		./configure --prefix=$_PREFIX -no-shared -no-zlib-dynamic -no-test mingw
+		make
+		make install
+		popd
+	fi
+
+	if [ -z $(which nano) ] ; then
 		message_status "Retrieving and building nano 2.3.1 ..."
 		if ! wget -O - http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz | tar -zx; then
 				error "Failed to get and extract nano-2.3.1 Check errors."
@@ -84,7 +144,7 @@ build_tools_dmg() {
 
 		pushd nano-2.3.1
 		patch --backup -p1 < ../../patches/nano-2.3.1-WIN.patch
-		CFLAGS="-I/usr/local/include -DENOTSUP=48 -D_POSIX_SOURCE" LDFLAGS="-L/usr/local/lib" LIBS="-lregex" ./configure --prefix=/usr/local --enable-color
+		CFLAGS="-I$_PREFIX/include -DENOTSUP=48 -D_POSIX_SOURCE" LDFLAGS="-L$_PREFIX/lib -static-libgcc" LIBS="-lregex -liconv -lintl" ./configure --prefix=$_PREFIX --enable-color
 		if ! make install; then
 			error "Failed to make nano-2.3.1"
 			exit 1
@@ -92,10 +152,10 @@ build_tools_dmg() {
 		cp .nanorc ~/.nanorc
 		popd
 		message_status "nano is ready!"
-#	fi
+	fi
 
 	if [ -z $(which dmg2img) ] ; then
-		if [[ 1 == 1 ]] && [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ 1 == 1 ]] && [[ "$UNAME" == "Windows" ]] ; then
 
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 
@@ -110,21 +170,8 @@ build_tools_dmg() {
 			cp ../../files/bzip2-1.0.6-Makefile ./Makefile
 			make install
 			popd
-			
-			if ! wget -O - http://www.openssl.org/source/openssl-1.0.0f.tar.gz | tar -zx; then
-					error "Failed to get and extract openssl-1.0.0f Check errors."
-					popd
-					exit 1
-			fi
-
-			pushd openssl-1.0.0f
-			./configure --prefix=/usr/local -no-shared -no-zlib-dynamic -no-test mingw
-			make
-			make install
-			popd
 
 			rm -Rf bzip2-1.0.6
-			rm -Rf openssl-1.0.0f
 	
 			message_status "Retrieving and building dmg2img 1.6.2 ..."
 	
@@ -136,7 +183,7 @@ build_tools_dmg() {
 
 		pushd dmg2img-1.6.2
 		patch -p0 <../../patches/dmg2img-1.6.2-WIN.patch
-		if ! CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -mwindows" CC="gcc" make install; then
+		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" make install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
@@ -160,7 +207,7 @@ build_tools_dmg() {
 		fi
 
 		pushd libxml2-2.7.1
-		./configure --prefix=/usr/local --with-threads=no --disable-shared --enable-static
+		./configure --prefix=$_PREFIX --with-threads=no --disable-shared --enable-static
 		make
 		make install
 
@@ -195,7 +242,7 @@ build_tools_dmg() {
 		pushd xar-1.5.2
 		patch --backup -p1 < ../../patches/xar-1.5.2-WIN.patch
 		
-		if ! CFLAGS="-I/usr/local/include -DENOTSUP=48" LDFLAGS="-L/usr/local/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=/usr/local --disable-shared --enable-static; then
+		if ! CFLAGS="-I$_PREFIX/include -DENOTSUP=48" LDFLAGS="-L$_PREFIX/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=$_PREFIX --disable-shared --enable-static; then
 			error "Failed to configure xar-1.5.2"
 			popd
 			exit 1
@@ -216,7 +263,7 @@ build_tools_dmg() {
 
 # Platform independent umount command
 umount_dmg() {
-	if [[ $(uname-bt) == "Darwin" ]] ; then
+	if [[ $UNAME == "Darwin" ]] ; then
 		$SUDO hdiutil detach $MNT_DIR
 	else
 		# shouldn't we have a DEBUG var and only
@@ -267,7 +314,7 @@ mount_dmg() {
 			umount_dmg
 		fi
 	fi
-	if [[ $(uname-bt) == "Darwin" ]] ; then
+	if [[ $UNAME == "Darwin" ]] ; then
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
 		# sudo hdiutil attach -mountpoint $2 $DMG
@@ -373,8 +420,9 @@ if [[ "$_OPERATION" == "--help" ]] || [[ -z $1 ]] ; then
 fi
 shift
 TMPDIR=$PWD/tmp
+INSTDIR=$PWD/install
 mkdir -p $TMPDIR
-build_tools_dmg $TMPDIR
+build_tools_dmg $TMPDIR $INSTDIR
 if [[ "$_OPERATION" == "--cache" ]] ; then
 	$DMGFILE=$1
 	if [[ ! -f $DMGFILE ]] ; then

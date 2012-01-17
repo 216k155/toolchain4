@@ -1,0 +1,14 @@
+--- gettext-runtime/tests/test-lock.c.orig	Tue Jan 17 00:11:42 2012
++++ gettext-runtime/tests/test-lock.c	Tue Jan 17 00:12:01 2012
+@@ -104,9 +104,9 @@
+ {
+   sched_yield ();
+ }
+-static inline void * gl_thread_self (void)
++static inline gl_thread_t gl_thread_self (void)
+ {
+-  return (void *) pthread_self ();
++  return pthread_self ();
+ }
+ #endif
+ #if TEST_PTH_THREADS
