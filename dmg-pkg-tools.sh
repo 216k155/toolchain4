@@ -7,6 +7,9 @@
 #  to avoid re-mount un-necessarily.
 # Keeps a cache of copied-from-dmg files to avoid mounting un-necessarily.
 
+# Sample usages:
+# ./dmg-pkg-tools.sh --extract ../cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg files/pkgs MacOSX10.5.pkg iPhoneSDK4_3.pkg
+
 . ./bash-tools.sh
 
 MNT_DIR=/tmp/mnt
@@ -60,7 +63,7 @@ build_tools_dmg() {
 	pushd $_TMP_DIR
 	mkdir -p $_PREFIX/include
 	mkdir -p $_PREFIX/lib
-
+	PATH=$_PREFIX/bin:$PATH
 	if [[ ! -d pthreads ]] ; then
 		cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
 		pushd pthreads
@@ -151,11 +154,11 @@ build_tools_dmg() {
 		fi
 		cp .nanorc ~/.nanorc
 		popd
-		message_status "nano is ready!"
 	fi
+	message_status "nano is ready!"
 
 	if [ -z $(which dmg2img) ] ; then
-		if [[ 1 == 1 ]] && [[ "$UNAME" == "Windows" ]] ; then
+		if [[ "$UNAME" == "Windows" ]] ; then
 
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 
@@ -218,7 +221,23 @@ build_tools_dmg() {
 		fi
 
 		popd
-#		rm -Rf libxml2-2.7.1
+		rm -Rf libxml2-2.7.1
+		popd
+	fi
+
+	if [ -z $(which cpio) ] ; then
+		pushd $_TMP_DIR
+		if ! wget -O - http://ftp.gnu.org/gnu/cpio/cpio-2.11.tar.gz | tar -zx; then
+			error "Failed to get and extract cpio-2.11 Check errors."
+			popd
+			exit 1
+		fi
+		pushd cpio-2.11
+		patch --backup -p1 < ../../patches/cpio-2.11-WIN.patch
+		CFLAGS=-O2 && ./configure --prefix=$_PREFIX  CFLAGS=-O2
+		make
+		make install
+		popd
 		popd
 	fi
 
@@ -232,23 +251,23 @@ build_tools_dmg() {
 		cp lns.exe /usr/local/bin
 		popd
 
-#if [[ ! -d xar-1.5.2 ]] ; then
-		if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
-			error "Failed to get and extract xar-1.5.2 Check errors."
-			popd
-			exit 1
+		if [[ ! -d xar-1.5.2 ]] ; then
+			if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
+				error "Failed to get and extract xar-1.5.2 Check errors."
+				popd
+				exit 1
+			fi
 		fi
-#fi
 		pushd xar-1.5.2
 		patch --backup -p1 < ../../patches/xar-1.5.2-WIN.patch
-		
+
 		if ! CFLAGS="-I$_PREFIX/include -DENOTSUP=48" LDFLAGS="-L$_PREFIX/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=$_PREFIX --disable-shared --enable-static; then
 			error "Failed to configure xar-1.5.2"
 			popd
 			exit 1
 		fi
 
-		if ! make install; then
+		if ! make && make install; then
 			error "Failed to make xar-1.5.2"
 			popd
 			exit 1
@@ -344,11 +363,11 @@ mount_dmg() {
 cache_packages() {
 	local _DMG=$1
 	shift
-	local _DST=$2
+	local _DST=$1
 	shift
-	local _KM=$3
+	local _KM=$1
 	shift
-	local _KEY=$4
+	local _KEY=$1
 	shift
 	local _PKGS=("$@")
 	shift
@@ -364,7 +383,7 @@ cache_packages() {
 	done
 
 	local _MOUNTED=0
-	mkdir -p $PKG_DIR
+	mkdir -p $_DST
 
 	if [[ ${_ALL_PKGS_FOUND} = 0 ]] ; then
 		mount_dmg $TMP_DIR $_DMG $MNT_DIR $_KEY
@@ -413,6 +432,7 @@ extract_packages_cached() {
 _OPERATION=$1
 if [[ "$_OPERATION" == "--help" ]] || [[ -z $1 ]] ; then
 	echo "$0 --cache <dmg-file> <--keep-mounted> <--key KEY> <dst-files-folder> FILES..."
+	echo "$0 --extract <dmg-file> <--keep-mounted> <--key KEY> <dst-files-folder> FILES..."
 	echo "$0 --extract-cached CACHED_PKG_FILES..."
 	echo "$0 --list <dmg-file>"
 	echo "$0 --umount"
@@ -423,8 +443,8 @@ TMPDIR=$PWD/tmp
 INSTDIR=$PWD/install
 mkdir -p $TMPDIR
 build_tools_dmg $TMPDIR $INSTDIR
-if [[ "$_OPERATION" == "--cache" ]] ; then
-	$DMGFILE=$1
+if [[ "$_OPERATION" = "--cache" ]] || [[ "$_OPERATION" = "--extract" ]] ; then
+	DMGFILE=$1
 	if [[ ! -f $DMGFILE ]] ; then
 		echo "Couldn't find dmg file $DMGFILE"
 		exit
@@ -441,16 +461,22 @@ if [[ "$_OPERATION" == "--cache" ]] ; then
 		KEY=$1
 		shift
 	fi
-	$DEST=$1
+	DEST=$1
 	shift
+	if [[ "$_OPERATION" == "--extract" ]] ; then
+		# For --extract, XDEST is where the package's contents get written (e.g. files/sdks)
+		XDEST=$1
+		shift
+	fi
 	[[ -d $DEST ]] || mkdir -p $DEST
 	if [[ ! -d $DEST ]] ; then
 		echo "Couldn't create dest folder $DEST"
 	fi
-	if [[ "$_OPERATION" == "--cache" ]] ; then
-		FILES=("$@")
-		cache_packages $DMGFILE $DEST $KEEP_MOUNTED $KEY $FILES
-		exit 0
+	FILES=("$@")
+	CACHED_PACKAGES=( $(cache_packages $DMGFILE $DEST $KEEP_MOUNTED $KEY "${FILES[@]}") )
+	echo "Cached packages ${CACHED_PACKAGES[@]}"
+	if [[ "$_OPERATION" == "--extract" ]] ; then
+		extract_packages_cached $XDEST ${CACHED_PACKAGES[@]}
 	fi
 elif [[ "$_OPERATION" == "--extract-cached" ]] ; then
 	FILES=("$@")
