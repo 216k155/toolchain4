@@ -17,6 +17,8 @@ MNT_CACHE=$(dirname $0)/.dmgtools.mounted
 
 UNAME=$(uname-bt)
 
+SAVE_INTERMEDIATES=1
+
 if [[ "$UNAME" == "Windows" ]] ; then
 	SUDO=
 else
@@ -174,7 +176,7 @@ build_tools_dmg() {
 			make install
 			popd
 
-			rm -Rf bzip2-1.0.6
+			[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf bzip2-1.0.6
 	
 			message_status "Retrieving and building dmg2img 1.6.2 ..."
 	
@@ -184,16 +186,17 @@ build_tools_dmg() {
 			fi
 		fi
 
+		cp -rf dmg2img-1.6.2 dmg2img-1.6.2.orig
 		pushd dmg2img-1.6.2
-		patch -p0 <../../patches/dmg2img-1.6.2-WIN.patch
-		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" make install; then
+		patch --backup -p1 <../../patches/dmg2img-1.6.2-WIN.patch
+		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" DESTDIR="$_PREFIX" make install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
 			exit 1
 		fi
 
-		rm -Rf dmg2img-1.6.2
+		[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf dmg2img-1.6.2
 		popd
 	fi
 	popd
@@ -221,7 +224,7 @@ build_tools_dmg() {
 		fi
 
 		popd
-		rm -Rf libxml2-2.7.1
+		[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf libxml2-2.7.1
 		popd
 	fi
 
@@ -274,7 +277,7 @@ build_tools_dmg() {
 		fi
 
 		popd
-		rm -Rf xar-1.5.2
+		[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf xar-1.5.2
 		popd
 	fi
 	message_status "xar is ready!"
