@@ -1,0 +1,57 @@
+--- minimal/mapping.h.orig	Thu Jan 19 21:19:44 2012
++++ minimal/mapping.h	Thu Jan 19 21:50:27 2012
+@@ -38,7 +38,11 @@
+ #ifndef MINIMAL_MAPPING_H
+ #define MINIMAL_MAPPING_H
+ 
++#if !defined(__MINGW32__)
+ #include <sys/mman.h>
++#else 
++#include <windows.h> 
++#endif
+ 
+ #include <errno.h>
+ #include <unistd.h>
+@@ -63,9 +67,42 @@
+         *psize = size;
+ 
+     void *base;
++#if defined(__MINGW32__)
++/*
++HANDLE WINAPI CreateFile(
++  __in      LPCTSTR lpFileName,
++  __in      DWORD dwDesiredAccess,
++  __in      DWORD dwShareMode,
++  __in_opt  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
++  __in      DWORD dwCreationDisposition,
++  __in      DWORD dwFlagsAndAttributes,
++  __in_opt  HANDLE hTemplateFile
++);
++*/
++    HANDLE fd = CreateFile(path, ro ? GENERIC_READ : GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 
++                        0, OPEN_ALWAYS, 0, NULL);
++    HANDLE fm = CreateFileMapping(fd, NULL, ro ? PAGE_READONLY : PAGE_READWRITE, 0, size, NULL); 
++ 
++    if (fm == NULL) 
++        return NULL; 
++    ret = MapViewOfFile (fm, ro ? FILE_MAP_READ : FILE_MAP_WRITE, 0, offset, size);
++ 
++    CloseHandle (fm);
++ 
++    if (ret == NULL) 
++        return ret; 
++ 
++//  memcpy (ret, old_address, old_size < new_size ? old_size : new_size); 
++//  UnmapViewOfFile (old_address); 
++    DeleteFile(fd);
++//#else 
++//   ret = mmap (0, new_size=size, PROT_READ | PROT_WRITE=ro ? PROT_READ : PROT_READ | PROT_WRITE, 
++// 	      MAP_PRIVATE | MAP_ANONYMOUS!=MAP_SHARED, -1, 0); 
++#else
+     _syscall(base = mmap(NULL, size, ro ? PROT_READ : PROT_READ | PROT_WRITE, MAP_SHARED, fd, offset));
+ 
+     _syscall(close(fd));
++#endif
+     return base;
+ }
+ 

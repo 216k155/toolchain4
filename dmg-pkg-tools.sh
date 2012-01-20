@@ -12,21 +12,8 @@
 
 . ./bash-tools.sh
 
-MNT_DIR=/tmp/mnt
-MNT_CACHE=$(dirname $0)/.dmgtools.mounted
-
-UNAME=$(uname-bt)
-
-SAVE_INTERMEDIATES=1
-
-if [[ "$UNAME" == "Windows" ]] ; then
-	SUDO=
-else
-	SUDO=sudo
-fi
-
 patch_mingw_types_h() {
-	if [[ "$UNAME" == "Windows" ]] ; then
+	if [[ "$(uname-bt)" == "Windows" ]] ; then
 		if [[ ! $(egrep uid_t /usr/include/sys/types.h) ]] ; then
 			printf %s \
 '--- sys/types.h-orig	2012-01-13 00:17:02 +0000
@@ -61,17 +48,25 @@ build_tools_dmg() {
 	patch_mingw_types_h
 	local _TMP_DIR=$1
 	local _PREFIX=$2
+	local _TCPREFIX=$3
+	local _SAVE_INTERMEDIATES=1
+	local _JOBS=8
+	local _SUDO=sudo
+	if [[ "$UNAME" == "Windows" ]] ; then
+		_JOBS=1
+		_SUDO=
+	fi
 	mkdir -p $_TMP_DIR
 	pushd $_TMP_DIR
 	mkdir -p $_PREFIX/include
 	mkdir -p $_PREFIX/lib
-	PATH=$_PREFIX/bin:$PATH
+	export PATH=$_PREFIX/bin:$PATH
 	if [[ ! -d pthreads ]] ; then
 		cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
 		pushd pthreads
-		make clean GC-static
+		make -j $_JOBS clean GC-static
 		cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
-		make clean GCE-shared
+		make -j $_JOBS clean GCE-shared
 		cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
 		cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
 		# For GOMP. The usual linux/vs-mingw -l<lib> issue... -> TODORMD :: This may not be needed!
@@ -86,7 +81,7 @@ build_tools_dmg() {
 		fi
 		pushd libiconv-1.14
 		CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=$_PREFIX  CFLAGS=-O2
-		if ! make install-lib ; then
+		if ! make -j $_JOBS install-lib ; then
 			error "Failed to make libiconv-1.14"
 		fi
 		do-sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" $_PREFIX/include/iconv.h
@@ -103,7 +98,7 @@ build_tools_dmg() {
 		# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
 		# eval $nm_cmd
 		NM="C:/usr/bin/nm.exe" ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=$_PREFIX --enable-multibyte --prefix=$_PREFIX CFLAGS="-O3 -DPTW32_STATIC_LIB"
-		if ! make install ; then
+		if ! make -j $_JOBS install ; then
 			error "Failed to make gettext-0.18.1.1"
 		fi
 		popd
@@ -115,12 +110,12 @@ build_tools_dmg() {
 		pushd mingw-libgnurx-2.5.1
 		patch --backup -p0 < ../../patches/mingw-libgnurx-2.5.1-static.patch
 		./configure --prefix=$_PREFIX --enable-static --disable-shared
-		if ! make ; then
+		if ! make  -j $_JOBS; then
 			error "Failed to make mingw-libgnurx-2.5.1"
 			popd
 			exit 1
 		fi
-		make install
+		make -j $_JOBS install
 		popd
 	fi
 
@@ -134,8 +129,8 @@ build_tools_dmg() {
 
 		pushd openssl-1.0.0f
 		./configure --prefix=$_PREFIX -no-shared -no-zlib-dynamic -no-test mingw
-		make
-		make install
+		make -j $_JOBS 
+		make -j $_JOBS install
 		popd
 	fi
 
@@ -150,7 +145,7 @@ build_tools_dmg() {
 		pushd nano-2.3.1
 		patch --backup -p1 < ../../patches/nano-2.3.1-WIN.patch
 		CFLAGS="-I$_PREFIX/include -DENOTSUP=48 -D_POSIX_SOURCE" LDFLAGS="-L$_PREFIX/lib -static-libgcc" LIBS="-lregex -liconv -lintl" ./configure --prefix=$_PREFIX --enable-color
-		if ! make install; then
+		if ! make -j $_JOBS install; then
 			error "Failed to make nano-2.3.1"
 			exit 1
 		fi
@@ -173,10 +168,10 @@ build_tools_dmg() {
 			pushd bzip2-1.0.6
 			# Fails due to chmod a+x without .exe suffix, ignored.
 			cp ../../files/bzip2-1.0.6-Makefile ./Makefile
-			make install
+			DESTDIR="$_PREFIX" make -j $_JOBS install
 			popd
 
-			[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf bzip2-1.0.6
+			[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf bzip2-1.0.6
 	
 			message_status "Retrieving and building dmg2img 1.6.2 ..."
 	
@@ -189,22 +184,18 @@ build_tools_dmg() {
 		cp -rf dmg2img-1.6.2 dmg2img-1.6.2.orig
 		pushd dmg2img-1.6.2
 		patch --backup -p1 <../../patches/dmg2img-1.6.2-WIN.patch
-		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" DESTDIR="$_PREFIX" make install; then
+		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" DESTDIR="$_PREFIX" make -j $_JOBS install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
 			exit 1
 		fi
 
-		[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf dmg2img-1.6.2
+		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf dmg2img-1.6.2
 		popd
 	fi
-	popd
 	message_status "dmg2img is ready!"
-
 	if [ -z $(which xml2-config) ] ; then
-
-		pushd $_TMP_DIR
 
 		if ! wget -O - http://xmlsoft.org/sources/old/libxml2-2.7.1.tar.gz | tar -zx; then
 			error "Failed to get and extract libxml2-2.7.1 Check errors."
@@ -214,22 +205,20 @@ build_tools_dmg() {
 
 		pushd libxml2-2.7.1
 		./configure --prefix=$_PREFIX --with-threads=no --disable-shared --enable-static
-		make
-		make install
+		make -j $_JOBS 
+		make -j $_JOBS install
 
-		if ! make install; then
+		if ! make -j $_JOBS install; then
 			error "Failed to make libxml2-2.7.1"
 			popd
 			exit 1
 		fi
 
 		popd
-		[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf libxml2-2.7.1
-		popd
+		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf libxml2-2.7.1
 	fi
 
 	if [ -z $(which cpio) ] ; then
-		pushd $_TMP_DIR
 		if ! wget -O - http://ftp.gnu.org/gnu/cpio/cpio-2.11.tar.gz | tar -zx; then
 			error "Failed to get and extract cpio-2.11 Check errors."
 			popd
@@ -238,15 +227,14 @@ build_tools_dmg() {
 		pushd cpio-2.11
 		patch --backup -p1 < ../../patches/cpio-2.11-WIN.patch
 		CFLAGS=-O2 && ./configure --prefix=$_PREFIX  CFLAGS=-O2
-		make
-		make install
+		make -j $_JOBS
+		make -j $_JOBS install
+
 		popd
-		popd
+		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf cpio-2.11
 	fi
 
 	if [ -z $(which xar) ] ; then
-		pushd $_TMP_DIR
-	
 		message_status "Retrieving and building Nokia's lns ..."
 		git clone git://gitorious.org/qt-labs/qtmodularization.git
 		pushd qtmodularization/src/lns
@@ -270,27 +258,65 @@ build_tools_dmg() {
 			exit 1
 		fi
 
-		if ! make && make install; then
+		make -j $_JOBS
+		make -j $_JOBS install
+		if ! make -j $_JOBS && make -j $_JOBS install; then
 			error "Failed to make xar-1.5.2"
 			popd
 			exit 1
 		fi
 
 		popd
-		[[ $SAVE_INTERMEDIATES == 1 ]] || rm -Rf xar-1.5.2
-		popd
+		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf xar-1.5.2
 	fi
 	message_status "xar is ready!"
+
+	if [ -z $(which git) ] ; then 
+		if ! wget -O - http://www.kernel.org/pub/software/scm/git/git-1.7.3.tar.gz | tar -zx; then
+			error "Failed to get and extract git-1.7.3 Check errors."
+			exit 1
+		fi
+
+		pushd git-1.7.3
+
+		if ! make install; then
+			error "Failed to make git-1.7.3"
+			exit 1
+		fi
+
+		popd
+		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf git-1.7.3
+	fi
+	message_status "git is ready!"
+
+	# mmap problems.
+#	if [ -z $(which ldid) ] ; then
+#		if ! wget -O - http://svn.telesphoreo.org/trunk/data/ldid/ldid-1.0.610.tgz | tar -zx; then
+#			error "Failed to get and extract ldid-1.0.610 Check errors."
+#			exit 1
+#		fi
+#		pushd ldid-1.0.610
+#		g++ -I . -o util/ldid{,.cpp} -x c util/{lookup2,sha1}.c
+#		mkdir -p ${_TCPREFIX}/pre/bin/
+#		cp -a util/ldid${EXEEXT} ${_TCPREFIX}/pre/bin/
+#		message_action "ldid built. (direct)"
+#		popd
+#	fi
+#	message_status "ldid is ready!"
+	popd
 }
 
 # Platform independent umount command
 umount_dmg() {
+	local _MNT_DIR=/tmp/mnt
+	local _MNT_CACHE=$(dirname $0)/.dmgtools.mounted
+
 	if [[ $UNAME == "Darwin" ]] ; then
-		$SUDO hdiutil detach $MNT_DIR
+		$SUDO hdiutil detach $_MNT_DIR
 	else
 		# shouldn't we have a DEBUG var and only
 		# delete the TMP_IMG if DEBUG is not set/true
-		$SUDO umount -fl $MNT_DIR
+		$SUDO umount -fl $_MNT_DIR
 		$SUDO losetup -d /dev/loop0
 		sleep 1
 	fi
@@ -298,24 +324,26 @@ umount_dmg() {
 		error "Failed to unmount."
 		exit 1
 	fi
-	if [[ -f $MNT_CACHE ]] ; then
-		rm -f $MNT_CACHE
+	if [[ -f $_MNT_CACHE ]] ; then
+		rm -f $_MNT_CACHE
 	fi
 }
 
 # Platform independent mount command
 mount_dmg() {
+	local _MNT_DIR=/tmp/mnt
+	local _MNT_CACHE=$(dirname $0)/.dmgtools.mounted
 	# Key provided, we need to decrypt the DMG first
 	local _TMP_DIR=$1
 	shift
 	local _DMG=$1
 	shift
-	local MNTFILE=
-	if [[ -f $MNT_CACHE ]] ; then
-		MNTFILE=( $(cat $MNT_CACHE) )
+	local _MNTFILE=
+	if [[ -f $_MNT_CACHE ]] ; then
+		_MNTFILE=( $(cat $_MNT_CACHE) )
 	fi
 
-	if [[ $MNTFILE == $_DMG ]] ; then
+	if [[ $_MNTFILE == $_DMG ]] ; then
 		message_status "Already mounted $_DMG..."
 		return 0
 	fi
@@ -327,12 +355,12 @@ mount_dmg() {
 			error "Failed to decrypt `basename $1`!"
 			exit 1
 		fi
-		local _DMG="${TMP_DECRYPTED}"
+		_DMG="${TMP_DECRYPTED}"
 	else
-		local _DMG="$1"
+		_DMG="$1"
 	fi
 	if [[ ! -z $MNTFILE ]] ; then
-		if [[ $MNTFILE != $DMG ]] ; then
+		if [[ $MNTFILE != $_DMG ]] ; then
 			umount_dmg
 		fi
 	fi
@@ -378,7 +406,7 @@ cache_packages() {
 	local _ALL_PKGS_FOUND=1
 	for i in "${_PKGS[@]}"
 	do
-		local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename ${i} ".pkg").pkg
+		local _CACHE_FILE=${_DST}/$(basename "${_DMG}" ".dmg")##${i}
 		echo ${_CACHE_FILE}
 		if [[ ! -f ${_CACHE_FILE} ]] ; then
 			_ALL_PKGS_FOUND=0
@@ -431,65 +459,3 @@ extract_packages_cached() {
 		fi
 	done
 }
-
-_OPERATION=$1
-if [[ "$_OPERATION" == "--help" ]] || [[ -z $1 ]] ; then
-	echo "$0 --cache <dmg-file> <--keep-mounted> <--key KEY> <dst-files-folder> FILES..."
-	echo "$0 --extract <dmg-file> <--keep-mounted> <--key KEY> <dst-files-folder> FILES..."
-	echo "$0 --extract-cached CACHED_PKG_FILES..."
-	echo "$0 --list <dmg-file>"
-	echo "$0 --umount"
-	exit 1
-fi
-shift
-TMPDIR=$PWD/tmp
-INSTDIR=$PWD/install
-mkdir -p $TMPDIR
-build_tools_dmg $TMPDIR $INSTDIR
-if [[ "$_OPERATION" = "--cache" ]] || [[ "$_OPERATION" = "--extract" ]] ; then
-	DMGFILE=$1
-	if [[ ! -f $DMGFILE ]] ; then
-		echo "Couldn't find dmg file $DMGFILE"
-		exit
-	fi
-	shift
-	KEEP_MOUNTED=0
-	if [[ "$1" == "--keep-mounted" ]] ; then
-		KEEP_MOUNTED=1
-		shift
-	fi
-	KEY=0
-	if [[ "$1" == "--key" ]] ; then
-		shift
-		KEY=$1
-		shift
-	fi
-	DEST=$1
-	shift
-	if [[ "$_OPERATION" == "--extract" ]] ; then
-		# For --extract, XDEST is where the package's contents get written (e.g. files/sdks)
-		XDEST=$1
-		shift
-	fi
-	[[ -d $DEST ]] || mkdir -p $DEST
-	if [[ ! -d $DEST ]] ; then
-		echo "Couldn't create dest folder $DEST"
-	fi
-	FILES=("$@")
-	CACHED_PACKAGES=( $(cache_packages $DMGFILE $DEST $KEEP_MOUNTED $KEY "${FILES[@]}") )
-	echo "Cached packages ${CACHED_PACKAGES[@]}"
-	if [[ "$_OPERATION" == "--extract" ]] ; then
-		extract_packages_cached $XDEST ${CACHED_PACKAGES[@]}
-	fi
-elif [[ "$_OPERATION" == "--extract-cached" ]] ; then
-	FILES=("$@")
-	extract_packages_cached $TMPDIR $FILES
-elif [[ "$_OPERATION" == "--list" ]] ; then
-	DMGFILE=$1
-	shift
-	mount_dmg $TMPDIR $DMGFILE $MNT_DIR
-	find $MNT_DIR
-	exit 0
-elif [[ "$_OPERATION" == "--umount" ]] ; then
-	umount_dmg
-fi

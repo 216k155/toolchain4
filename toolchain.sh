@@ -33,6 +33,7 @@
 # What version of the toolchain are we building?
 TOOLCHAIN_VERSION="4.3"
 #TOOLCHAIN_VERSION="3.1.2"
+MACOSX="MacOSX10.5"
 
 #what device are we building for?
 DEVICE="iPhone_3GS"
@@ -55,7 +56,7 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 [ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre"
 [ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src"
 [ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
-
+[ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
 
 
 
@@ -135,28 +136,44 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 #   Runs classdump on a selected iPhone over SSH in order to generate useable
 #   Objective-C headers for (mostly) private frameworks.
 
+# Error reporting, coloured printing.
 . bash-tools.sh
+# function for building tools (xar, dmg2img, cpio, nano and all the libs they depend on)
+. dmg-pkg-tools.sh
 
+UNAME=$(uname-bt)
+if [[ "$UNAME" == "Windows" ]] ; then
+	EXEEXT=".exe"
+fi
 FILES_DIR="${IPHONEDEV_DIR}/files"
 SDKS_DIR="${IPHONEDEV_DIR}/sdks"
 TMP_DIR="${IPHONEDEV_DIR}/tmp"
 MNT_DIR="${FILES_DIR}/mnt"
 FW_DIR="${FILES_DIR}/firmware"
+HOST_DIR="${IPHONEDEV_DIR}/host-install"
 
 #IPHONE_SDK="iphone_sdk_*.dmg"
 #IPHONE_SDK="*sdk_${TOOLCHAIN_VERSION}_final.dmg"
-IPHONE_SDK="xcode_3.2.6_and_ios_sdk_4.3.dmg"
-[ -z $IPHONE_SDK_DMG ] && IPHONE_SDK_DMG="${FILES_DIR}/${IPHONE_SDK}"
+#IPHONE_SDK="/usr/src/cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg"
+#IPHONE_SDK="/usr/src/cross-mac/iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg"
+#[[ ! -f $IPHONE_SDK_DMG ]] && IPHONE_SDK_DMG="${FILES_DIR}/${IPHONE_SDK}"
+#echo IPHONE_SDK $IPHONE_SDK IPHONE_SDK $IPHONE_SDK
+
+IPHONE_SDK_DMG="/usr/src/cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg"
 
 # URLS
 IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
 DARWIN_SOURCES_DIR="$FILES_DIR/darwin_sources"
 
-NEEDED_COMMANDS="gcc make sudo mount cpio zcat tar wget unzip gawk bison flex patch"
+if [[ "$(uname-bt)" == "Windows" ]] ; then
+	SUDO=
+else
+	SUDO=sudo
+fi
+
+NEEDED_COMMANDS="gcc make mount $SUDO zcat tar wget unzip gawk bison flex patch"
 
 HERE=`pwd`
-
-. dmg-pkg-tools.sh
 
 # Takes a plist string and does a very basic lookup of a particular key value,
 # given a key name and an XPath style path to the key in terms of dict entries
@@ -181,88 +198,16 @@ plist_key() {
 # Builds dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools() {
-	mkdir -p $TMP_DIR
 
-	if [ -z $(which dmg2img) ] ; then 
-		message_status "Retrieving and building dmg2img 1.6.2 ..."
+	build_tools_dmg $PWD/tmp $HOST_DIR $PREFIX
 
-		cd $TMP_DIR
-		if ! wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar -zx; then
-			error "Failed to get and extract dmg2img-1.6.2 Check errors."
-			exit 1
-		fi
+#	if [[ `strings /usr/bin/as | grep as_driver | wc -w` < 1 ]]; then
+#		cp /usr/bin/as /usr/bin/i386-redhat-linux-as
+#		message_status "Rename /usr/bin/as in /usr/bin/i386-redhat-linux-as"
+#		cp as_driver/as_driver /usr/bin/as
+#	fi
+#	message_status "as_driver installed in /usr/bin/as"
 
-		pushd dmg2img-1.6.2
-
-		if ! make install; then
-			error "Failed to make dmg2img-1.6.2"
-			error "Make sure you have libbz2-dev and libssl-dev available on your system."
-			exit 1
-		fi
-
-		popd
-		rm -Rf dmg2img-1.6.2
-	fi
-	message_status "dmg2img is ready!"
-
-	if [ -z $(which xar) ] ; then 
-		cd $TMP_DIR
-		if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
-			error "Failed to get and extract xar-1.5.2 Check errors."
-			exit 1
-		fi
-
-		pushd xar-1.5.2
-
-		if ! make install; then
-			error "Failed to make xar-1.5.2"
-			exit 1
-		fi
-
-		popd
-		rm -Rf xar-1.5.2
-	fi
-	message_status "xar is ready!"
-
-	if [ -z $(which git) ] ; then 
-		cd $TMP_DIR
-		if ! wget -O - http://www.kernel.org/pub/software/scm/git/git-1.7.3.tar.gz | tar -zx; then
-			error "Failed to get and extract git-1.7.3 Check errors."
-			exit 1
-		fi
-
-		pushd git-1.7.3
-
-		if ! make install; then
-			error "Failed to make git-1.7.3"
-			exit 1
-		fi
-
-		popd
-		rm -Rf git-1.7.3
-	fi
-	message_status "git is ready!"
-
-	if [ -z $(which ldid) ] ; then
-		pushd ldid-1.0.610/util
-#		if ! make install; then
-#			error "Failed to make ldid-1.0.610"
-#			exit 1
-#		fi
-		if ! sudo cp ldid /usr/local/bin; then
-			error "Failed to copy ldid"
-			exit 1
-		fi
-		popd
-	fi
-	message_status "ldid is ready!"
-
-	if [[ `strings /usr/bin/as | grep as_driver | wc -w` < 1 ]]; then
-		cp /usr/bin/as /usr/bin/i386-redhat-linux-as
-		message_status "Rename /usr/bin/as in /usr/bin/i386-redhat-linux-as"
-		cp as_driver/as_driver /usr/bin/as
-	fi
-	message_status "as_driver installed in /usr/bin/as"
 }
 
 toolchain_extract_headers() {
@@ -297,8 +242,8 @@ toolchain_extract_headers() {
 	fi
 
 	# Inform the user why we suddenly need their password
-	message_status "Trying to mount the iPhone SDK dmg..."
-	mount_dmg $IPHONE_SDK_DMG $MNT_DIR
+#	message_status "Trying to mount the iPhone SDK dmg..."
+#	mount_dmg $IPHONE_SDK_DMG $MNT_DIR
 
 	# iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg
 	# xcode_3.2.6_and_ios_sdk_4.3.dmg
@@ -312,7 +257,11 @@ toolchain_extract_headers() {
 	# Check the version of the SDK
 	# Apple seems to apply a policy of rounding off the last component of the long version number
 	# so we'll do the same here
-	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "${MNT_DIR}/${MPKG_NAME}.mpkg/Contents/version.plist" | awk '
+	PLIST="${MPKG_NAME}.mpkg/Contents/version.plist"
+	message_status "cache_packages for $PLIST"
+	CACHED_PLIST=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "$PLIST") )
+exit 1
+	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "$CACHED_PLIST[0]" | awk '
 		BEGIN { FS="." }
 		{
 			if(substr($4,1,1) >= 5)
@@ -322,36 +271,47 @@ toolchain_extract_headers() {
 		}')
 	echo "SDK is version ${SDK_VERSION}"
 
+	echo "Unmounting..."
+	umount_dmg
 	if [ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "older" ]; then
 		error "We are trying to build toolchain ${TOOLCHAIN_VERSION} but this"
 		error "SDK is ${SDK_VERSION}. Please download the latest SDK here:"
 		error "http://developer.apple.com/iphone/"
-		echo "Unmounting..."
-		umount_dmg
 		exit 1
 	fi
 
 	# Check which PACKAGE we have to extract. Apple does have different
-	# namings for it, depending on the SDK version.
-#	if [ "${MPKG_NAME}" = "xCode and iOS SDK" ] ; then
-#		PACKAGE="iPhoneSDK4_3.pkg"
-#		TOOLCHAIN_VERSION=4.3
-#	el
-	if [ "${TOOLCHAIN_VERSION}" = "3.1.2" ] ; then
-		PACKAGE="iPhoneSDKHeadersAndLibs.pkg"
+	# namings for it, depending on the SDK version and also depending on
+	# whether it's the newer "xcode and ios" style dmg.
+	if [ "${MPKG_NAME}" = "xCode and iOS SDK" ] ; then
+		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDK4_3.pkg"
+		TOOLCHAIN_VERSION=4.3
+	elif [ "${TOOLCHAIN_VERSION}" = "3.1.2" ] ; then
+		PACKAGES[${#PACKAGES[*]}]="iPhoneSDKHeadersAndLibs.pkg"
 	elif [[ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "newer" ]]; then
-		PACKAGE="iPhoneSDK`echo $TOOLCHAIN_VERSION | sed 's/\./_/g' `.pkg"
+		PACKAGES[${#PACKAGES[*]}]="iPhoneSDK`echo $TOOLCHAIN_VERSION | sed 's/\./_/g' `.pkg"
 	else
-		PACKAGE="iPhoneSDKHeadersAndLibs.pkg"
+		PACKAGES[${#PACKAGES[*]}]="iPhoneSDKHeadersAndLibs.pkg"
 	fi
 
-	if [ ! -r ${MNT_DIR}/Packages/$PACKAGE ]; then
-		error "I tried to extract $PACKAGE but I couldn't find it!"
-		echo "Unmounting..."
-		umount_dmg
-		exit 1
-	fi
+	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.4.Universal.pkg"
+	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.5.pkg"
+#	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.6.pkg"
 
+#	if [ ! -r ${MNT_DIR}/Packages/$PACKAGE ]; then
+#		error "I tried to extract $PACKAGE but I couldn't find it!"
+#		echo "Unmounting..."
+#		umount_dmg
+#		exit 1
+#
+#	fi
+	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG "${PACKAGES[@]}") )
+
+	echo "Cached packages ${CACHED_PACKAGES[@]}"
+	message_status "Cached packages ${CACHED_PACKAGES[@]}"
+
+	extract_packages $TMP_DIR "${CACHED_PACKAGES[@]}"
+	exit 1
 	message_status "Extracting `basename $PACKAGE`..."
 
 	rm -fR $TMP_DIR/Documentation $TMP_DIR/Examples $TMP_DIR/Platforms $TMP_DIR/SDKs
@@ -1432,91 +1392,6 @@ case $1 in
 		message_action "It seems like the toolchain built!"
 		;;
 
-
-	dmg2img)
-		check_environment
-		message_action "Preparing to make dmg2img..."
-		download_dmg2img=1
-		if [ -d dmg2img-1.6.2 ] ; then
-		  if ! confirm -N "Download dmg2img again?"; then
-		        download_dmg2img=0
-		  fi
-		fi
-	        if [ "x$download_dmg2img" == "x1" ]; then
-		  wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar xzf - 
-		fi
-		cd  dmg2img-1.6.2
-
-		if ! (make && sudo make install); then
-			error "Failed to make dmg2img-1.6.2"
-			error "Make sure you have libbz2 and libssl available on your system."
-			exit 1
-		fi
-		message_action "dmg2img built."
-		;;
-
-	xar)
-		check_environment
-		message_action "Preparing to make xar..."
-		download_xar=1
-		if [ -f xar-1.5.2.tar.gz ] ; then
-		  if ! confirm -N "Download xar again?"; then
-		        download_xar=0
-		  fi
-		fi
-	        if [ "x$download_xar" == "x1" ]; then
-		  wget -N http://xar.googlecode.com/files/xar-1.5.2.tar.gz
-		fi
-		extract_xar=1
-		if [ -d xar-1.5.2 ] ; then
-		  if ! confirm -N "Extract xar again?"; then
-		        extract_xar=0
-		  fi
-		fi
-	        if [ "x$extract_xar" == "x1" ]; then
-		  tar xzf xar-1.5.2.tar.gz
-		fi
-		cd xar-1.5.2
-		if ! (./configure) ; then
-			error "Failed to configure xar-1.5.2, you need to install libxml2-dev"
-			exit 1
-                fi
-
-		if ! (make && sudo make install); then
-			error "Failed to make xar-1.5.2"
-			exit 1
-		fi
-		message_action "xar built."
-		;;
-
-	ldid)
-		check_environment
-		message_action "Preparing to make ldid..."
-		download_ldid=1
-		if [ -f  ldid-1.0.610.tgz ] ; then
-		  if ! confirm -N "Download ldid again?"; then
-		        download_ldid=0
-		  fi
-		fi
-	        if [ "x$download_ldid" == "x1" ]; then
-		  wget -N http://svn.telesphoreo.org/trunk/data/ldid/ldid-1.0.610.tgz
-		fi
-		extract_ldid=1
-		if [ -d  ldid-1.0.610 ] ; then
-		  if ! confirm -N "Extract ldid again?"; then
-		        extract_ldid=0
-		  fi
-		fi
-	        if [ "x$extract_ldid" == "x1" ]; then
-		  tar xzf ldid-1.0.610.tgz
-		fi
-		cd ldid-1.0.610
-		g++ -I . -o util/ldid{,.cpp} -x c util/{lookup2,sha1}.c
-		[ -d ${TOOLCHAIN}/pre/bin/ ] || mkdir -p ${TOOLCHAIN}/pre/bin/
-		cp -a util/ldid ${TOOLCHAIN}/pre/bin/
-		message_action "ldid built."
-		;;
-
 	classdump)
 		check_environment
 		message_action "Preparing to classdump..."
@@ -1550,8 +1425,10 @@ case $1 in
 
 	*)
 		# Shows usage information to the user
-		BOLD=$(tput bold)
-		ENDF=$(tput sgr0)
+		if [[ ! "$UNAME" == "Windows" ]] ; then
+			BOLD=$(tput bold)
+			ENDF=$(tput sgr0)
+		fi
 		echo	"toolchain.sh <action>"
 		echo
 		echo	"    ${BOLD}all${ENDF}"
