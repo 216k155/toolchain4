@@ -2,6 +2,8 @@
 
 set -e
 
+. ../bash-tools.sh
+
 CCTOOLSNAME=cctools
 CCTOOLSVERS=782
 LD64NAME=ld64
@@ -123,18 +125,25 @@ fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
 
+if [[ ! "$(uname-bt)" == "Windows" ]] ; then
+	PATCH_POSIX=--posix
+fi
+
 if [ -d "${DISTDIR}" ]; then
     echo "${DISTDIR} already exists. Please move aside before running" 1>&2
     exit 1
 fi
 
 mkdir -p ${DISTDIR}
-[ -f "${CCTOOLSDISTFILE}" ] || wget http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
-tar ${TARSTRIP}=1 -zxf ${CCTOOLSDISTFILE} -C ${DISTDIR}
+[[ ! -f "${CCTOOLSDISTFILE}" ]] && wget http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
 
-[ -f "${LD64DISTFILE}" ] || wget http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
+tar ${TARSTRIP}=1 -xf ${CCTOOLSDISTFILE} -C ${DISTDIR} > /dev/null 2>&1
+# Fix dodgy timestamps.
+find ${DISTDIR} | xargs touch
+
+[[ ! -f "${LD64DISTFILE}" ]] && wget http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
 mkdir -p ${DISTDIR}/ld64
-tar ${TARSTRIP}=1 -zxf ${LD64DISTFILE} -C ${DISTDIR}/ld64
+tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64
 rm -rf ${DISTDIR}/ld64/FireOpal
 find ${DISTDIR}/ld64 ! -perm +200 -exec chmod u+w {} \;
 find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
@@ -199,7 +208,7 @@ for p in ${PATCHFILES}; do
 	echo "Applying patch $p"
     fi
     pushd ${DISTDIR}/$dir > /dev/null
-    patch --backup --posix -p0 < ${PATCHFILESDIR}/$p
+    patch --backup $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
     if [ $? -ne 0 ]; then
 	echo "There was a patch failure. Please manually merge and exit the sub-shell when done"
 	$SHELL
@@ -234,6 +243,7 @@ find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
 find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
+echo PWD is $PWD
 autoheader
 autoconf
 rm -rf autom4te.cache

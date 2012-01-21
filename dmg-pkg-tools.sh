@@ -235,14 +235,18 @@ build_tools_dmg() {
 		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf cpio-2.11
 	fi
 
-	if [ -z $(which xar) ] ; then
+	if [ -z $(which lns) ] ; then
 		message_status "Retrieving and building Nokia's lns ..."
 		git clone git://gitorious.org/qt-labs/qtmodularization.git
-		pushd qtmodularization/src/lns
+		pushd qtmodularization
+		patch -p1 < ../../patches/lns-git.patch
+		pushd src/lns
 		CXXFLAGS="-DSE_PRIVILEGE_REMOVED=4" make
-		cp lns.exe /usr/local/bin
+		cp ../../lns.exe $_PREFIX/bin/
 		popd
-
+		popd
+	fi
+	if [ -z $(which xar) ] ; then
 		if [[ ! -d xar-1.5.2 ]] ; then
 			if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
 				error "Failed to get and extract xar-1.5.2 Check errors."

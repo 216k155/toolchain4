@@ -144,6 +144,7 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 UNAME=$(uname-bt)
 if [[ "$UNAME" == "Windows" ]] ; then
 	EXEEXT=".exe"
+	LN=lns.exe
 fi
 FILES_DIR="${IPHONEDEV_DIR}/files"
 SDKS_DIR="${IPHONEDEV_DIR}/sdks"
@@ -195,6 +196,14 @@ plist_key() {
 		}'
 }
 
+ln_s() {
+	if [[ "$(uname-bt)" == "Windows" ]] ; then
+		lns -s $1 $2
+	else
+		ln -sf $1 $2
+	fi
+}
+
 # Builds dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools() {
@@ -211,7 +220,6 @@ build_tools() {
 }
 
 toolchain_extract_headers() {
-	build_tools
 	TMP_SDKS_DIR=${TMP_DIR}/sdks
 	mkdir -p ${MNT_DIR} ${SDKS_DIR} ${TMP_DIR} ${TMP_SDKS_DIR}
 
@@ -312,7 +320,6 @@ toolchain_extract_headers() {
 }
 
 toolchain_extract_firmware_old() {
-	build_tools
 	mkdir -p $FW_DIR $MNT_DIR $TMP_DIR
 
 	if [ -f "${FW_DIR}/current" ] ; then
@@ -475,7 +482,6 @@ toolchain_extract_firmware_old() {
 }
 
 toolchain_extract_firmware() {
-	build_tools
 	message_status "Downloading and extracting firmware are no more necessary"
 }
 
@@ -532,10 +538,19 @@ toolchain_cctools() {
 		  fi
 		fi
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
+			echo $PWD
+			echo $PWD
+			echo $PWD
+			echo $PWD
 			./extract.sh --updatepatch --vers ${CCTOOLS_VER} --foreignheaders
 		else
+			echo $PWD
+			echo $PWD
+			echo $PWD
+			echo $PWD
 			./extract.sh --updatepatch --vers ${CCTOOLS_VER}
 		fi
+		exit 1
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
 		cp -r odcctools-${CCTOOLS_VER_FH} "${CCTOOLS_DIR}"
@@ -720,7 +735,7 @@ toolchain_build_sys3() {
 	mkdir -p "${SYS_DIR}/usr/lib"
 	cp -R -p "${LEOPARD_SDK_INC}" ${SYS_DIR}/usr/
 	cd ${SYS_DIR}/usr/include
-	ln -sf . System
+	ln_s . System
 
 	cp -R -pf "${IPHONE_SDK_INC}"/* .
 	cp -R -pf "${DARWIN_SOURCES_DIR}"/xnu-1228.7.58/osfmk/* .
@@ -875,8 +890,8 @@ toolchain_build_sys3() {
 	cp -R -p "${DARWIN_SOURCES_DIR}"/JavaScriptCore-*/icu/unicode/*.h unicode
 
 	cd "$SYS_DIR"
-	ln -sf gcc/darwin/4.0/stdint.h usr/include
-	ln -sf libstdc++.6.dylib usr/lib/libstdc++.dylib
+	ln_s gcc/darwin/4.0/stdint.h usr/include
+	ln_s libstdc++.6.dylib usr/lib/libstdc++.dylib
 
 	message_status "Applying patches..."
 
@@ -934,7 +949,7 @@ toolchain_build_sys3() {
 	fi
 
 	mkdir -p "$SYS_DIR"/"$(dirname $PREFIX)"
-	ln -sf "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
+	ln_s "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
 
 
 #	Copying Frameworks
@@ -952,7 +967,7 @@ toolchain_sys50() {
 	#local TOOLCHAIN="${IPHONEDEV_DIR}/toolchain"
 	local TOOLCHAIN_VERSION="5.0"
 	local PKGVERSION="5_0"
-        local SYS_DIR="${TOOLCHAIN}/sys50"
+	local SYS_DIR="${TOOLCHAIN}/sys50"
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SIMULATOR_SDK="${SDKS_DIR}/iPhoneSimulator${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
@@ -974,19 +989,8 @@ toolchain_sys50() {
 	        rm -fr "${SYS_DIR}"
 	        mkdir -p "${SYS_DIR}"
 		message_status "Copying System and usr from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
-		if [ -f "${IPHONE_SDK}.tgz" ] ; then
-		  rm -fr "$IPHONE_SDK"
-		  cd "${SDKS_DIR}"; tar xzvf iPhoneOS${TOOLCHAIN_VERSION}.sdk.tgz
-	  	elif [ ! -f "${SDKS_DIR}/iPhoneSDK${PKGVERSION}.pkg" ] ; then
-		  error "I couldn't find iPhoneSDK${PKGVERSION}.pkg at: ${SDKS_DIR}"
-		  exit 1
-	  	else
-		  cd "${SDKS_DIR}"; rm -f Payload; xar -xf "${SDKS_DIR}/iPhoneSDK${PKGVERSION}.pkg" Payload; cat Payload | zcat | cpio -id
-		  # zcat on OSX needs .Z suffix
-		  cd "${SDKS_DIR}"; mv Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk .; rm -fr Platforms
-		fi
 
-                pushd "${IPHONE_SDK}"
+		pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
 		cp -R -pf usr "${SYS_DIR}"
 		popd
@@ -997,8 +1001,10 @@ toolchain_sys50() {
 		do
 			f=`basename $i .framework`
 			echo $f
-			mkdir -p ${SYS_DIR}/usr/include/$f
-			cp -Rf -p $i/Headers/* ${SYS_DIR}/usr/include/$f/
+			if [[ -d $i/Headers ]] ; then
+				mkdir -p ${SYS_DIR}/usr/include/$f
+				cp -Rf -p $i/Headers/* ${SYS_DIR}/usr/include/$f/
+			fi
 		done
 		popd
 
@@ -1014,7 +1020,7 @@ toolchain_sys50() {
 	fi
 
 	mkdir -p "$SYS_DIR"/"$(dirname $PREFIX)"
-	ln -sf "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
+	ln_s "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
 }
 
 
@@ -1043,19 +1049,8 @@ toolchain_sys43() {
 	        rm -fr "${SYS_DIR}"
 	        mkdir -p "${SYS_DIR}"
 		message_status "Copying System and usr from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
-		if [ -f "${IPHONE_SDK}.tgz" ] ; then
-		  rm -fr "$IPHONE_SDK"
-		  cd "${SDKS_DIR}"; tar xzvf iPhoneOS${TOOLCHAIN_VERSION}.sdk.tgz
-	  	elif [ ! -f "${SDKS_DIR}/iPhoneSDK${PKGVERSION}.pkg" ] ; then
-		  error "I couldn't find iPhoneSDK${PKGVERSION}.pkg at: ${SDKS_DIR}"
-		  exit 1
-	  	else
-		  cd "${SDKS_DIR}"; rm -f Payload; xar -xf "${SDKS_DIR}/iPhoneSDK${PKGVERSION}.pkg" Payload; cat Payload | zcat | cpio -id
-		  # zcat on OSX needs .Z suffix
-		  cd "${SDKS_DIR}"; mv Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk .; rm -fr Platforms
-		fi
 
-                pushd "${IPHONE_SDK}"
+		pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
 		cp -R -pf usr "${SYS_DIR}"
 		popd
@@ -1066,14 +1061,16 @@ toolchain_sys43() {
 		do
 			f=`basename $i .framework`
 			echo $f
-			mkdir -p ${SYS_DIR}/usr/include/$f
-			cp -Rf -p $i/Headers/* ${SYS_DIR}/usr/include/$f/
+			if [[ -d $i/Headers ]] ; then
+				mkdir -p ${SYS_DIR}/usr/include/$f
+				cp -Rf -p $i/Headers/* ${SYS_DIR}/usr/include/$f/
+			fi
 		done
 		popd
 	fi
 
 	mkdir -p "$SYS_DIR"/"$(dirname $PREFIX)"
-	ln -sf "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
+	ln_s "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
 
 }
 
@@ -1111,14 +1108,17 @@ toolchain_sys() {
 		do
 			f=`basename $i .framework`
 			echo $f
-			mkdir -p ${SYS_DIR}/usr/include/$f
-			cp -Rf -p $i/Headers/* ${SYS_DIR}/usr/include/$f/
+			if [[ -d $i/Headers ]] ; then
+				mkdir -p ${SYS_DIR}/usr/include/$f
+				cp -Rf -p $i/Headers/* ${SYS_DIR}/usr/include/$f/
+			fi
 		done
 		popd
 	fi
 
 	mkdir -p "$SYS_DIR"/"$(dirname $PREFIX)"
-	ln -sf "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
+	message_status "Making symlink $PREFIX to $SYS_DIR"/"$(dirname $PREFIX)"
+	ln_s "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
 
 }
 
@@ -1238,6 +1238,7 @@ check_environment() {
 	message_status "Environment is ready"
 }
 
+build_tools
 case $1 in
 	all)
 		check_environment
@@ -1302,8 +1303,8 @@ case $1 in
 		check_environment
 		message_action "Building the sys313 Headers and Libraries..."
 		TOOLCHAIN_VERSION=3.1.3
-        	SYS_DIR="${TOOLCHAIN}/sys313"
-        	PKGNAME="iPhoneSDKHeadersAndLibs.pkg"
+		SYS_DIR="${TOOLCHAIN}/sys313"
+		PKGNAME="iPhoneSDKHeadersAndLibs.pkg"
 		toolchain_build_sys3
 		message_action "sys313 folder built!"
 		;;
