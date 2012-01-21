@@ -1099,17 +1099,6 @@ toolchain_sys() {
 	        rm -fr "${SYS_DIR}"
 	        mkdir -p "${SYS_DIR}"
 		message_status "Copying System and usr from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
-		if [ -f "${IPHONE_SDK}.tgz" ] ; then
-		  rm -fr "$IPHONE_SDK"
-		  cd "${SDKS_DIR}"; tar xzvf iPhoneOS${TOOLCHAIN_VERSION}.sdk.tgz
-	  	elif [ ! -f "${SDKS_DIR}/iPhoneSDK4_2.pkg" ] ; then
-		  error "I couldn't find iPhoneSDK4_2.pkg at: ${SDKS_DIR}"
-		  exit 1
-	  	else
-		  cd "${SDKS_DIR}"; rm -f Payload; xar -xf "${SDKS_DIR}/iPhoneSDK4_2.pkg" Payload; cat Payload | zcat | cpio -id
-		  # zcat on OSX needs .Z suffix
-		  cd "${SDKS_DIR}"; mv Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk .; rm -fr Platforms
-		fi
 
 	    pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
