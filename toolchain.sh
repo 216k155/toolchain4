@@ -158,8 +158,8 @@ HOST_DIR="${IPHONEDEV_DIR}/host-install"
 #IPHONE_SDK="/usr/src/cross-mac/iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg"
 #[[ ! -f $IPHONE_SDK_DMG ]] && IPHONE_SDK_DMG="${FILES_DIR}/${IPHONE_SDK}"
 #echo IPHONE_SDK $IPHONE_SDK IPHONE_SDK $IPHONE_SDK
-
-IPHONE_SDK_DMG="/usr/src/cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg"
+IPHONE_SDK_DMG="$PWD/../xcode_3.2.6_and_ios_sdk_4.3.dmg"
+#IPHONE_SDK_DMG="$PWD/../iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg"
 
 # URLS
 IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
@@ -217,13 +217,13 @@ toolchain_extract_headers() {
 	rm -fR tmp/Documentation tmp/Examples tmp/Platforms tmp/SDKs tmp/Applications /tmp/System /tmp/Tools /tmp/private /tmp/usr
 
 	# Make sure we don't already have these
-	if [ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
-		echo "SDKs seem to already be extracted."
-		return
-	fi
+#	if [ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
+#		echo "SDKs seem to already be extracted."
+#		return
+#	fi
 
 	# Look for the DMG and ask the user if is isn't findable.
-	if ! [ -r $IPHONE_SDK_DMG ] ; then
+	if [ ! -f $IPHONE_SDK_DMG ] ; then
 		echo "I'm having trouble finding the iPhone SDK. I looked here:"
 		echo $IPHONE_SDK_DMG
 		if ! confirm "Do you have the SDK?"; then
@@ -257,11 +257,12 @@ toolchain_extract_headers() {
 	# Check the version of the SDK
 	# Apple seems to apply a policy of rounding off the last component of the long version number
 	# so we'll do the same here
-	PLIST="${MPKG_NAME}.mpkg/Contents/version.plist"
+	PLIST="${MPKG_NAME}".mpkg/Contents/version.plist
 	message_status "cache_packages for $PLIST"
 	CACHED_PLIST=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "$PLIST") )
-exit 1
-	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "$CACHED_PLIST[0]" | awk '
+	message_status "cache_packages done for $PLIST"
+	CACHED_PLIST_FILE=${CACHED_PLIST[0]}
+	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "${CACHED_PLIST_FILE}" | awk '
 		BEGIN { FS="." }
 		{
 			if(substr($4,1,1) >= 5)
@@ -271,14 +272,12 @@ exit 1
 		}')
 	echo "SDK is version ${SDK_VERSION}"
 
-	echo "Unmounting..."
-	umount_dmg
-	if [ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "older" ]; then
-		error "We are trying to build toolchain ${TOOLCHAIN_VERSION} but this"
-		error "SDK is ${SDK_VERSION}. Please download the latest SDK here:"
-		error "http://developer.apple.com/iphone/"
-		exit 1
-	fi
+#	if [ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "older" ]; then
+#		error "We are trying to build toolchain ${TOOLCHAIN_VERSION} but this"
+#		error "SDK is ${SDK_VERSION}. Please download the latest SDK here:"
+#		error "http://developer.apple.com/iphone/"
+#		exit 1
+#	fi
 
 	# Check which PACKAGE we have to extract. Apple does have different
 	# namings for it, depending on the SDK version and also depending on
@@ -287,16 +286,16 @@ exit 1
 		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDK4_3.pkg"
 		TOOLCHAIN_VERSION=4.3
 	elif [ "${TOOLCHAIN_VERSION}" = "3.1.2" ] ; then
-		PACKAGES[${#PACKAGES[*]}]="iPhoneSDKHeadersAndLibs.pkg"
+		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDKHeadersAndLibs.pkg"
 	elif [[ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "newer" ]]; then
-		PACKAGES[${#PACKAGES[*]}]="iPhoneSDK`echo $TOOLCHAIN_VERSION | sed 's/\./_/g' `.pkg"
+		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDK`echo $TOOLCHAIN_VERSION | sed 's/\./_/g' `.pkg"
 	else
-		PACKAGES[${#PACKAGES[*]}]="iPhoneSDKHeadersAndLibs.pkg"
+		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDKHeadersAndLibs.pkg"
 	fi
 
 	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.4.Universal.pkg"
 	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.5.pkg"
-#	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.6.pkg"
+	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.6.pkg"
 
 #	if [ ! -r ${MNT_DIR}/Packages/$PACKAGE ]; then
 #		error "I tried to extract $PACKAGE but I couldn't find it!"
@@ -305,9 +304,8 @@ exit 1
 #		exit 1
 #
 #	fi
-	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG "${PACKAGES[@]}") )
+	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "${PACKAGES[@]}") )
 
-	echo "Cached packages ${CACHED_PACKAGES[@]}"
 	message_status "Cached packages ${CACHED_PACKAGES[@]}"
 
 	extract_packages $TMP_DIR "${CACHED_PACKAGES[@]}"
@@ -466,15 +464,15 @@ toolchain_extract_firmware_old() {
 
 		IPHONEWIKI_KEY_URL=$( wget --quiet -O - $IPHONEWIKI_KEY_URL | awk '
 		    BEGIN { IGNORECASE = 1; }
-	    	/name="'${DEVICE}'/  { found_phone=1; } 
+	    	/name="'${DEVICE}'/  { found_phone=1; }
 			/.*'${FIRMWARE_VERSION}'.*/ && found_phone { found_firmware=1; }
-	     	/.*href=.*/ && found_firmware { while(sub(/href=|"/,"", $3));; print $3; exit;}  
+	     	/.*href=.*/ && found_firmware { while(sub(/href=|"/,"", $3));; print $3; exit;}
 		')
-		
+
 		echo "Finding intermediate URL : http://www.theiphonewiki.com$IPHONEWIKI_KEY_URL"
 		DECRYPTION_KEY_SYSTEM=`wget --quiet -O - "http://www.theiphonewiki.com"$IPHONEWIKI_KEY_URL | awk '
  		    BEGIN { IGNORECASE = 1; }
-			/.*VFDecrypt<\/a>.*/  { print $5;}  
+			/.*VFDecrypt<\/a>.*/  { print $5;}
 		'`
 
 		if [ ! "$DECRYPTION_KEY_SYSTEM" ] ; then
@@ -627,7 +625,7 @@ toolchain_llvmgcc() {
 		else
 		    if confirm -N "check update gcc ?"; then
 			pushd "${GCC_DIR}"
-			git pull 
+			git pull
 			# mg; after success nail to a running version
 			if ! git pull git://git.saurik.com/llvm-gcc-4.2 || ! git checkout b3dd8400196ccb63fbf10fe036f9f8725b2f0a39; then
 				error "Failed to checkout saurik's llvm-gcc-4.2."
@@ -704,7 +702,6 @@ toolchain_build_sys3() {
 		cd "${SDKS_DIR}"; mv "Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk" .; rm -fr Payload Platforms Examples Documentation
 	  fi
 	fi
-	
 
 	extract_sources=1
 	if [ -d "${DARWIN_SOURCES_DIR}/xnu-1228.7.58" ] ; then
@@ -742,7 +739,7 @@ toolchain_build_sys3() {
 	fi
 
 	if [ "x$copy_headers" == "x1" ]; then
-  
+
 	rm -fr "${SYS_DIR}"
 	mkdir -p "${SYS_DIR}"
 
@@ -859,7 +856,7 @@ toolchain_build_sys3() {
 		mkdir -p $framework
 		cp -R -p "${LEOPARD_SDK_LIBS}"/"${framework}".framework/Versions/?/Headers/* $framework
 	done
-	
+
 	echo "Application Services"
 	mkdir -p ApplicationServices
 	cp -R -p "${LEOPARD_SDK_LIBS}"/ApplicationServices.framework/Versions/A/Headers/* ApplicationServices
@@ -909,7 +906,7 @@ toolchain_build_sys3() {
 
 	mkdir unicode
 	cp -R -p "${DARWIN_SOURCES_DIR}"/JavaScriptCore-*/icu/unicode/*.h unicode
-	
+
 	cd "$SYS_DIR"
 	ln -sf gcc/darwin/4.0/stdint.h usr/include
 	ln -sf libstdc++.6.dylib usr/lib/libstdc++.dylib
@@ -1181,7 +1178,7 @@ class_dump() {
 		read -p "What is your iPhone's IP address? " IPHONE_IP
 		[ -z $IPHONE_IP ] && exit 1
 	fi
-	
+
 	message_status "Selecting required SDK components..."
 	[ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] || toolchain_extract_headers
 	for type in PrivateFrameworks; do
@@ -1191,7 +1188,7 @@ class_dump() {
 			cp "${folder}/${framework}" "${TMP_DIR}/Frameworks/${framework}/"
 		done
 	done
-	
+
 	message_status "Copying frameworks to iPhone (${IPHONE_IP})..."
 	echo "rm -Rf /tmp/Frameworks" | ssh root@$IPHONE_IP
 	if ! scp -r "${TMP_DIR}/Frameworks" root@$IPHONE_IP:/tmp/; then
@@ -1199,7 +1196,7 @@ class_dump() {
 		exit 1
 	fi
 	rm -Rf "${TMP_DIR}/Frameworks"
-	
+
 	message_status "Class dumping as root@$IPHONE_IP..."
 	ssh root@$IPHONE_IP <<'COMMAND'
 		if [ -z `which class-dump` ]; then
@@ -1212,7 +1209,7 @@ class_dump() {
 			fi
 			apt-get install class-dump
 		fi
-		
+
 		for folder in /tmp/Frameworks/*; do
 			framework=`basename $folder`
 			echo $framework
@@ -1229,7 +1226,7 @@ COMMAND
 		error "Failed to export iPhone frameworks."
 		exit 1
 	fi
-	
+
 	message_status "Framework headers exported. Copying..."
 	scp -r root@$IPHONE_IP:/tmp/Frameworks  "${TMP_DIR}"
 }
@@ -1260,7 +1257,7 @@ check_environment() {
 		error "iPhone SDK >=2.0. Sorry."
 		exit 1
 	fi
-	
+
 	# Check for required commands
 	local command
 	local missing
@@ -1274,14 +1271,14 @@ check_environment() {
 		error "You may need to install additional software for them using your package manager."
 		exit 1
 	fi
-	
+
 	# Performs a check for objective-c extensions to gcc
 	if [ ! -z "`LANG=C gcc --help=objc 2>&1 | grep \"warning: unrecognized argument to --help\"`" ]; then
 		error "GCC does not appear to support Objective-C."
 		error "You may need to install support, for example the \"gobjc\" package in debian."
 		exit
 	fi
-	
+
 	message_status "Environment is ready"
 }
 
@@ -1291,16 +1288,16 @@ case $1 in
 		export TOOLCHAIN_CHECKED=1
 		( ./toolchain.sh headers && \
 		  ./toolchain.sh darwin_sources && \
-		  ./toolchain.sh firmware && 
-		  ./toolchain.sh cctools && 
-		  ./toolchain.sh llvmgcc && 
+		  ./toolchain.sh firmware &&
+		  ./toolchain.sh cctools &&
+		  ./toolchain.sh llvmgcc &&
 		  ./toolchain.sh build ) || exit 1
-		
+
 		confirm "Do you want to clean up the source files used to build the toolchain?" && ./toolchain.sh clean
 		message_action "All stages completed. The toolchain is ready."
 		unset TOOLCHAIN_CHECKED
 		;;
-		
+
 	headers)
 		check_environment
 		message_action "Getting the header files..."
@@ -1344,7 +1341,7 @@ case $1 in
 		toolchain_build_sys3
 		message_action "sys32 folder built!"
 		;;
-	
+
 	build313)
 		check_environment
 		message_action "Building the sys313 Headers and Libraries..."
@@ -1354,7 +1351,7 @@ case $1 in
 		toolchain_build_sys3
 		message_action "sys313 folder built!"
 		;;
-	
+
 	buildsys)
 		check_environment
 		message_action "Building the sys Headers and Libraries..."
@@ -1362,7 +1359,7 @@ case $1 in
 		toolchain_sys
 		message_action "sys folder built!"
 		;;
-	
+
 	buildsys43)
 		check_environment
 		message_action "Building the sys43 Headers and Libraries..."
@@ -1378,7 +1375,7 @@ case $1 in
 		toolchain_sys50
 		message_action "sys50 folder built!"
 		;;
-	
+
 	build|rebuild)
 		check_environment
 		message_action "Building the toolchain..."
@@ -1386,7 +1383,7 @@ case $1 in
 			message_action "rebuilding..."
 			[ -d "${SYS_DIR}" ] && rm -Rf "${SYS_DIR}"
 			[ -d "${BUILD_DIR}" ] && rm -Rf "${BUILD_DIR}"
-		fi 
+		fi
 #		toolchain_build
 		toolchain_sys
 		message_action "It seems like the toolchain built!"
@@ -1406,11 +1403,11 @@ case $1 in
 
 	clean)
 		message_status "Cleaning up..."
-		
+
 		for file in ${FW_DIR}/*; do
 			[ -d "${file}" ] && rm -Rf "${file}"
 		done
-#		rm -f "${FW_DIR}/current"	
+#		rm -f "${FW_DIR}/current"
 		rm -Rf "${MNT_DIR}"
 		rm -Rf "${DARWIN_SOURCES_DIR}"
 		rm -Rf "${SDKS_DIR}"

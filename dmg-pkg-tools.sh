@@ -4,6 +4,7 @@
 # http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/sys-devel/binutils-apple/binutils-apple-4.2.ebuild?revision=1.2
 
 # Keeps a cache of the mounted DMG file in $(dirname $0)/.dmgtools.mounted
+# Keeps a cache of the loop device in $(dirname $0)/.dmgtools.loopdev
 #  to avoid re-mount un-necessarily.
 # Keeps a cache of copied-from-dmg files to avoid mounting un-necessarily.
 
@@ -36,7 +37,7 @@ patch_mingw_types_h() {
  #define __need_ptrdiff_t
 ' > /usr/include/sys-types-uid_daddr_caddr.patch
 			pushd /usr/include
-			patch -p0 < sys-types-uid_daddr_caddr.patch		
+			patch -p0 < sys-types-uid_daddr_caddr.patch
 			popd
 		fi
 	fi
@@ -46,9 +47,9 @@ patch_mingw_types_h() {
 # images, so that we can mount them.
 build_tools_dmg() {
 	patch_mingw_types_h
-	local _TMP_DIR=$1
-	local _PREFIX=$2
-	local _TCPREFIX=$3
+	local _TMP_DIR=$1; shift
+	local _PREFIX=$1; shift
+	local _TCPREFIX=$1; shift
 	local _SAVE_INTERMEDIATES=1
 	local _JOBS=8
 	local _SUDO=sudo
@@ -61,77 +62,78 @@ build_tools_dmg() {
 	mkdir -p $_PREFIX/include
 	mkdir -p $_PREFIX/lib
 	export PATH=$_PREFIX/bin:$PATH
-	if [[ ! -d pthreads ]] ; then
-		cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
-		pushd pthreads
-		make -j $_JOBS clean GC-static
-		cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
-		make -j $_JOBS clean GCE-shared
-		cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
-		cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
-		# For GOMP. The usual linux/vs-mingw -l<lib> issue... -> TODORMD :: This may not be needed!
-	 	cp libpthreadGC2.a $_PREFIX/lib/libpthread.a
-		cp pthread.h sched.h semaphore.h $_PREFIX/include/
-		popd
-	fi
-
-	if [[ ! -d libiconv-1.14 ]] ; then
-		if ! wget -O - libiconv-1.14.tar.gz http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz | tar -zx; then
-			error "Failed to get and extract libiconv-1.14 Check errors."
-		fi
-		pushd libiconv-1.14
-		CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=$_PREFIX  CFLAGS=-O2
-		if ! make -j $_JOBS install-lib ; then
-			error "Failed to make libiconv-1.14"
-		fi
-		do-sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" $_PREFIX/include/iconv.h
-		popd
-	fi
-
-	if [[ ! -d gettext-0.18.1.1 ]] ; then
-		if ! wget -O - http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz | tar -zx; then
-			error "Failed to get and extract gettext-0.18.1.1 Check errors."
-		fi
-		pushd gettext-0.18.1.1
-		patch --backup -p0 < ../../patches/gettext-0.18.1.1-win-pthreads.patch
-		# Without NM=... gettext-tools\libgettextpo\exported.sh ends up with /bin/nm and that fails to eval:
-		# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
-		# eval $nm_cmd
-		NM="C:/usr/bin/nm.exe" ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=$_PREFIX --enable-multibyte --prefix=$_PREFIX CFLAGS="-O3 -DPTW32_STATIC_LIB"
-		if ! make -j $_JOBS install ; then
-			error "Failed to make gettext-0.18.1.1"
-		fi
-		popd
-	fi
-	if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
-		if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
-			error "Failed to get and extract mingw-regex-2.5.1 Check errors."
-		fi
-		pushd mingw-libgnurx-2.5.1
-		patch --backup -p0 < ../../patches/mingw-libgnurx-2.5.1-static.patch
-		./configure --prefix=$_PREFIX --enable-static --disable-shared
-		if ! make  -j $_JOBS; then
-			error "Failed to make mingw-libgnurx-2.5.1"
+	if [[ "$UNAME" == "Windows" ]] ; then
+		if [[ ! -d pthreads ]] ; then
+			cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
+			pushd pthreads
+			make -j $_JOBS clean GC-static
+			cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
+			make -j $_JOBS clean GCE-shared
+			cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
+			cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
+			# For GOMP. The usual linux/vs-mingw -l<lib> issue... -> TODORMD :: This may not be needed!
+	 		cp libpthreadGC2.a $_PREFIX/lib/libpthread.a
+			cp pthread.h sched.h semaphore.h $_PREFIX/include/
 			popd
-			exit 1
 		fi
-		make -j $_JOBS install
-		popd
-	fi
 
-	# Needed by both dmg2img and xar.
-	if [[ ! -d openssl-1.0.0f ]] ; then
-		if ! wget -O - http://www.openssl.org/source/openssl-1.0.0f.tar.gz | tar -zx; then
-				error "Failed to get and extract openssl-1.0.0f Check errors."
+		if [[ ! -d libiconv-1.14 ]] ; then
+			if ! wget -O - libiconv-1.14.tar.gz http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz | tar -zx; then
+				error "Failed to get and extract libiconv-1.14 Check errors."
+			fi
+			pushd libiconv-1.14
+			CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=$_PREFIX  CFLAGS=-O2
+			if ! make -j $_JOBS install-lib ; then
+				error "Failed to make libiconv-1.14"
+			fi
+			do-sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" $_PREFIX/include/iconv.h
+			popd
+		fi
+
+		if [[ ! -d gettext-0.18.1.1 ]] ; then
+			if ! wget -O - http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz | tar -zx; then
+				error "Failed to get and extract gettext-0.18.1.1 Check errors."
+			fi
+			pushd gettext-0.18.1.1
+			patch --backup -p0 < ../../patches/gettext-0.18.1.1-win-pthreads.patch
+			# Without NM=... gettext-tools\libgettextpo\exported.sh ends up with /bin/nm and that fails to eval:
+			# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
+			# eval $nm_cmd
+			NM="C:/usr/bin/nm.exe" ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=$_PREFIX --enable-multibyte --prefix=$_PREFIX CFLAGS="-O3 -DPTW32_STATIC_LIB"
+			if ! make -j $_JOBS install ; then
+				error "Failed to make gettext-0.18.1.1"
+			fi
+			popd
+		fi
+		if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
+			if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
+				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
+			fi
+			pushd mingw-libgnurx-2.5.1
+			patch --backup -p0 < ../../patches/mingw-libgnurx-2.5.1-static.patch
+			./configure --prefix=$_PREFIX --enable-static --disable-shared
+			if ! make  -j $_JOBS; then
+				error "Failed to make mingw-libgnurx-2.5.1"
 				popd
 				exit 1
+			fi
+			make -j $_JOBS install
+			popd
 		fi
+		# Needed by both dmg2img and xar.
+		if [[ ! -d openssl-1.0.0f ]] ; then
+			if ! wget -O - http://www.openssl.org/source/openssl-1.0.0f.tar.gz | tar -zx; then
+					error "Failed to get and extract openssl-1.0.0f Check errors."
+					popd
+					exit 1
+			fi
 
-		pushd openssl-1.0.0f
-		./configure --prefix=$_PREFIX -no-shared -no-zlib-dynamic -no-test mingw
-		make -j $_JOBS 
-		make -j $_JOBS install
-		popd
+			pushd openssl-1.0.0f
+			./configure --prefix=$_PREFIX -no-shared -no-zlib-dynamic -no-test mingw
+			make -j $_JOBS
+			make -j $_JOBS install
+			popd
+		fi
 	fi
 
 	if [ -z $(which nano) ] ; then
@@ -160,9 +162,9 @@ build_tools_dmg() {
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 
 			if ! wget -O - http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz | tar -zx; then
-					error "Failed to get and extract bzip2-1.0.6 Check errors."
-					popd
-					exit 1
+				error "Failed to get and extract bzip2-1.0.6 Check errors."
+				popd
+				exit 1
 			fi
 
 			pushd bzip2-1.0.6
@@ -172,16 +174,15 @@ build_tools_dmg() {
 			popd
 
 			[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf bzip2-1.0.6
-	
-			message_status "Retrieving and building dmg2img 1.6.2 ..."
-	
-			if ! wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar -zx; then
-				error "Failed to get and extract dmg2img-1.6.2 Check errors."
-				exit 1
-			fi
 		fi
 
-		cp -rf dmg2img-1.6.2 dmg2img-1.6.2.orig
+		message_status "Retrieving and building dmg2img 1.6.2 ..."
+
+		if ! wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar -zx; then
+			error "Failed to get and extract dmg2img-1.6.2 Check errors."
+			exit 1
+		fi
+
 		pushd dmg2img-1.6.2
 		patch --backup -p1 <../../patches/dmg2img-1.6.2-WIN.patch
 		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" DESTDIR="$_PREFIX" make -j $_JOBS install; then
@@ -205,7 +206,7 @@ build_tools_dmg() {
 
 		pushd libxml2-2.7.1
 		./configure --prefix=$_PREFIX --with-threads=no --disable-shared --enable-static
-		make -j $_JOBS 
+		make -j $_JOBS
 		make -j $_JOBS install
 
 		if ! make -j $_JOBS install; then
@@ -271,7 +272,7 @@ build_tools_dmg() {
 	fi
 	message_status "xar is ready!"
 
-	if [ -z $(which git) ] ; then 
+	if [ -z $(which git) ] ; then
 		if ! wget -O - http://www.kernel.org/pub/software/scm/git/git-1.7.3.tar.gz | tar -zx; then
 			error "Failed to get and extract git-1.7.3 Check errors."
 			exit 1
@@ -308,8 +309,11 @@ build_tools_dmg() {
 
 # Platform independent umount command
 umount_dmg() {
-	local _MNT_DIR=/tmp/mnt
+	local _MNT_DIRCACHE=$(dirname $0)/.dmgtools.dir
 	local _MNT_CACHE=$(dirname $0)/.dmgtools.mounted
+	local _MNT_LOOPDEV=$(dirname $0)/.dmgtools.loopdev
+	local _MNT_DEV=( $(cat $_MNT_LOOPDEV) )
+	local _MNT_DIR=( $(cat $_MNT_DIRCACHE) )
 
 	if [[ $UNAME == "Darwin" ]] ; then
 		$SUDO hdiutil detach $_MNT_DIR
@@ -317,78 +321,94 @@ umount_dmg() {
 		# shouldn't we have a DEBUG var and only
 		# delete the TMP_IMG if DEBUG is not set/true
 		$SUDO umount -fl $_MNT_DIR
-		$SUDO losetup -d /dev/loop0
+		$SUDO losetup -d $_MNT_DEV
 		sleep 1
 	fi
 	if [ ! $? == 0 ]; then
 		error "Failed to unmount."
 		exit 1
 	fi
+	if [[ -f $_MNT_DIRCACHE ]] ; then
+		rm -f $_MNT_DIRCACHE
+	fi
 	if [[ -f $_MNT_CACHE ]] ; then
 		rm -f $_MNT_CACHE
+	fi
+	if [[ -f $_MNT_LOOPDEV ]] ; then
+		rm -f $_MNT_LOOPDEV
 	fi
 }
 
 # Platform independent mount command
 mount_dmg() {
-	local _MNT_DIR=/tmp/mnt
+	local _MNT_DIRCACHE=$(dirname $0)/.dmgtools.dir
 	local _MNT_CACHE=$(dirname $0)/.dmgtools.mounted
+	local _MNT_LOOPDEV=$(dirname $0)/.dmgtools.loopdev
 	# Key provided, we need to decrypt the DMG first
-	local _TMP_DIR=$1
-	shift
-	local _DMG=$1
-	shift
+	local _TMP_DIR=$1; shift
+	local _DMG=$1; shift
+	local _MNT_DIR=$1; shift
 	local _MNTFILE=
 	if [[ -f $_MNT_CACHE ]] ; then
 		_MNTFILE=( $(cat $_MNT_CACHE) )
 	fi
 
 	if [[ $_MNTFILE == $_DMG ]] ; then
-		message_status "Already mounted $_DMG..."
+		# Already mounted.
 		return 0
 	fi
 
 	if [[ ! -z $3 ]] ; then
 		message_status "Decrypting `basename $1`..."
-		TMP_DECRYPTED=${_TMP_DIR}/`basename $1`.decrypted
+		TMP_DECRYPTED=${_TMP_DIR}/`basename "$1"`.decrypted
 		if ! vfdecrypt -i $1 -o $TMP_DECRYPTED -k $3 &> /dev/null; then
 			error "Failed to decrypt `basename $1`!"
 			exit 1
 		fi
 		_DMG="${TMP_DECRYPTED}"
-	else
-		_DMG="$1"
 	fi
-	if [[ ! -z $MNTFILE ]] ; then
-		if [[ $MNTFILE != $_DMG ]] ; then
+	if [[ ! -z $_MNTFILE ]] ; then
+		if [[ $_MNTFILE != $_DMG ]] ; then
 			umount_dmg
 		fi
 	fi
-	if [[ $UNAME == "Darwin" ]] ; then
+	if [[ "$UNAME" == "Darwin" ]] ; then
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
 		# sudo hdiutil attach -mountpoint $2 $DMG
-		MOUNT_RES=$?
+		_MOUNT_RES=$?
 	else
 		# Convert the DMG to an IMG for mounting
-		TMP_IMG=${_TMP_DIR}/`basename $_DMG .dmg`.img
-		[ ! -f ${TMP_IMG} ] && dmg2img -v -i $_DMG -o $TMP_IMG
+		_TMP_IMG=${_TMP_DIR}/`basename "$_DMG" .dmg`.img
+		[ ! -f $_TMP_IMG ] && dmg2img -v -i "$_DMG" -o "$_TMP_IMG"
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
 		# This is needed for 3.0 sdk and dmg2img 1.6.1
-		[[ -d $2 ]] || mkdir -p $2
-		$SUDO losetup -o 36864 /dev/loop0 $TMP_IMG
-		$SUDO mount -t hfsplus /dev/loop0 $2
+		[[ -d $_MNT_DIR ]] || mkdir -p $_MNT_DIR
+		local _i
+		# /dev/loop0 may be in use, so loop over /dev/loop0..7
+		for _i in {0..7}
+		do
+			$SUDO losetup -o 36864 /dev/loop$_i "$_TMP_IMG"
+			if [[ $? == 0 ]] ; then
+				$SUDO mount -t hfsplus /dev/loop$_i $_MNT_DIR
+				if [[ $? == 0 ]] ; then
+					echo /dev/loop$_i > $_MNT_LOOPDEV
+					break
+				fi
+			fi
+		done
 #		$SUDO mount -t hfsplus -o loop,offset=36864 $TMP_IMG $2
-		MOUNT_RES=$?
+		_MOUNT_RES=$?
 		sleep 1
 		# find $2
 	fi
-	if [[ ! $MOUNT_RES = 0 ]] ; then
+	if [[ ! $_MOUNT_RES = 0 ]] ; then
 		error "Failed to mount `basename $1`."
 		exit 1
 	fi
-	echo $_DMG > $MNT_CACHE
+	echo $_DMG > $_MNT_CACHE
+	echo $_MNT_DIR > $_MNT_DIRCACHE
 }
 
 cache_packages() {
@@ -406,8 +426,8 @@ cache_packages() {
 	local _ALL_PKGS_FOUND=1
 	for i in "${_PKGS[@]}"
 	do
-		local _CACHE_FILE=${_DST}/$(basename "${_DMG}" ".dmg")##${i}
-		echo ${_CACHE_FILE}
+		local _EXT="${i##*.}"
+		local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
 		if [[ ! -f ${_CACHE_FILE} ]] ; then
 			_ALL_PKGS_FOUND=0
 		fi
@@ -421,15 +441,26 @@ cache_packages() {
 		_MOUNTED=1
 		for i in "${_PKGS[@]}"
 		do
-			local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename ${i} ".pkg").pkg
-			if [[ ! -f ${_CACHE_FILE} ]] ; then
-				if [[ ! -r ${MNT_DIR}/$i ]] ; then
-					error "I tried to cache ${MNT_DIR}/$i but I couldn't find it!"
-					echo $(ls ${MNT_DIR}/Packages)
-					exit 1
-				fi
-				cp ${MNT_DIR}/$i ${_CACHE_FILE}
+			local _EXT="${i##*.}"
+			local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
+			if [[ -f ${_CACHE_FILE} ]] ; then
+				cp "${MNT_DIR}/$i" "${_CACHE_FILE}"
+				echo "${_CACHE_FILE}"
 			fi
+#				if [[ ! -r ${MNT_DIR}/$i ]] ; then
+#					error "I tried to cache ${MNT_DIR}/$i but I couldn't find it!"
+#					echo $(ls ${MNT_DIR}/Packages)
+#					exit 1
+#				fi
+#			else
+#			fi
+		done
+	else
+		for i in "${_PKGS[@]}"
+		do
+			local _EXT="${i##*.}"
+			local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
+			echo "${_CACHE_FILE}"
 		done
 	fi
 
@@ -439,8 +470,7 @@ cache_packages() {
 }
 
 extract_packages_cached() {
-	local _TMPDIR=$1
-	shift
+	local _OUTDIR=$1; shift
 	local _PKGS=("$@")
 
 	for i in "${_PKGS[@]}"
@@ -448,14 +478,29 @@ extract_packages_cached() {
 		local _CACHE_FILE=${i}
 		if [ -f ${_CACHE_FILE} ] ; then
 			echo "extracting ${_CACHE_FILE}"
-			pushd $_TMP_DIR
+			pushd $_OUTDIR
 			xar -xf ${_CACHE_FILE} Payload
 			# zcat on OSX needs .Z suffix
 			cat Payload | zcat | cpio -id -v
 			rm Payload
 			popd
-		else
-			error "Failed to extract $_CACHE_FILE"
+#		else
+#			error "Failed to extract $_CACHE_FILE"
 		fi
 	done
+}
+
+extract_packages() {
+	local _OUTDIR=$1; shift
+	local _DMG=$1; shift
+	local _PKGS=("$@")
+
+	declare -a _CACHEDPKGS
+	for i in "${_PKGS[@]}"
+	do
+		local _EXT="${i##*.}"
+		local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
+		_CACHEDPKGS[${#_CACHEDPKGS[*]}]="$_CACHE_FILE"
+	done
+	extract_packages_cached $_OUTDIR "${_CACHEDPKGS[@]}"
 }
