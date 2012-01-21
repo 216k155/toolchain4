@@ -223,7 +223,9 @@ toolchain_extract_headers() {
 #	fi
 
 	# Look for the DMG and ask the user if is isn't findable.
-	if [ ! -f $IPHONE_SDK_DMG ] ; then
+	# Can't do this on Windows. In theory everything's ready-ish except no way
+	# to mount a hfs+ image (or any image for that matter)
+	if [[ ! "$UNAME" == "Windows" ]] && [[ ! -f $IPHONE_SDK_DMG ]] ; then
 		echo "I'm having trouble finding the iPhone SDK. I looked here:"
 		echo $IPHONE_SDK_DMG
 		if ! confirm "Do you have the SDK?"; then
@@ -241,9 +243,6 @@ toolchain_extract_headers() {
 		fi
 	fi
 
-	# Inform the user why we suddenly need their password
-#	message_status "Trying to mount the iPhone SDK dmg..."
-#	mount_dmg $IPHONE_SDK_DMG $MNT_DIR
 
 	# iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg
 	# xcode_3.2.6_and_ios_sdk_4.3.dmg
@@ -257,6 +256,9 @@ toolchain_extract_headers() {
 	# Check the version of the SDK
 	# Apple seems to apply a policy of rounding off the last component of the long version number
 	# so we'll do the same here
+
+	message_status "I might need to mount the iPhone SDK dmg..."
+
 	PLIST="${MPKG_NAME}.mpkg/Contents/version.plist"
 	message_status "cache_packages for $PLIST"
 	CACHED_PLIST=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "$PLIST") )
@@ -293,24 +295,18 @@ toolchain_extract_headers() {
 		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDKHeadersAndLibs.pkg"
 	fi
 
+	# Be greedy. Failed packages are silently skipped and not returned from cache_packages.
+	# ...however, what to do about syncing up if packages are skipped? i.e. the 1:1 mapping
+	# between PACKAGES and CACHED_PACKAGES goes...
 	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.4.Universal.pkg"
 	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.5.pkg"
 	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.6.pkg"
 
-#	if [ ! -r ${MNT_DIR}/Packages/$PACKAGE ]; then
-#		error "I tried to extract $PACKAGE but I couldn't find it!"
-#		echo "Unmounting..."
-#		umount_dmg
-#		exit 1
-#
-#	fi
+	message_status "Caching packages ${PACKAGES[@]}"
 	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "${PACKAGES[@]}") )
 
-	message_status "Cached packages ${CACHED_PACKAGES[@]}"
-
-	extract_packages $TMP_DIR "${CACHED_PACKAGES[@]}"
-	exit 1
-	message_status "Extracting `basename $PACKAGE`..."
+	message_status "Extracting ${CACHED_PACKAGES[@]}"
+	extract_packages_cached ${SDKS_DIR} $IPHONE_SDK_DMG "${CACHED_PACKAGES[@]}"
 
 	rm -fR $TMP_DIR/Documentation $TMP_DIR/Examples $TMP_DIR/Platforms $TMP_DIR/SDKs
 

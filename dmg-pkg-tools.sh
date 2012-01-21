@@ -471,11 +471,13 @@ cache_packages() {
 
 extract_packages_cached() {
 	local _OUTDIR=$1; shift
-	local _PKGS=("$@")
+	local _PKGSC=("$@")
 
-	for i in "${_PKGS[@]}"
+	local _in
+	for _in in "${_PKGSC[@]}"
 	do
-		local _CACHE_FILE=${i}
+		message_status "extract_packages_cached ${_in}"
+		local _CACHE_FILE=${_in}
 		if [ -f ${_CACHE_FILE} ] ; then
 			echo "extracting ${_CACHE_FILE}"
 			pushd $_OUTDIR
@@ -491,16 +493,21 @@ extract_packages_cached() {
 }
 
 extract_packages() {
+	message_status "in extract_packages"
 	local _OUTDIR=$1; shift
+	local _PKGSDIR=$1; shift
 	local _DMG=$1; shift
 	local _PKGS=("$@")
 
-	declare -a _CACHEDPKGS
-	for i in "${_PKGS[@]}"
+	local _i
+	for _i in "${_PKGS[@]}"
 	do
-		local _EXT="${i##*.}"
-		local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
+		message_status "file is $_i"
+		local _EXT="${_i##*.}"
+		local _CACHE_FILE=${_PKGSDIR}/$(basename ${_DMG} ".dmg")##$(basename "${_i}" ${_EXT})${_EXT}
 		_CACHEDPKGS[${#_CACHEDPKGS[*]}]="$_CACHE_FILE"
 	done
+	echo ${_CACHEDPKGS[@]}
 	extract_packages_cached $_OUTDIR "${_CACHEDPKGS[@]}"
+	message_status "done extract_packages"
 }
