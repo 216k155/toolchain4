@@ -212,19 +212,18 @@ build_tools() {
 
 toolchain_extract_headers() {
 	build_tools
-	mkdir -p ${MNT_DIR} ${SDKS_DIR} ${TMP_DIR}
-	# Remove this next line,
-	rm -fR tmp/Documentation tmp/Examples tmp/Platforms tmp/SDKs tmp/Applications /tmp/System /tmp/Tools /tmp/private /tmp/usr
+	TMP_SDKS_DIR=${TMP_DIR}/sdks
+	mkdir -p ${MNT_DIR} ${SDKS_DIR} ${TMP_DIR} ${TMP_SDKS_DIR}
 
 	# Make sure we don't already have these
-#	if [ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
-#		echo "SDKs seem to already be extracted."
-#		return
-#	fi
+	if [ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
+		echo "SDKs seem to already be extracted."
+		return
+	fi
 
 	# Look for the DMG and ask the user if is isn't findable.
-	# Can't do this on Windows. In theory everything's ready-ish except no way
-	# to mount a hfs+ image (or any image for that matter)
+	# Can't do this on Windows. In theory everything is ready-ish except no way
+	# to mount a hfs+ image (or any image for that matter) (and xar doesn't work right - xml2 issue?)
 	if [[ ! "$UNAME" == "Windows" ]] && [[ ! -f $IPHONE_SDK_DMG ]] ; then
 		echo "I'm having trouble finding the iPhone SDK. I looked here:"
 		echo $IPHONE_SDK_DMG
@@ -306,38 +305,10 @@ toolchain_extract_headers() {
 	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "${PACKAGES[@]}") )
 
 	message_status "Extracting ${CACHED_PACKAGES[@]}"
-	extract_packages_cached ${SDKS_DIR} $IPHONE_SDK_DMG "${CACHED_PACKAGES[@]}"
+	extract_packages_cached ${TMP_SDKS_DIR} $IPHONE_SDK_DMG "${CACHED_PACKAGES[@]}"
 
-	rm -fR $TMP_DIR/Documentation $TMP_DIR/Examples $TMP_DIR/Platforms $TMP_DIR/SDKs
-
-	cp ${MNT_DIR}/Packages/$PACKAGE $TMP_DIR/iphone.pkg
-	cd $TMP_DIR
-	xar -xf iphone.pkg Payload
-	# zcat on OSX needs .Z suffix
-	cat Payload | zcat | cpio -id
-
-	# These folders are version named so the SDK version can be verified
-	if [ ! -d Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk ]; then
-		error "I couldn't find the folder iPhoneOS${TOOLCHAIN_VERSION}.sdk. Perhaps this is"
-		error "not the right SDK dmg for toolchain ${TOOLCHAIN_VERSION}."
-		exit 1
-	fi
-
-	mv -f Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk ${SDKS_DIR}
-
-	rm -fR $TMP_DIR/Documentation $TMP_DIR/Examples $TMP_DIR/Platforms $TMP_DIR/SDKs
-
-	message_status "Extracting ${MACOSX}.pkg..."
-
-	cp ${MNT_DIR}/Packages/${MACOSX}.pkg $TMP_DIR/macosx.pkg
-	cd $TMP_DIR
-	xar -xf macosx.pkg Payload
-	cat Payload | zcat | cpio -id
-	mv -f SDKs/${MACOSX}.sdk ${SDKS_DIR}
-
-	message_status "Unmounting iPhone SDK img..."
-	cd $HERE
-	umount_dmg
+	mv -f ${TMP_SDKS_DIR}/SDKs/*.sdk ${SDKS_DIR}
+	mv -f ${TMP_SDKS_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk ${SDKS_DIR}
 }
 
 toolchain_extract_firmware_old() {
