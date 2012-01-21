@@ -252,11 +252,18 @@ build_tools_dmg() {
 		fi
 		pushd xar-1.5.2
 		patch --backup -p1 < ../../patches/xar-1.5.2-WIN.patch
-
-		if ! CFLAGS="-I$_PREFIX/include -DENOTSUP=48" LDFLAGS="-L$_PREFIX/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=$_PREFIX --disable-shared --enable-static; then
-			error "Failed to configure xar-1.5.2"
-			popd
-			exit 1
+		if [[ "$UNAME" == "Windows" ]] ; then
+			if ! CFLAGS="-I$_PREFIX/include -DENOTSUP=48" LDFLAGS="-L$_PREFIX/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=$_PREFIX --disable-shared --enable-static; then
+				error "Failed to configure xar-1.5.2"
+				popd
+				exit 1
+			fi
+		else
+			if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib" ./configure --prefix=$_PREFIX --disable-shared --enable-static; then
+				error "Failed to configure xar-1.5.2"
+				popd
+				exit 1
+			fi
 		fi
 
 		make -j $_JOBS
