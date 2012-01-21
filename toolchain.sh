@@ -257,7 +257,7 @@ toolchain_extract_headers() {
 	# Check the version of the SDK
 	# Apple seems to apply a policy of rounding off the last component of the long version number
 	# so we'll do the same here
-	PLIST="${MPKG_NAME}".mpkg/Contents/version.plist
+	PLIST="${MPKG_NAME}.mpkg/Contents/version.plist"
 	message_status "cache_packages for $PLIST"
 	CACHED_PLIST=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "$PLIST") )
 	message_status "cache_packages done for $PLIST"

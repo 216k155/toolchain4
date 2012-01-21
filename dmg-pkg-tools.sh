@@ -443,7 +443,7 @@ cache_packages() {
 		do
 			local _EXT="${i##*.}"
 			local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
-			if [[ -f ${_CACHE_FILE} ]] ; then
+			if [[ ! -f ${_CACHE_FILE} ]] && [[ -f ${MNT_DIR}/$i ]] ; then
 				cp "${MNT_DIR}/$i" "${_CACHE_FILE}"
 				echo "${_CACHE_FILE}"
 			fi
