@@ -41,8 +41,8 @@ FIRMWARE_VERSION="4.3"
 MACOSX="MacOSX10.5"
 CCTOOLS_VER=782
 CCTOOLS_VER=809
-#FOREIGNHEADERS=-foreign-headers
-FOREIGNHEADERS=
+FOREIGNHEADERS=-foreign-headers
+#FOREIGNHEADERS=
 CCTOOLS_VER_FH="${CCTOOLS_VER}${FOREIGNHEADERS}"
 
 # Manualy change this if needed
@@ -646,7 +646,6 @@ toolchain_build_sys3() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
 	local GCC_DIR="$SRC_DIR/gcc"
 	local CSU_DIR="$SRC_DIR/csu"
 	export PATH="$PREFIX/bin":"${PATH}"
