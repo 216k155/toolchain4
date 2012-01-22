@@ -166,13 +166,16 @@ IPHONE_SDK_DMG="$PWD/../xcode_3.2.6_and_ios_sdk_4.3.dmg"
 IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
 DARWIN_SOURCES_DIR="$FILES_DIR/darwin_sources"
 
+SUDO=sudo
+GAWK=gawk
 if [[ "$(uname-bt)" == "Windows" ]] ; then
 	SUDO=
-else
-	SUDO=sudo
+fi
+if [[ "$(uname-bt)" == "Darwin" ]] ; then
+	GAWK=awk
 fi
 
-NEEDED_COMMANDS="gcc make mount $SUDO zcat tar wget unzip gawk bison flex patch"
+NEEDED_COMMANDS="gcc make mount $SUDO zcat tar wget unzip $GAWK bison flex patch"
 
 HERE=`pwd`
 

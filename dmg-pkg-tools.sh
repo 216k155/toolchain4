@@ -49,6 +49,14 @@ patch_mingw_types_h() {
 	fi
 }
 
+downloadUntar() {
+	local _FNAME=$(basename $1)
+	if [[ ! -f $_FNAME ]] ; then
+		wget -c $1
+	fi
+	tar -zxf $_FNAME
+}
+
 # Builds dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools_dmg() {
@@ -59,9 +67,11 @@ build_tools_dmg() {
 	local _SAVE_INTERMEDIATES=1
 	local _JOBS=8
 	local _SUDO=sudo
+	local _MACHFLAG=
 	if [[ "$UNAME" == "Windows" ]] ; then
 		_JOBS=1
 		_SUDO=
+		_MACHFLAG=-mwindows
 	fi
 	mkdir -p $_TMP_DIR
 	pushd $_TMP_DIR
@@ -70,7 +80,7 @@ build_tools_dmg() {
 	export PATH=$_PREFIX/bin:$PATH
 	if [[ "$UNAME" == "Windows" ]] ; then
 		if [[ ! -d zlib-1.2.5 ]] ; then
-			if ! wget -O - http://downloads.sourceforge.net/libpng/zlib/1.2.5/zlib-1.2.5.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://downloads.sourceforge.net/libpng/zlib/1.2.5/zlib-1.2.5.tar.gz); then
 				error "Failed to get and extract zlib-1.2.5 Check errors."
 				popd
 				exit 1
@@ -98,7 +108,7 @@ build_tools_dmg() {
 		fi
 
 		if [[ ! -d libiconv-1.14 ]] ; then
-			if ! wget -O - http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz); then
 				error "Failed to get and extract libiconv-1.14 Check errors."
 			fi
 			pushd libiconv-1.14
@@ -111,7 +121,7 @@ build_tools_dmg() {
 		fi
 
 		if [[ ! -d gettext-0.18.1.1 ]] ; then
-			if ! wget -O - http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz); then
 				error "Failed to get and extract gettext-0.18.1.1 Check errors."
 			fi
 			pushd gettext-0.18.1.1
@@ -126,7 +136,7 @@ build_tools_dmg() {
 			popd
 		fi
 		if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
-			if ! wget -O - http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
 				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
 			fi
 			pushd mingw-libgnurx-2.5.1
@@ -142,7 +152,7 @@ build_tools_dmg() {
 		fi
 		# Needed by both dmg2img and xar.
 		if [[ ! -d openssl-1.0.0f ]] ; then
-			if ! wget -O - http://www.openssl.org/source/openssl-1.0.0f.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
 					error "Failed to get and extract openssl-1.0.0f Check errors."
 					popd
 					exit 1
@@ -158,7 +168,7 @@ build_tools_dmg() {
 
 	if [ -z $(which nano) ] ; then
 		message_status "Retrieving and building nano 2.3.1 ..."
-		if ! wget -O - http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz | tar -zx; then
+		if ! $(downloadUntar http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz); then
 				error "Failed to get and extract nano-2.3.1 Check errors."
 				popd
 				exit 1
@@ -179,7 +189,7 @@ build_tools_dmg() {
 	if [ -z $(which dmg2img) ] ; then
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 			message_status "Retrieving and building bzip2 1.0.6 ..."
-			if ! wget -O - http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz); then
 				error "Failed to get and extract bzip2-1.0.6 Check errors."
 				popd
 				exit 1
@@ -197,14 +207,14 @@ build_tools_dmg() {
 
 		message_status "Retrieving and building dmg2img 1.6.2 ..."
 
-		if ! wget -O - http://vu1tur.eu.org/tools/download.pl?dmg2img-1.6.2.tar.gz | tar -zx; then
+		if ! $(downloadUntar http://vu1tur.eu.org/tools/dmg2img-1.6.2.tar.gz); then
 			error "Failed to get and extract dmg2img-1.6.2 Check errors."
 			exit 1
 		fi
 
 		pushd dmg2img-1.6.2
 		patch --backup -p1 <../../patches/dmg2img-1.6.2-WIN.patch
-		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib -mwindows" CC="gcc" DESTDIR="$_PREFIX" make -j $_JOBS install; then
+		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib $_MACHFLAG" CC="gcc" DESTDIR="$_PREFIX" make -j $_JOBS install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
@@ -217,7 +227,7 @@ build_tools_dmg() {
 	message_status "dmg2img is ready!"
 	if [ -z $(which xml2-config) ] ; then
 
-		if ! wget -O - http://xmlsoft.org/sources/old/libxml2-2.7.1.tar.gz | tar -zx; then
+		if ! $(downloadUntar http://xmlsoft.org/sources/old/libxml2-2.7.1.tar.gz); then
 			error "Failed to get and extract libxml2-2.7.1 Check errors."
 			popd
 			exit 1
@@ -239,7 +249,7 @@ build_tools_dmg() {
 	fi
 
 	if [ -z $(which cpio) ] ; then
-		if ! wget -O - http://ftp.gnu.org/gnu/cpio/cpio-2.11.tar.gz | tar -zx; then
+		if ! $(downloadUntar http://ftp.gnu.org/gnu/cpio/cpio-2.11.tar.gz); then
 			error "Failed to get and extract cpio-2.11 Check errors."
 			popd
 			exit 1
@@ -266,7 +276,7 @@ build_tools_dmg() {
 	fi
 	if [ -z $(which xar) ] ; then
 		if [[ ! -d xar-1.5.2 ]] ; then
-			if ! wget -O - http://xar.googlecode.com/files/xar-1.5.2.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://xar.googlecode.com/files/xar-1.5.2.tar.gz); then
 				error "Failed to get and extract xar-1.5.2 Check errors."
 				popd
 				exit 1
@@ -302,7 +312,7 @@ build_tools_dmg() {
 	message_status "xar is ready!"
 
 	if [ -z $(which git) ] ; then
-		if ! wget -O - http://www.kernel.org/pub/software/scm/git/git-1.7.3.tar.gz | tar -zx; then
+		if ! $(downloadUntar http://www.kernel.org/pub/software/scm/git/git-1.7.3.tar.gz); then
 			error "Failed to get and extract git-1.7.3 Check errors."
 			exit 1
 		fi
@@ -322,7 +332,7 @@ build_tools_dmg() {
 	# Needed by cctools, so probably belongs elsewhere.
 	if [[ "$(uname-bt)" == "Windows" ]] ; then
 		if [[ ! -f $_PREFIX/include/uuid/uuid.h ]] ; then
-			if ! wget -O - http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz | tar -zx; then
+			if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
 				error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
 				exit 1
 			fi
@@ -342,7 +352,7 @@ build_tools_dmg() {
 
 	# mmap problems.
 #	if [ -z $(which ldid) ] ; then
-#		if ! wget -O - http://svn.telesphoreo.org/trunk/data/ldid/ldid-1.0.610.tgz | tar -zx; then
+#		if ! $(downloadUntar http://svn.telesphoreo.org/trunk/data/ldid/ldid-1.0.610.tgz); then
 #			error "Failed to get and extract ldid-1.0.610 Check errors."
 #			exit 1
 #		fi
@@ -363,29 +373,31 @@ umount_dmg() {
 	local _MNT_CACHE=$(dirname $0)/.dmgtools.mounted
 	local _MNT_LOOPDEV=$(dirname $0)/.dmgtools.loopdev
 	local _MNT_DEV=( $(cat $_MNT_LOOPDEV) )
-	local _MNT_DIR=( $(cat $_MNT_DIRCACHE) )
-
-	if [[ $UNAME == "Darwin" ]] ; then
-		$SUDO hdiutil detach $_MNT_DIR
-	else
-		# shouldn't we have a DEBUG var and only
-		# delete the TMP_IMG if DEBUG is not set/true
-		$SUDO umount -fl $_MNT_DIR
-		$SUDO losetup -d $_MNT_DEV
-		sleep 1
-	fi
-	if [ ! $? == 0 ]; then
-		error "Failed to unmount."
-		exit 1
-	fi
-	if [[ -f $_MNT_DIRCACHE ]] ; then
-		rm -f $_MNT_DIRCACHE
-	fi
-	if [[ -f $_MNT_CACHE ]] ; then
-		rm -f $_MNT_CACHE
-	fi
 	if [[ -f $_MNT_LOOPDEV ]] ; then
-		rm -f $_MNT_LOOPDEV
+		local _MNT_DIR=( $(cat $_MNT_DIRCACHE) )
+
+		if [[ $UNAME == "Darwin" ]] ; then
+			$SUDO hdiutil detach $_MNT_DIR
+		else
+			# shouldn't we have a DEBUG var and only
+			# delete the TMP_IMG if DEBUG is not set/true
+			$SUDO umount -fl $_MNT_DIR
+			$SUDO losetup -d $_MNT_DEV
+		fi
+		sleep 1
+		if [ ! $? == 0 ]; then
+			error "Failed to unmount."
+			exit 1
+		fi
+		if [[ -f $_MNT_DIRCACHE ]] ; then
+			rm -f $_MNT_DIRCACHE
+		fi
+		if [[ -f $_MNT_CACHE ]] ; then
+			rm -f $_MNT_CACHE
+		fi
+		if [[ -f $_MNT_LOOPDEV ]] ; then
+			rm -f $_MNT_LOOPDEV
+		fi
 	fi
 }
 
