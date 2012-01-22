@@ -154,12 +154,15 @@ find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
 rm -rf ${DISTDIR}/{cbtlibs,dyld,file,gprof,libdyld,mkshlib,profileServer}
 
+if [ "$(uname -s)" = "Darwin" ] ; then
+    SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
+else
+    SDKROOT=${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk
+fi
+cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
+
 if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
-    if [ "$(uname -s)" = "Darwin" ] ; then
-	SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
-    else
-	SDKROOT=${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk
-    fi
+
     echo "Merging content from $SDKROOT"
     if [ ! -d "$SDKROOT" ]; then
 	echo "$SDKROOT must be present" 1>&2
@@ -197,6 +200,12 @@ find ${DISTDIR} -type f -name \*.h | while read f; do
     sed -e 's/^__private_extern__/extern/' < $f > $f.tmp
     mv -f $f.tmp $f
 done
+
+#echo "Removing static enum bool"
+#find ${DISTDIR} -type f -name \*.[ch] | while read f; do
+#    sed -e 's/static enum bool/static bool/' < $f > $f.tmp
+#    mv -f $f.tmp $f
+#done
 
 set +e
 
