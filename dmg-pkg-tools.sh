@@ -69,6 +69,20 @@ build_tools_dmg() {
 	mkdir -p $_PREFIX/lib
 	export PATH=$_PREFIX/bin:$PATH
 	if [[ "$UNAME" == "Windows" ]] ; then
+		if [[ ! -d zlib-1.2.5 ]] ; then
+			if ! wget -O - http://downloads.sourceforge.net/libpng/zlib/1.2.5/zlib-1.2.5.tar.gz | tar -zx; then
+				error "Failed to get and extract zlib-1.2.5 Check errors."
+				popd
+				exit 1
+			fi
+			pushd zlib-1.2.5
+			if ! INCLUDE_PATH=$_PREFIX/include LIBRARY_PATH=$_PREFIX/lib make -f win32/Makefile.gcc -j $_JOBS install; then
+				error "Failed to make zlib-1.2.5"
+				exit 1
+			fi
+			popd
+		fi
+
 		if [[ ! -d pthreads ]] ; then
 			cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
 			pushd pthreads
@@ -142,20 +156,6 @@ build_tools_dmg() {
 		fi
 	fi
 
-	if [[ ! -d zlib-1.2.5 ]] ; then
-		if ! wget -O - http://downloads.sourceforge.net/libpng/zlib/1.2.5/zlib-1.2.5.tar.gz | tar -zx; then
-			error "Failed to get and extract zlib-1.2.5 Check errors."
-			popd
-			exit 1
-		fi
-		pushd zlib-1.2.5
-		if ! INCLUDE_PATH=$_PREFIX/include LIBRARY_PATH=$_PREFIX/lib make -f win32/Makefile.gcc -j $_JOBS install; then
-			error "Failed to make zlib-1.2.5"
-			exit 1
-		fi
-		popd
-    fi
-
 	if [ -z $(which nano) ] ; then
 		message_status "Retrieving and building nano 2.3.1 ..."
 		if ! wget -O - http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz | tar -zx; then
@@ -178,9 +178,7 @@ build_tools_dmg() {
 
 	if [ -z $(which dmg2img) ] ; then
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
-
 			message_status "Retrieving and building bzip2 1.0.6 ..."
-
 			if ! wget -O - http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz | tar -zx; then
 				error "Failed to get and extract bzip2-1.0.6 Check errors."
 				popd
@@ -255,8 +253,7 @@ build_tools_dmg() {
 		popd
 		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf cpio-2.11
 	fi
-
-	if [ -z $(which lns) ] ; then
+	if [[ "$(uname-bt)" == "Windows" ]] && [[ -z $(which lns) ]] ; then
 		message_status "Retrieving and building Nokia's lns ..."
 		git clone git://gitorious.org/qt-labs/qtmodularization.git
 		pushd qtmodularization
