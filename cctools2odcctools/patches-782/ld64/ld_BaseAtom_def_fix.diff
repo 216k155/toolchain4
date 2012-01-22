@@ -1,0 +1,56 @@
+--- src/MachOReaderRelocatable.hpp.orig	2012-01-22 20:17:36 +0000
++++ src/MachOReaderRelocatable.hpp	2012-01-22 20:19:16 +0000
+@@ -74,6 +74,26 @@
+ // forward reference
+ template <typename A> class Reader;
+ 
++class BaseAtom : public ObjectFile::Atom
++{
++public:
++												BaseAtom() : fStabsStartIndex(0), fStabsCount(0) {}
++
++	virtual void								setSize(uint64_t size)	= 0;
++	virtual void								addReference(ObjectFile::Reference* ref) = 0;
++	virtual void								sortReferences() = 0;
++	virtual void								addLineInfo(const ObjectFile::LineInfo& info) = 0;
++	virtual uint64_t							getObjectAddress() const = 0;
++	virtual uint32_t							getOrdinal() const { return fOrdinal; }
++	virtual void								setOrdinal(uint32_t value) { fOrdinal = value; }
++	virtual const void*							getSectionRecord() const = 0;
++	virtual bool								isAlias() const { return false; }
++
++	uint32_t									fStabsStartIndex;
++	uint32_t									fStabsCount;
++	uint32_t									fOrdinal;
++};
++
+ struct AtomAndOffset
+ {
+ 						AtomAndOffset(ObjectFile::Atom* a=NULL) : atom(a), offset(0) {}
+@@ -267,26 +287,6 @@
+ 
+ LinkEditSegment LinkEditSegment::fgSingleton;
+ 
+-class BaseAtom : public ObjectFile::Atom
+-{
+-public:
+-												BaseAtom() : fStabsStartIndex(0), fStabsCount(0) {}
+-
+-	virtual void								setSize(uint64_t size)	= 0;
+-	virtual void								addReference(ObjectFile::Reference* ref) = 0;
+-	virtual void								sortReferences() = 0;
+-	virtual void								addLineInfo(const ObjectFile::LineInfo& info) = 0;
+-	virtual uint64_t							getObjectAddress() const = 0;
+-	virtual uint32_t							getOrdinal() const { return fOrdinal; }
+-	virtual void								setOrdinal(uint32_t value) { fOrdinal = value; }
+-	virtual const void*							getSectionRecord() const = 0;
+-	virtual bool								isAlias() const { return false; }
+-
+-	uint32_t									fStabsStartIndex;
+-	uint32_t									fStabsCount;
+-	uint32_t									fOrdinal;
+-};
+-
+ class BaseAtomSorter
+ {
+ public:

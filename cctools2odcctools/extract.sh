@@ -88,6 +88,7 @@ ld64/Options-config_h.diff ld64/Options-ctype.diff \
 ld64/Options-defcross.diff ld64/Options_h_includes.diff \
 ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
 ld64/Thread64_MachOWriterExecutable.diff ld64/ld_createReader_typename.diff \
+ld64/ld_BaseAtom_def_fix.diff \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
@@ -110,6 +111,7 @@ ld64/Options-config_h.diff ld64/Options-ctype.diff \
 ld64/Options-defcross.diff ld64/Options_h_includes.diff \
 ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
 ld64/Thread64_MachOWriterExecutable.diff ld64/ld_createReader_typename.diff \
+ld64/ld_BaseAtom_def_fix.diff \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
