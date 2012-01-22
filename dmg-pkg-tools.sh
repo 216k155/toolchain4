@@ -14,8 +14,6 @@
 . ./bash-tools.sh
 
 patch_mingw_types_h() {
-	if [[ "$(uname-bt)" == "Windows" ]] ; then
-		if [[ ! $(egrep uid_t /usr/include/sys/types.h) ]] ; then
 			printf %s \
 '--- sys/types.h-orig	2012-01-13 00:17:02 +0000
 +++ sys/types.h	2012-01-13 00:34:53 +0000
@@ -35,9 +33,17 @@ patch_mingw_types_h() {
  #define __need_wchar_t
  #define __need_size_t
  #define __need_ptrdiff_t
-' > /usr/include/sys-types-uid_daddr_caddr.patch
+' > /tmp/sys-types-uid_daddr_caddr.patch
+
+	if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ ! $(egrep uid_t /usr/include/sys/types.h) ]] ; then
 			pushd /usr/include
-			patch -p0 < sys-types-uid_daddr_caddr.patch
+			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
+			popd
+		fi
+		if [[ ! $(egrep uid_t /mingw/include/sys/types.h) ]] ; then
+			pushd /mingw/include
+			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
 			popd
 		fi
 	fi
@@ -78,7 +84,7 @@ build_tools_dmg() {
 		fi
 
 		if [[ ! -d libiconv-1.14 ]] ; then
-			if ! wget -O - libiconv-1.14.tar.gz http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz | tar -zx; then
+			if ! wget -O - http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz | tar -zx; then
 				error "Failed to get and extract libiconv-1.14 Check errors."
 			fi
 			pushd libiconv-1.14
@@ -136,6 +142,20 @@ build_tools_dmg() {
 		fi
 	fi
 
+	if [[ ! -d zlib-1.2.5 ]] ; then
+		if ! wget -O - http://downloads.sourceforge.net/libpng/zlib/1.2.5/zlib-1.2.5.tar.gz | tar -zx; then
+			error "Failed to get and extract zlib-1.2.5 Check errors."
+			popd
+			exit 1
+		fi
+		pushd zlib-1.2.5
+		if ! INCLUDE_PATH=$_PREFIX/include LIBRARY_PATH=$_PREFIX/lib make -f win32/Makefile.gcc -j $_JOBS install; then
+			error "Failed to make zlib-1.2.5"
+			exit 1
+		fi
+		popd
+    fi
+
 	if [ -z $(which nano) ] ; then
 		message_status "Retrieving and building nano 2.3.1 ..."
 		if ! wget -O - http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz | tar -zx; then
@@ -157,7 +177,7 @@ build_tools_dmg() {
 	message_status "nano is ready!"
 
 	if [ -z $(which dmg2img) ] ; then
-		if [[ "$UNAME" == "Windows" ]] ; then
+		if [[ "$(uname-bt)" == "Windows" ]] ; then
 
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 
@@ -170,7 +190,8 @@ build_tools_dmg() {
 			pushd bzip2-1.0.6
 			# Fails due to chmod a+x without .exe suffix, ignored.
 			cp ../../files/bzip2-1.0.6-Makefile ./Makefile
-			DESTDIR="$_PREFIX" make -j $_JOBS install
+			do-sed $"s#PREFIX=/usr#PREFIX=$_PREFIX#g" ./Makefile
+			make -j $_JOBS install
 			popd
 
 			[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf bzip2-1.0.6
@@ -300,6 +321,27 @@ build_tools_dmg() {
 		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf git-1.7.3
 	fi
 	message_status "git is ready!"
+
+	# Needed by cctools, so probably belongs elsewhere.
+	if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ ! -f $_PREFIX/include/uuid/uuid.h ]] ; then
+			if ! wget -O - http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz | tar -zx; then
+				error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
+				exit 1
+			fi
+			pushd e2fsprogs-libs-1.41.14/
+			patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
+			./configure --prefix=$_PREFIX --disable-elf-shlibs --disable-uuidd
+			pushd lib/uuid/
+			if ! ( make install && make ) ; then
+				error "Failed to make libuuid"
+				exit 1
+			fi
+			popd
+			popd
+		fi
+	fi
+	message_status "libuuid is ready!"
 
 	# mmap problems.
 #	if [ -z $(which ldid) ] ; then

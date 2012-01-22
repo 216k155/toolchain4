@@ -114,3 +114,14 @@ message_action() {
 	cecho blue $*
 }
 
+
+do-sed()
+{
+    if [ "$(uname-bt)" = "darwin" ]
+    then
+        sed -i '.bak' "$1" $2
+        rm ${2}.bak
+    else
+        sed "$1" -i $2
+    fi
+}

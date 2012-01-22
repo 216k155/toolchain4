@@ -243,7 +243,6 @@ find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
 find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
-echo PWD is $PWD
 autoheader
 autoconf
 rm -rf autom4te.cache
@@ -254,6 +253,4 @@ if [ $MAKEDISTFILE -eq 1 ]; then
     mv ${DISTDIR} ${DISTDIR}-$DATE
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
-patch odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}/misc/Makefile.in < patches/misc/Makefile.in.diff
-
-exit 0
+patch odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}/misc/Makefile.in < $PATCHFILESDIR/misc/Makefile.in.diff

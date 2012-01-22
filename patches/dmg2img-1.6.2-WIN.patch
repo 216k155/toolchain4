@@ -1,7 +1,7 @@
 diff -x '*.orig' -burN dmg2img-1.6.2.orig/Makefile dmg2img-1.6.2/Makefile
 --- dmg2img-1.6.2.orig/Makefile	2012-01-19 18:03:25 +0000
 +++ dmg2img-1.6.2/Makefile	2012-01-19 18:12:20 +0000
-@@ -1,6 +1,6 @@
+@@ -1,11 +1,11 @@
  #CC = gcc
 -CFLAGS = -O2 -Wall
 -BIN_DIR = ${DESTDIR}/usr/bin
@@ -10,6 +10,12 @@ diff -x '*.orig' -burN dmg2img-1.6.2.orig/Makefile dmg2img-1.6.2/Makefile
  
  all: dmg2img vfdecrypt 
  
+ dmg2img: dmg2img.c dmg2img.h mntcmd.h gpt.h dmg2img.o base64.o adc.o 
+-	$(CC) -s -o dmg2img dmg2img.o base64.o adc.o -L. -lz -lbz2
++	$(CC) $(LDFLAGS) -s -o dmg2img dmg2img.o base64.o adc.o -L. -lz -lbz2
+ 
+ dmg2img.o: dmg2img.c dmg2img.h
+ 	$(CC) $(CFLAGS) -c dmg2img.c
 @@ -17,11 +17,11 @@
  	$(CC) $(CFLAGS) -c adc.c
  

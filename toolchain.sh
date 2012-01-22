@@ -522,7 +522,6 @@ toolchain_cctools() {
 			build_as=0
 		fi
 	fi
-
 	if [ "x$build_as" == "x1" ]; then
 	   download_cctools=1
 	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER_FH}" ]; then
@@ -538,19 +537,10 @@ toolchain_cctools() {
 		  fi
 		fi
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
-			echo $PWD
-			echo $PWD
-			echo $PWD
-			echo $PWD
 			./extract.sh --updatepatch --vers ${CCTOOLS_VER} --foreignheaders
 		else
-			echo $PWD
-			echo $PWD
-			echo $PWD
-			echo $PWD
 			./extract.sh --updatepatch --vers ${CCTOOLS_VER}
 		fi
-		exit 1
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
 		cp -r odcctools-${CCTOOLS_VER_FH} "${CCTOOLS_DIR}"
@@ -564,7 +554,7 @@ toolchain_cctools() {
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CFLAGS="-m32" LDFLAGS="-m32" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO \
+		CFLAGS="-m32" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 
