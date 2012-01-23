@@ -105,7 +105,7 @@ PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff \
-include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
+include/stuff/bytesex-floatstate.diff \
 ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
 ld64/Options-config_h.diff ld64/Options-ctype.diff \
 ld64/Options-defcross.diff ld64/Options_h_includes.diff \

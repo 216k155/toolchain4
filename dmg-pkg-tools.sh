@@ -434,10 +434,11 @@ mount_dmg() {
 			umount_dmg
 		fi
 	fi
+	[[ -d $_MNT_DIR ]] || mkdir -p $_MNT_DIR
 	if [[ "$UNAME" == "Darwin" ]] ; then
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
-		# sudo hdiutil attach -mountpoint $2 $DMG
+		sudo hdiutil attach -noverify -mountpoint $_MNT_DIR $_DMG
 		_MOUNT_RES=$?
 	else
 		# Convert the DMG to an IMG for mounting
@@ -446,7 +447,6 @@ mount_dmg() {
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
 		# This is needed for 3.0 sdk and dmg2img 1.6.1
-		[[ -d $_MNT_DIR ]] || mkdir -p $_MNT_DIR
 		local _i
 		# /dev/loop0 may be in use, so loop over /dev/loop0..7
 		for _i in {0..7}
@@ -545,7 +545,7 @@ extract_packages_cached() {
 			pushd $_OUTDIR
 			xar -xf ${_CACHE_FILE} Payload
 			# zcat on OSX needs .Z suffix
-			cat Payload | zcat | cpio -id -v
+			cat Payload | zcat | cpio -id
 			rm Payload
 			popd
 #		else

@@ -35,14 +35,14 @@ TOOLCHAIN_VERSION="4.3"
 #TOOLCHAIN_VERSION="3.1.2"
 MACOSX="MacOSX10.5"
 
-#what device are we building for?
+# what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
 MACOSX="MacOSX10.5"
+CCTOOLS_VER=809
 CCTOOLS_VER=782
-#CCTOOLS_VER=809
-FOREIGNHEADERS=-foreign-headers
-#FOREIGNHEADERS=
+FOREIGNHEADERS=
+#FOREIGNHEADERS=-foreign-headers
 CCTOOLS_VER_FH="${CCTOOLS_VER}${FOREIGNHEADERS}"
 
 # Manualy change this if needed
@@ -316,7 +316,7 @@ toolchain_extract_headers() {
 	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "${PACKAGES[@]}") )
 
 	message_status "Extracting ${CACHED_PACKAGES[@]}"
-	extract_packages_cached ${TMP_SDKS_DIR} $IPHONE_SDK_DMG "${CACHED_PACKAGES[@]}"
+	extract_packages_cached ${TMP_SDKS_DIR} "${CACHED_PACKAGES[@]}"
 
 	mv -f ${TMP_SDKS_DIR}/SDKs/*.sdk ${SDKS_DIR}
 	mv -f ${TMP_SDKS_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk ${SDKS_DIR}
@@ -557,7 +557,7 @@ toolchain_cctools() {
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CFLAGS="-m32" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO \
+		CFLAGS="-m32 -save-temps" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 
@@ -1111,7 +1111,6 @@ toolchain_sys() {
 	mkdir -p "$SYS_DIR"/"$(dirname $PREFIX)"
 	message_status "Making symlink $PREFIX to $SYS_DIR"/"$(dirname $PREFIX)"
 	ln_s "$PREFIX" "$SYS_DIR"/"$(dirname $PREFIX)"
-
 }
 
 class_dump() {
