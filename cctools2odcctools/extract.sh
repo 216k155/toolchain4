@@ -137,13 +137,13 @@ if [ -d "${DISTDIR}" ]; then
 fi
 
 mkdir -p ${DISTDIR}
-[[ ! -f "${CCTOOLSDISTFILE}" ]] && wget http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
+[[ ! -f "${CCTOOLSDISTFILE}" ]] && wget -c http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
 
 tar ${TARSTRIP}=1 -xf ${CCTOOLSDISTFILE} -C ${DISTDIR} > /dev/null 2>&1
 # Fix dodgy timestamps.
 find ${DISTDIR} | xargs touch
 
-[[ ! -f "${LD64DISTFILE}" ]] && wget http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
+[[ ! -f "${LD64DISTFILE}" ]] && wget -c http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
 mkdir -p ${DISTDIR}/ld64
 tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64
 rm -rf ${DISTDIR}/ld64/FireOpal
@@ -161,11 +161,22 @@ else
 fi
 cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
 
+# llvm headers
+# Originally, in toolchain4, gcc used was Saurik's, but that doesn't contain
+# the llvm-c headers we need.
+message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
+GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
+if [ ! -d $GCC_DIR ]; then
+	wget -c http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
+	tar zxf llvmgcc42-2336.1.tar.gz
+fi
+cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
+
 if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
 
-    echo "Merging content from $SDKROOT"
+    message_status "Merging content from $SDKROOT"
     if [ ! -d "$SDKROOT" ]; then
-	echo "$SDKROOT must be present" 1>&2
+	error "$SDKROOT must be present"
 	exit 1
     fi
 
@@ -178,10 +189,11 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
 	mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h;
     fi
 
-    rm ${DISTDIR}/include/sys/cdefs.h
-    rm ${DISTDIR}/include/sys/types.h
-    rm ${DISTDIR}/include/sys/select.h
+#    rm ${DISTDIR}/include/sys/cdefs.h
+#    rm ${DISTDIR}/include/sys/types.h
+#    rm ${DISTDIR}/include/sys/select.h
 
+	# Not sure about this bit either...
     for f in ${DISTDIR}/include/libkern/OSByteOrder.h; do
 	sed -e 's/__GNUC__/__GNUC_UNUSED__/g' < $f > $f.tmp
 	mv -f $f.tmp $f
@@ -189,13 +201,13 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
 fi
 
 # process source for mechanical substitutions
-echo "Removing #import"
+message_status "Removing #import"
 find ${DISTDIR} -type f -name \*.[ch] | while read f; do
     sed -e 's/^#import/#include/' < $f > $f.tmp
     mv -f $f.tmp $f
 done
 
-echo "Removing __private_extern__"
+message_status "Removing __private_extern__"
 find ${DISTDIR} -type f -name \*.h | while read f; do
     sed -e 's/^__private_extern__/extern/' < $f > $f.tmp
     mv -f $f.tmp $f
@@ -210,18 +222,18 @@ done
 set +e
 
 INTERACTIVE=0
-echo "Applying patches"
+message_status "Applying patches"
 for p in ${PATCHFILES}; do
     dir=`dirname $p`
     if [ $INTERACTIVE -eq 1 ]; then
 	read -p "Apply patch $p? " REPLY
     else
-	echo "Applying patch $p"
+	message_status "Applying patch $p"
     fi
     pushd ${DISTDIR}/$dir > /dev/null
     patch --backup $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
     if [ $? -ne 0 ]; then
-	echo "There was a patch failure. Please manually merge and exit the sub-shell when done"
+	error "There was a patch failure. Please manually merge and exit the sub-shell when done"
 	$SHELL
 	if [ $UPDATEPATCH -eq 1 ]; then
 	    find . -type f | while read f; do
@@ -237,18 +249,18 @@ done
 
 set -e
 
-echo "Adding new files"
+message_status "Adding new files"
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
 
 if [ -z $FOREIGNHEADERS ] ; then
-	echo "Removing include/foreign"
+	message_status "Removing include/foreign"
 	rm -rf ${DISTDIR}/include/foreign
 else
-	echo "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
+	message_status "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
 	rm -rf ${DISTDIR}/include/mach/ppc
 fi
 
-echo "Deleting cruft"
+message_status "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
 find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
 find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
