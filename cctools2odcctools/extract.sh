@@ -167,8 +167,10 @@ cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
 message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
 GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
 if [ ! -d $GCC_DIR ]; then
+	pushd $(dirname ${GCC_DIR})
 	wget -c http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
-	tar zxf llvmgcc42-2336.1.tar.gz
+	tar zxf $TARFILE
+	popd
 fi
 cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
 
