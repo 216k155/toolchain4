@@ -39,11 +39,21 @@ MACOSX="MacOSX10.5"
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
 MACOSX="MacOSX10.5"
-#CCTOOLS_VER=809
-CCTOOLS_VER=782
-#FOREIGNHEADERS=
-FOREIGNHEADERS=-foreign-headers
-CCTOOLS_VER_FH="${CCTOOLS_VER}${FOREIGNHEADERS}"
+
+# Set the defaults.
+if [[ -z $CCTOOLSVER ]] ; then
+	#CCTOOLSVER=809
+	CCTOOLSVER=782
+fi
+if [[ -z $FOREIGNHEADERS ]] ; then
+	FOREIGNHEADERS=-foreign-headers
+elif [[ "$FOREIGNHEADERS" = "0" ]] ; then
+	FOREIGNHEADERS=
+else
+	FOREIGNHEADERS=-foreign-headers
+fi
+
+CCTOOLS_VER_FH="${CCTOOLSVER}${FOREIGNHEADERS}"
 
 # Manualy change this if needed
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
@@ -540,9 +550,9 @@ toolchain_cctools() {
 		  fi
 		fi
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
-			./extract.sh --updatepatch --vers ${CCTOOLS_VER} --foreignheaders
+			./extract.sh --updatepatch --vers ${CCTOOLSVER} --foreignheaders
 		else
-			./extract.sh --updatepatch --vers ${CCTOOLS_VER}
+			./extract.sh --updatepatch --vers ${CCTOOLSVER}
 		fi
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
