@@ -136,6 +136,7 @@ if [ -d "${DISTDIR}" ]; then
     exit 1
 fi
 
+rm -rf ${DISTDIR}
 mkdir -p ${DISTDIR}
 [[ ! -f "${CCTOOLSDISTFILE}" ]] && wget -c http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
 
@@ -233,7 +234,7 @@ for p in ${PATCHFILES}; do
 	message_status "Applying patch $p"
     fi
     pushd ${DISTDIR}/$dir > /dev/null
-    patch --backup $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
+    patch $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
     if [ $? -ne 0 ]; then
 	error "There was a patch failure. Please manually merge and exit the sub-shell when done"
 	$SHELL
@@ -245,7 +246,9 @@ for p in ${PATCHFILES}; do
 	    done > ${PATCHFILESDIR}/$p
 	fi
     fi
-#find . -type f -name \*.orig -exec rm -f "{}" \;
+    # For subsequent patches to work, move orig files out of the way
+    # to a filename that includes the patch name, e.g. archive.c.orig.archive.diff
+    find . -type f -name \*.orig -exec mv "{}" "{}"$(basename $p) \;
     popd > /dev/null
 done
 
