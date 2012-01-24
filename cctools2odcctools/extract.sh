@@ -169,7 +169,7 @@ GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
 if [ ! -d $GCC_DIR ]; then
 	pushd $(dirname ${GCC_DIR})
 	wget -c http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
-	tar zxf $TARFILE
+	tar -zxf llvmgcc42-2336.1.tar.gz
 	popd
 fi
 cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
@@ -245,7 +245,7 @@ for p in ${PATCHFILES}; do
 	    done > ${PATCHFILESDIR}/$p
 	fi
     fi
-    find . -type f -name \*.orig -exec rm -f "{}" \;
+#find . -type f -name \*.orig -exec rm -f "{}" \;
     popd > /dev/null
 done
 
