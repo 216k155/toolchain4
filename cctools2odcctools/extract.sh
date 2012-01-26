@@ -95,7 +95,7 @@ libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
 misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
 misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
-otool/nolibmstub.diff otool/noobjc.diff \
+otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 ld64/LTOReader-setasmpath.diff include/mach/machine_armv7.diff \
 ld/ld-nomach.diff libstuff/cmd_with_prefix.diff ld64/cstdio.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
@@ -118,7 +118,7 @@ libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
 misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
 misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
-otool/nolibmstub.diff otool/noobjc.diff \
+otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 ld64/LTOReader-setasmpath.diff include/mach/machine_armv7.diff \
 ld/ld-nomach.diff libstuff/cmd_with_prefix.diff ld64/cstdio.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
