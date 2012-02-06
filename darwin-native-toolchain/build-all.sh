@@ -79,19 +79,19 @@ function doSed
 
 pushd ${TARBALLS}
 if [[ ! -f ${GCC_STUBNAME}.tar.gz ]] ; then
-	wget -c http://www.opensource.apple.com/tarballs/llvmgcc42/${GCC_STUBNAME}.tar.gz
+	curl -S -L -O http://www.opensource.apple.com/tarballs/llvmgcc42/${GCC_STUBNAME}.tar.gz
 fi
 if [[ ! -f ${LD64_STUBNAME}.tar.gz ]] ; then
-	wget -c http://www.opensource.apple.com/tarballs/ld64/${LD64_STUBNAME}.tar.gz
+	curl -S -L -O http://www.opensource.apple.com/tarballs/ld64/${LD64_STUBNAME}.tar.gz
 fi
 if [[ ! -f ${CCTOOLS_STUBNAME}.tar.gz ]] ; then
-	wget -c http://www.opensource.apple.com/tarballs/cctools/${CCTOOLS_STUBNAME}.tar.gz
+	curl -S -L -O http://www.opensource.apple.com/tarballs/cctools/${CCTOOLS_STUBNAME}.tar.gz
 fi
 if [[ ! -f ${DYLD_STUBNAME}.tar.gz ]] ; then
-	wget -c http://www.opensource.apple.com/tarballs/dyld/${DYLD_STUBNAME}.tar.gz
+	curl -S -L -O http://www.opensource.apple.com/tarballs/dyld/${DYLD_STUBNAME}.tar.gz
 fi
 if [[ ! -f streams.h ]] ; then
-	wget -c http://opensource.apple.com/source/Libstreams/Libstreams-25/streams.h?txt -O streams.h
+	curl -S -L -O http://opensource.apple.com/source/Libstreams/Libstreams-25/streams.h?txt -O streams.h
 fi
 popd
 
