@@ -90,7 +90,6 @@ fi
 if [[ ! -f ${DYLD_STUBNAME}.tar.gz ]] ; then
 	wget -c http://www.opensource.apple.com/tarballs/dyld/${DYLD_STUBNAME}.tar.gz
 fi
-
 if [[ ! -f streams.h ]] ; then
 	wget -c http://opensource.apple.com/source/Libstreams/Libstreams-25/streams.h?txt -O streams.h
 fi
@@ -142,7 +141,7 @@ mkdir -p ${BUILD_PREFIX}/include/streams
 mkdir -p ${BUILD_PREFIX}/include/mach
 
 cp -rf ${GCC_DIR_BUILD}/llvmCore/include/llvm-c ${BUILD_PREFIX}/include/
-cp streams.h ${BUILD_PREFIX}/include/streams/
+cp tarballs/streams.h ${BUILD_PREFIX}/include/streams/
 cp /usr/include/mach/mach.h ${BUILD_PREFIX}/include/mach/
 cp /usr/include/mach/mach_init.h ${BUILD_PREFIX}/include/mach/
 cp /usr/include/mach/mach_traps.h ${BUILD_PREFIX}/include/mach/
@@ -178,7 +177,7 @@ pushd ${LD64_DIR_BUILD}
 	# I'm pretty sure we don't want arm here, but it's safely ignored.
 	BUILD_ARCHS="i386 x86_64 arm"
 	if [[ $SAVETEMPS == 1 ]] ; then
-		patch -p0 < ../patches/ld64.project.pbxproj.use-clang.patch
+		patch -p0 < ../../patches/ld64.project.pbxproj.use-clang.patch
 		OCF_SAVE_TEMPS=-save-temps
 		OCF_SAVE_TEMPS_CLANG=-save-temps
 		BUILD_ARCHS="i386"
