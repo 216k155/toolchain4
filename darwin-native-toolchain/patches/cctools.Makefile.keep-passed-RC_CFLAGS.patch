@@ -1,0 +1,10 @@
+--- Makefile.orig	2012-01-28 16:47:38.000000000 +0000
++++ Makefile	2012-01-28 16:45:07.000000000 +0000
+@@ -22,7 +22,6 @@
+ 
+ DSTROOT = /
+ RC_OS = macos
+-RC_CFLAGS =
+ 
+ INSTALLSRC_SUBDIRS = $(COMMON_SUBDIRS) $(SUBDIRS_32) ar include efitools
+ COMMON_SUBDIRS = libstuff as gprof misc libmacho RelNotes man cbtlibs otool

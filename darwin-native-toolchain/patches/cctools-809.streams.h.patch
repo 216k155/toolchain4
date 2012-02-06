@@ -1,0 +1,22 @@
+--- include/mach-o/rld.h-orig	2012-01-29 21:35:07.000000000 +0000
++++ include/mach-o/rld.h	2012-01-29 21:36:01.000000000 +0000
+@@ -27,7 +27,7 @@
+ #ifndef _MACHO_RLD_H_
+ #define _MACHO_RLD_H_
+ 
+-#include <streams/streams.h>
++/*#include <streams/streams.h>*/
+ #include <mach-o/loader.h>
+ 
+ extern long rld_load(
+--- ld/layout.c.orig	2012-01-29 21:50:28.000000000 +0000
++++ ld/layout.c	2012-01-29 21:50:45.000000000 +0000
+@@ -70,7 +70,7 @@
+ #include <mach-o/reloc.h>
+ #if defined(RLD) && !defined(SA_RLD) && !(defined(KLD) && defined(__STATIC__))
+ #include <mach-o/rld.h>
+-#include <streams/streams.h>
++/*#include <streams/streams.h>*/
+ #endif /* defined(RLD) && !defined(SA_RLD) &&
+ 	  !(defined(KLD) && defined(__STATIC__)) */
+ 

@@ -1,0 +1,10 @@
+--- misc/pagestuff.c.orig	2012-01-29 23:22:56.000000000 +0000
++++ misc/pagestuff.c	2012-01-29 23:23:13.000000000 +0000
+@@ -24,6 +24,7 @@
+ #import <stdio.h>
+ #import <stdlib.h>
+ #import <string.h>
++#include <mach/mach_init.h>
+ #import "stuff/ofile.h"
+ #import "stuff/errors.h"
+ #import "stuff/allocate.h"

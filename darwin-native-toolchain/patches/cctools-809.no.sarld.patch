@@ -1,0 +1,13 @@
+--- ld/Makefile.orig	2012-01-30 23:39:10.000000000 +0000
++++ ld/Makefile	2012-01-30 23:40:02.000000000 +0000
+@@ -102,7 +102,9 @@
+ teflon_lib_ofiles nextstep_lib_ofiles: lib_ofiles
+ 
+ 
+-lib_ofiles: $(OFILE_DIRS) $(SYMROOT) sarld_build \
++#lib_ofiles: $(OFILE_DIRS) $(SYMROOT) sarld_build \
++#	    $(RC_OS) dynamic_ofiles profile_ofiles
++lib_ofiles: $(OFILE_DIRS) $(SYMROOT) \
+ 	    $(RC_OS) dynamic_ofiles profile_ofiles
+ 
+ macos:

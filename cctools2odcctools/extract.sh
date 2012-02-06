@@ -77,6 +77,10 @@ PATCHFILESDIR=${TOPSRCDIR}/patches-${CCTOOLSVERS}
 
 #PATCHFILES=`cd "${PATCHFILESDIR}" && find * -type f \! -path \*/.svn\* | sort`
 
+if [[ ! "$(uname -s)" = "Darwin" ]] ; then
+    LD64_CREATE_READER_TYPENAME_DIFF=ld64/ld_createReader_typename.diff
+fi
+
 if [[ ! ${USE_OSX_MACHINE_H} ]] ; then
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
@@ -87,8 +91,9 @@ ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
 ld64/Options-config_h.diff ld64/Options-ctype.diff \
 ld64/Options-defcross.diff ld64/Options_h_includes.diff \
 ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
-ld64/Thread64_MachOWriterExecutable.diff ld64/ld_createReader_typename.diff \
-ld64/ld_BaseAtom_def_fix.diff \
+ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
+ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
+ld64/cstdio.diff \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
@@ -96,8 +101,8 @@ misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
 misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
-ld64/LTOReader-setasmpath.diff include/mach/machine_armv7.diff \
-ld/ld-nomach.diff libstuff/cmd_with_prefix.diff ld64/cstdio.diff \
+include/mach/machine_armv7.diff \
+ld/ld-nomach.diff libstuff/cmd_with_prefix.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
 
 else
@@ -110,8 +115,9 @@ ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
 ld64/Options-config_h.diff ld64/Options-ctype.diff \
 ld64/Options-defcross.diff ld64/Options_h_includes.diff \
 ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
-ld64/Thread64_MachOWriterExecutable.diff ld64/ld_createReader_typename.diff \
-ld64/ld_BaseAtom_def_fix.diff \
+ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
+ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
+ld64/cstdio.diff \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
@@ -119,8 +125,8 @@ misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
 misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
-ld64/LTOReader-setasmpath.diff include/mach/machine_armv7.diff \
-ld/ld-nomach.diff libstuff/cmd_with_prefix.diff ld64/cstdio.diff \
+ include/mach/machine_armv7.diff \
+ld/ld-nomach.diff libstuff/cmd_with_prefix.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
 
 fi
@@ -155,7 +161,7 @@ find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
 rm -rf ${DISTDIR}/{cbtlibs,dyld,file,gprof,libdyld,mkshlib,profileServer}
 
-if [ "$(uname -s)" = "Darwin" ] ; then
+if [[ "$(uname -s)" = "Darwin" ]] ; then
     SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
 else
     SDKROOT=${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk

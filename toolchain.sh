@@ -29,6 +29,7 @@
 
 # Another reference, this time cctools version 809 from gentoo:
 # http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/sys-devel/binutils-apple/binutils-apple-4.2.ebuild?revision=1.2
+# https://github.com/rotten-apples/cctools
 
 # What version of the toolchain are we building?
 TOOLCHAIN_VERSION="4.3"

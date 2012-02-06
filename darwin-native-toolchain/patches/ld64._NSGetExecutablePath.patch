@@ -1,0 +1,44 @@
+--- src/ld/Options.cpp.orig	2012-02-01 01:16:38.000000000 +0000
++++ src/ld/Options.cpp	2012-02-01 01:17:04.000000000 +0000
+@@ -4124,7 +4124,7 @@
+ 	}
+ 	char rawPath[PATH_MAX];
+ 	char path[PATH_MAX];
+-	uint32_t bufSize = PATH_MAX;
++	unsigned long bufSize = PATH_MAX;
+ 	if ( _NSGetExecutablePath(rawPath, &bufSize) != -1 ) {
+ 		if ( realpath(rawPath, path) != NULL ) {
+ 			char* lastSlash = strrchr(path, '/');
+--- src/ld/InputFiles.cpp.orig	2012-02-02 21:13:11.000000000 +0000
++++ src/ld/InputFiles.cpp	2012-02-02 21:15:51.000000000 +0000
+@@ -301,7 +301,7 @@
+ 			char ldPath[PATH_MAX];
+ 			char tmpPath[PATH_MAX];
+ 			char libLTOPath[PATH_MAX];
+-			uint32_t bufSize = PATH_MAX;
++			unsigned long bufSize = PATH_MAX;
+ 			if ( _NSGetExecutablePath(ldPath, &bufSize) != -1 ) {
+ 				if ( realpath(ldPath, tmpPath) != NULL ) {
+ 					char* lastSlash = strrchr(tmpPath, '/');
+--- src/ld/lto_file.hpp.orig	2012-02-02 21:17:33.000000000 +0000
++++ src/ld/lto_file.hpp	2012-02-02 21:17:49.000000000 +0000
+@@ -525,7 +525,7 @@
+ #if LTO_API_VERSION >= 3
+ 	// find assembler next to linker
+ 	char path[PATH_MAX];
+-	uint32_t bufSize = PATH_MAX;
++	unsigned long bufSize = PATH_MAX;
+ 	if ( _NSGetExecutablePath(path, &bufSize) != -1 ) {
+ 		char* lastSlash = strrchr(path, '/');
+ 		if ( lastSlash != NULL ) {
+--- src/ld/parsers/lto_file.cpp.orig	2012-02-02 21:18:59.000000000 +0000
++++ src/ld/parsers/lto_file.cpp	2012-02-02 21:19:13.000000000 +0000
+@@ -627,7 +627,7 @@
+ #if LTO_API_VERSION >= 3
+ 	// find assembler next to linker
+ 	char path[PATH_MAX];
+-	uint32_t bufSize = PATH_MAX;
++	unsigned long bufSize = PATH_MAX;
+ 	if ( _NSGetExecutablePath(path, &bufSize) != -1 ) {
+ 		char* lastSlash = strrchr(path, '/');
+ 		if ( lastSlash != NULL ) {

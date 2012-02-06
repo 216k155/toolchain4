@@ -1,0 +1,56 @@
+--- ld64.xcodeproj/project.pbxproj.orig	2012-02-04 16:48:39.000000000 +0000
++++ ld64.xcodeproj/project.pbxproj	2012-02-04 16:50:24.000000000 +0000
+@@ -548,6 +548,8 @@
+ 				F971EED106D5ACF60041D381 /* Frameworks */,
+ 			);
+ 			buildRules = (
++				F9E8D4BE07FCAF2A00FD5801 /* PBXBuildRule */,
++				F9E8D4BD07FCAF2000FD5801 /* PBXBuildRule */,
+ 			);
+ 			dependencies = (
+ 			);
+@@ -564,6 +566,8 @@
+ 				F9A3DE140ED76D7700C590B9 /* CopyFiles */,
+ 			);
+ 			buildRules = (
++				F9E8D4BE07FCAF2A00FD5801 /* PBXBuildRule */,
++				F9E8D4BD07FCAF2000FD5801 /* PBXBuildRule */,
+ 			);
+ 			dependencies = (
+ 			);
+@@ -581,6 +585,8 @@
+ 				F9B813870EC2659600F94C13 /* install man page */,
+ 			);
+ 			buildRules = (
++				F9E8D4BE07FCAF2A00FD5801 /* PBXBuildRule */,
++				F9E8D4BD07FCAF2000FD5801 /* PBXBuildRule */,
+ 			);
+ 			dependencies = (
+ 			);
+@@ -598,6 +604,8 @@
+ 				F9C12EA50ED63E05005BC69D /* install man page */,
+ 			);
+ 			buildRules = (
++				F9E8D4BE07FCAF2A00FD5801 /* PBXBuildRule */,
++				F9E8D4BD07FCAF2000FD5801 /* PBXBuildRule */,
+ 			);
+ 			dependencies = (
+ 			);
+@@ -614,6 +622,8 @@
+ 				F9EA72C9097454A6008B4F1D /* Frameworks */,
+ 			);
+ 			buildRules = (
++				F9E8D4BE07FCAF2A00FD5801 /* PBXBuildRule */,
++				F9E8D4BD07FCAF2000FD5801 /* PBXBuildRule */,
+ 			);
+ 			dependencies = (
+ 			);
+@@ -631,6 +641,8 @@
+ 				F9B1A25E0A3A44CB00DA8FAB /* install man page */,
+ 			);
+ 			buildRules = (
++				F9E8D4BE07FCAF2A00FD5801 /* PBXBuildRule */,
++				F9E8D4BD07FCAF2000FD5801 /* PBXBuildRule */,
+ 			);
+ 			dependencies = (
+ 			);

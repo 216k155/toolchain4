@@ -1,0 +1,98 @@
+--- ld64.xcodeproj/project.pbxproj.orig	2012-01-27 23:32:24.000000000 +0000
++++ ld64.xcodeproj/project.pbxproj	2012-01-27 23:32:30.000000000 +0000
+@@ -913,6 +913,7 @@
+ 				MACOSX_DEPLOYMENT_TARGET = "";
+ 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CPLUSPLUSFLAGS)";
+ 				OTHER_LDFLAGS = "-Wl,-lazy_library,/Developer/usr/lib/libLTO.dylib";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = ld;
+ 				SECTORDER_FLAGS = "";
+@@ -972,6 +973,7 @@
+ 					"-Wl,-lazy_library,/Developer/usr/lib/libLTO.dylib",
+ 					"-Wl,-exported_symbol,__mh_execute_header",
+ 				);
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = ld;
+ 				SECTORDER_FLAGS = "";
+@@ -1008,6 +1010,7 @@
+ 				);
+ 				INSTALL_PATH = "$(HOME)/bin";
+ 				OTHER_LDFLAGS = "-Wl,-lazy_library,/Developer/usr/lib/libLTO.dylib";
++				OTHER_CFLAGS = "-save-temps";
+ 				OTHER_REZFLAGS = "";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = ObjectDump;
+@@ -1035,6 +1038,7 @@
+ 				);
+ 				INSTALL_PATH = "$(HOME)/bin";
+ 				OTHER_LDFLAGS = "-Wl,-lazy_library,/Developer/usr/lib/libLTO.dylib";
++				OTHER_CFLAGS = "-save-temps";
+ 				OTHER_REZFLAGS = "";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = ObjectDump;
+@@ -1149,6 +1153,7 @@
+ 					"-Wl,-lazy_library,/Developer/usr/lib/libLTO.dylib",
+ 					"-Wl,-exported_symbol,__mh_execute_header",
+ 				);
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = ld;
+ 				SECTORDER_FLAGS = "";
+@@ -1171,6 +1176,7 @@
+ 				HEADER_SEARCH_PATHS = "";
+ 				INSTALL_PATH = /usr/bin;
+ 				OTHER_LDFLAGS = "-Wl,-exported_symbol,__mh_execute_header";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = rebase;
+ 				STRIP_INSTALLED_PRODUCT = YES;
+@@ -1191,6 +1197,7 @@
+ 				HEADER_SEARCH_PATHS = "";
+ 				INSTALL_PATH = /usr/bin;
+ 				OTHER_LDFLAGS = "-Wl,-exported_symbol,__mh_execute_header";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = unwinddump;
+ 				STRIP_INSTALLED_PRODUCT = YES;
+@@ -1214,6 +1221,7 @@
+ 				);
+ 				INSTALL_PATH = "$(HOME)/bin";
+ 				OTHER_LDFLAGS = "-Wl,-lazy_library,/Developer/usr/lib/libLTO.dylib";
++				OTHER_CFLAGS = "-save-temps";
+ 				OTHER_REZFLAGS = "";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = ObjectDump;
+@@ -1249,6 +1257,7 @@
+ 				GCC_MODEL_TUNING = G5;
+ 				INSTALL_PATH = /usr/bin;
+ 				OTHER_LDFLAGS = "-Wl,-exported_symbol,__mh_execute_header";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = dyldinfo;
+ 				STRIP_INSTALLED_PRODUCT = YES;
+@@ -1362,6 +1371,7 @@
+ 				HEADER_SEARCH_PATHS = "";
+ 				INSTALL_PATH = /usr/bin;
+ 				OTHER_LDFLAGS = "-Wl,-exported_symbol,__mh_execute_header";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = unwinddump;
+ 				STRIP_INSTALLED_PRODUCT = YES;
+@@ -1405,6 +1415,7 @@
+ 				GCC_MODEL_TUNING = G5;
+ 				INSTALL_PATH = /usr/bin;
+ 				OTHER_LDFLAGS = "-Wl,-exported_symbol,__mh_execute_header";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = dyldinfo;
+ 				STRIP_INSTALLED_PRODUCT = YES;
+@@ -1467,6 +1478,7 @@
+ 				HEADER_SEARCH_PATHS = "";
+ 				INSTALL_PATH = /usr/bin;
+ 				OTHER_LDFLAGS = "-Wl,-exported_symbol,__mh_execute_header";
++				OTHER_CFLAGS = "-save-temps";
+ 				PREBINDING = NO;
+ 				PRODUCT_NAME = rebase;
+ 				STRIP_INSTALLED_PRODUCT = YES;

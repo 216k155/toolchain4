@@ -1,0 +1,156 @@
+--- ld/ld.c.orig	2012-01-29 19:20:46.000000000 +0000
++++ ld/ld.c	2012-01-29 19:38:58.000000000 +0000
+@@ -48,6 +48,7 @@
+ #include <signal.h>
+ #include <errno.h>
+ #include <libc.h>
++#include <sys/mman.h>
+ #include <ar.h>
+ #include <mach/mach.h>
+ #include <mach/mach_error.h>
+@@ -485,7 +486,6 @@
+     struct section_spec *sect_spec;
+     unsigned long align, tmp;
+     struct stat stat_buf;
+-    kern_return_t r;
+     const struct arch_flag *family_arch_flag;
+     enum undefined_check_level new_undefined_flag;
+     enum multiply_defined_check_level new_multiply_defined_flag,
+@@ -1015,11 +1015,16 @@
+			 * so it has to be handled specially.
+			 */
+			if(stat_buf.st_size != 0){
+-			    if((r = map_fd((int)fd, (vm_offset_t)0,
++/*			    if((r = map_fd((int)fd, (vm_offset_t)0,
+				(vm_offset_t *)&(sect_spec->file_addr),
+				(boolean_t)TRUE, (vm_size_t)stat_buf.st_size)
+-				) != KERN_SUCCESS)
+-				mach_fatal(r, "can't map file: %s for %s %s %s",
++				) != KERN_SUCCESS) */
++			    if((sect_spec->file_addr =
++				     mmap(NULL,(vm_size_t)stat_buf.st_size,
++				     PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_FILE,
++				     fd, (vm_offset_t)0
++				     )) == MAP_FAILED)
++				mach_fatal(1, "can't map file: %s for %s %s %s",
+				    argv[i+3], argv[i], argv[i+1], argv[i+2]);
+			}
+			else{
+@@ -1100,11 +1105,16 @@
+			 * so it has to be handled specially.
+			 */
+			if(stat_buf.st_size != 0){
+-			    if((r = map_fd((int)fd, (vm_offset_t)0,
++/*			    if((r = map_fd((int)fd, (vm_offset_t)0,
+				(vm_offset_t *)&(sect_spec->order_addr),
+				(boolean_t)TRUE, (vm_size_t)stat_buf.st_size)
+-				) != KERN_SUCCESS)
+-				mach_fatal(r, "can't map file: %s for %s %s %s",
++				) != KERN_SUCCESS) */
++			    if((sect_spec->order_addr =
++				 mmap(NULL,(vm_size_t)stat_buf.st_size,
++				      PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_FILE,
++				      fd, (vm_offset_t)0
++				)) == MAP_FAILED)
++				mach_fatal(1, "can't map file: %s for %s %s %s",
+				    argv[i+3], argv[i], argv[i+1], argv[i+2]);
+			}
+			else{
+@@ -2785,10 +2795,15 @@
+			 * so it has to be handled specially.
+			 */
+			if(stat_buf.st_size != 0){
+-			    if((r = map_fd((int)fd, (vm_offset_t)0,
++/*			    if((r = map_fd((int)fd, (vm_offset_t)0,
+				(vm_offset_t *)&(addr), (boolean_t)TRUE,
+-				(vm_size_t)stat_buf.st_size)) != KERN_SUCCESS)
+-				mach_fatal(r, "can't map file list file: %s",
++				(vm_size_t)stat_buf.st_size)) != KERN_SUCCESS) */
++			    if((addr =
++				     mmap(NULL,(vm_size_t)stat_buf.st_size,
++				     PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_FILE,
++				     fd, (vm_offset_t)0
++				     )) == MAP_FAILED)
++				mach_fatal(1, "can't map file list file: %s",
+				    filelist);
+			}
+			else{
+@@ -3171,10 +3186,15 @@
+	 * so it has to be handled specially.
+	 */
+	if(stat_buf.st_size != 0){
+-	    if((r = map_fd((int)fd, (vm_offset_t)0,
++/*	    if((r = map_fd((int)fd, (vm_offset_t)0,
+		(vm_offset_t *)&file_addr, (boolean_t)TRUE,
+-		(vm_size_t)stat_buf.st_size)) != KERN_SUCCESS)
+-		mach_fatal(r, "can't map file: %s for LD_UNPREBOUND_LIBRARIES "
++		(vm_size_t)stat_buf.st_size)) != KERN_SUCCESS) */
++	    if((file_addr =
++		     mmap(NULL,(vm_size_t)stat_buf.st_size,
++		     PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_FILE,
++		     fd, (vm_offset_t)0
++		     )) == MAP_FAILED)
++		mach_fatal(1, "can't map file: %s for LD_UNPREBOUND_LIBRARIES "
+			   "environment variable", file_name);
+	}
+	else
+--- ld/pass1.c.orig	2012-01-29 20:19:18.000000000 +0000
++++ ld/pass1.c	2012-01-29 20:28:34.000000000 +0000
+@@ -46,6 +46,7 @@
+ #include <stdio.h>
+ #include <mach/mach.h>
+ #include <errno.h>
++#include <sys/mman.h>
+ #include <limits.h>
+ #include <ctype.h>
+ #else /* defined(KLD) && defined(__STATIC__) */
+@@ -345,7 +346,7 @@
+ #ifndef RLD
+     char *p, *type;
+ #endif /* !defined(RLD) */
+-    kern_return_t r;
++/*    kern_return_t r; */
+     unsigned long file_size;
+     char *file_addr;
+     struct fat_header *fat_header;
+@@ -455,10 +456,12 @@
+	    close(fd);
+	    return;
+	}
+-	if((r = map_fd((int)fd, (vm_offset_t)0, (vm_offset_t *)&file_addr,
+-	    (boolean_t)TRUE, (vm_size_t)file_size)) != KERN_SUCCESS){
++/*	if((r = map_fd((int)fd, (vm_offset_t)0, (vm_offset_t *)&file_addr,
++	    (boolean_t)TRUE, (vm_size_t)file_size)) != KERN_SUCCESS){*/
++	if((file_addr = mmap(NULL,(vm_size_t)file_size, PROT_READ|PROT_WRITE,
++	    MAP_PRIVATE|MAP_FILE, fd, (vm_offset_t)0)) == MAP_FAILED){
+	    close(fd);
+-	    mach_fatal(r, "can't map file: %s", file_name);
++	    mach_fatal(1, "can't map file: %s", file_name);
+	}
+ #ifdef RLD_VM_ALLOC_DEBUG
+	print("rld() map_fd: addr = 0x%0x size = 0x%x\n",
+@@ -3606,7 +3609,7 @@
+     char *colon, *file_name, *dylib_name, *file_addr;
+     int fd;
+     struct stat stat_buf;
+-    kern_return_t r;
++/*    kern_return_t r;*/
+     struct fat_header *fat_header;
+     struct mach_header *mh;
+     struct load_command *lc;
+@@ -3700,10 +3703,12 @@
+	    close(fd);
+	    return(FALSE);
+	}
+-	if((r = map_fd((int)fd, (vm_offset_t)0, (vm_offset_t *)&file_addr,
+-	    (boolean_t)TRUE, (vm_size_t)file_size)) != KERN_SUCCESS){
++/*	if((r = map_fd((int)fd, (vm_offset_t)0, (vm_offset_t *)&file_addr,
++	    (boolean_t)TRUE, (vm_size_t)file_size)) != KERN_SUCCESS){*/
++	if((file_addr = mmap(NULL,(vm_size_t)file_size, PROT_READ|PROT_WRITE,
++	    MAP_PRIVATE|MAP_FILE, fd, (vm_offset_t)0)) == MAP_FAILED){
+	    close(fd);
+-	    mach_fatal(r, "can't map dynamic library file: %s", file_name);
++	    mach_fatal(1, "can't map dynamic library file: %s", file_name);
+	}
+	close(fd);
+

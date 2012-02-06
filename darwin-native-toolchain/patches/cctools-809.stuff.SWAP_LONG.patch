@@ -1,0 +1,11 @@
+--- include/stuff/bytesex.h.orig	2012-01-29 16:49:41.000000000 +0000
++++ include/stuff/bytesex.h	2012-01-29 16:50:27.000000000 +0000
+@@ -69,7 +69,7 @@
+ 		      (((a) >> 8) & 0x0000ff00) | \
+ 	 ((unsigned int)(a) >> 24) )
+ 
+-#ifndef __LP64__
++#ifndef SWAP_LONG
+ #define SWAP_LONG(a) ( ((a) << 24) | \
+ 		      (((a) << 8) & 0x00ff0000) | \
+ 		      (((a) >> 8) & 0x0000ff00) | \
