@@ -1,0 +1,11 @@
+--- misc/Makefile.orig	2012-02-07 12:09:18.000000000 +0000
++++ misc/Makefile	2012-02-07 12:09:38.000000000 +0000
+@@ -28,7 +28,7 @@
+ ifeq "" "$(TRIE)"
+   LIB_PRUNETRIE =
+   else
+-  LIB_PRUNETRIE = /usr/local/lib/libprunetrie.a
++  LIB_PRUNETRIE = -lprunetrie
+ endif
+ 
+ ifneq "" "$(wildcard /bin/mkdirs)"

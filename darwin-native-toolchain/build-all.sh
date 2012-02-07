@@ -91,7 +91,7 @@ if [[ ! -f ${DYLD_STUBNAME}.tar.gz ]] ; then
 	curl -S -L -O http://www.opensource.apple.com/tarballs/dyld/${DYLD_STUBNAME}.tar.gz
 fi
 if [[ ! -f streams.h ]] ; then
-	curl -S -L -O http://opensource.apple.com/source/Libstreams/Libstreams-25/streams.h?txt -O streams.h
+	curl -S -L -o streams.h -O http://opensource.apple.com/source/Libstreams/Libstreams-25/streams.h?txt
 fi
 popd
 
@@ -141,7 +141,7 @@ mkdir -p ${BUILD_PREFIX}/include/streams
 mkdir -p ${BUILD_PREFIX}/include/mach
 
 cp -rf ${GCC_DIR_BUILD}/llvmCore/include/llvm-c ${BUILD_PREFIX}/include/
-cp tarballs/streams.h ${BUILD_PREFIX}/include/streams/
+cp ${TARBALLS}/streams.h ${BUILD_PREFIX}/include/streams/
 cp /usr/include/mach/mach.h ${BUILD_PREFIX}/include/mach/
 cp /usr/include/mach/mach_init.h ${BUILD_PREFIX}/include/mach/
 cp /usr/include/mach/mach_traps.h ${BUILD_PREFIX}/include/mach/
@@ -217,11 +217,12 @@ pushd ${CCTOOLS_DIR_BUILD}
 	patch -p0 < ../../patches/cctools-809.pagestuff.vm_page_size.patch || exit 1
 	patch -p0 < ../../patches/cctools-809.no.kld.patch || exit 1
 	patch -p0 < ../../patches/cctools-809.no.sarld.patch || exit 1
+	patch -p0 < ../../patches/cctools.misc.Makefile.lprunetrie.patch || exit 1
 
 	if [[ $SAVETEMPS == 1 ]] ; then
-		make RC_CFLAGS="-save-temps -I${BUILD_PREFIX}/include -L${BUILD_PREFIX}/lib" # -DARCH64"
+		make RC_CFLAGS="-arch i386 -save-temps -I${BUILD_PREFIX}/include -L${BUILD_PREFIX}/lib" # -DARCH64"
 	else
-		make RC_CFLAGS="-I${BUILD_PREFIX}/include -L${BUILD_PREFIX}/lib" # -DARCH64"
+		make RC_CFLAGS="-arch i386 -I${BUILD_PREFIX}/include -L${BUILD_PREFIX}/lib" # -DARCH64"
 	fi
 popd
 
