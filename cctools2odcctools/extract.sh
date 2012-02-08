@@ -61,6 +61,7 @@ done
 CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
 DISTDIR=odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}
 
+USE_OSX_MACHINE_H=0
 if [[ -z $FOREIGNHEADERS ]] ; then
     USE_OSX_MACHINE_H=1
 fi
@@ -81,7 +82,7 @@ if [[ ! "$(uname -s)" = "Darwin" ]] ; then
     LD64_CREATE_READER_TYPENAME_DIFF=ld64/ld_createReader_typename.diff
 fi
 
-if [[ ! ${USE_OSX_MACHINE_H} ]] ; then
+if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
@@ -182,31 +183,32 @@ fi
 cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
 
 if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
-
     message_status "Merging content from $SDKROOT"
     if [ ! -d "$SDKROOT" ]; then
 	error "$SDKROOT must be present"
 	exit 1
     fi
 
-    mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new;
+    mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new
     for i in mach architecture i386 libkern sys; do
 	tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
     done
 
-    if [[ ! ${USE_OSX_MACHINE_H} ]] ; then
-	mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h;
+    if [[ "$USE_OSX_MACHINE_H" = "1" ]] ; then
+	mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
     fi
 
 #    rm ${DISTDIR}/include/sys/cdefs.h
 #    rm ${DISTDIR}/include/sys/types.h
 #    rm ${DISTDIR}/include/sys/select.h
 
-	# Not sure about this bit either...
-    for f in ${DISTDIR}/include/libkern/OSByteOrder.h; do
-	sed -e 's/__GNUC__/__GNUC_UNUSED__/g' < $f > $f.tmp
-	mv -f $f.tmp $f
-    done
+# If this is enabled, libkern/machine/OSByteOrder.h is used instead of
+# libkern/i386/OSByteOrder.h and this causes failure on Darwin, it may
+# be needed on other OSes though?
+#    for f in ${DISTDIR}/include/libkern/OSByteOrder.h; do
+#	sed -e 's/__GNUC__/__GNUC_UNUSED__/g' < $f > $f.tmp
+#	mv -f $f.tmp $f
+#    done
 fi
 
 # process source for mechanical substitutions

@@ -34,20 +34,24 @@
 # What version of the toolchain are we building?
 TOOLCHAIN_VERSION="4.3"
 #TOOLCHAIN_VERSION="3.1.2"
-MACOSX="MacOSX10.5"
+OSXVER="10.6"
+MACOSX="MacOSX${OSXVER}"
+
+# Uses -m32 to force 32bit build of everything. 64bit is broken atm
+# and my reference darwin-native-compiler is built as 32bit too.
+FORCE_32BIT=1
 
 # what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
-MACOSX="MacOSX10.5"
 
 # Set the defaults.
 if [[ -z $CCTOOLSVER ]] ; then
-	#CCTOOLSVER=809
-	CCTOOLSVER=782
+	CCTOOLSVER=809
+	#CCTOOLSVER=782
 fi
 if [[ -z $FOREIGNHEADERS ]] ; then
-	FOREIGNHEADERS=-foreign-headers
+	FOREIGNHEADERS=
 elif [[ "$FOREIGNHEADERS" = "0" ]] ; then
 	FOREIGNHEADERS=
 else
@@ -551,9 +555,9 @@ toolchain_cctools() {
 		  fi
 		fi
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
-			./extract.sh --updatepatch --vers ${CCTOOLSVER} --foreignheaders
+			./extract.sh --updatepatch --vers ${CCTOOLSVER} --foreignheaders --osxver ${OSXVER}
 		else
-			./extract.sh --updatepatch --vers ${CCTOOLSVER}
+			./extract.sh --updatepatch --vers ${CCTOOLSVER} --osxver ${OSXVER}
 		fi
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
@@ -568,7 +572,7 @@ toolchain_cctools() {
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CFLAGS="-m32 -save-temps" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO \
+		CC="gcc -m32" CFLAGS="-m32 -save-temps" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps" LDFLAGS="-m32 -L$HOST_DIR/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 

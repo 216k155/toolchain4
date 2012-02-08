@@ -60,7 +60,7 @@ elif [[ "$1" == "archive-src" ]] ; then
 	7za a -mx=9 darwin-compilers-src.7z build-all.sh darwin-compilers-gentoo patches
 	exit 0
 elif [[ "$1" == "clean" ]] ; then
-	rm -rf bld-* $GCC_DIR $LD64_DIR $CCTOOLS_DIR $DYLD_DIR $GCC_DIR_BUILD $LD64_DIR_BUILD $CCTOOLS_DIR_BUILD $DYLD_DIR_BUILD *.log
+	sudo rm -rf bld-* $GCC_DIR $LD64_DIR $CCTOOLS_DIR $DYLD_DIR $GCC_DIR_BUILD $LD64_DIR_BUILD $CCTOOLS_DIR_BUILD $DYLD_DIR_BUILD *.log
 	exit 0
 fi
 
