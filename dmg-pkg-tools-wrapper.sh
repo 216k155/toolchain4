@@ -2,6 +2,10 @@
 
 # Wrapper for command-line access to dmg-pkg-tools.sh
 
+# Sample usages:
+# ./dmg-pkg-tools-wrapper.sh --extract ../cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg files/pkgs MacOSX10.5.pkg iPhoneSDK4_3.pkg
+# ./dmg-pkg-tools-wrapper.sh --extract xcode_4.2.1_for_lion.dmg files files/pkgs InstallXcodeLion.pkg
+
 . $(dirname "$0")/dmg-pkg-tools.sh
 
 _OPERATION=$1
@@ -15,6 +19,7 @@ if [[ "$_OPERATION" == "--help" ]] || [[ -z $1 ]] ; then
 fi
 shift
 TMPDIR=$PWD/tmp
+MNTDIR=$PWD/mnt
 INSTDIR=$PWD/install
 mkdir -p $TMPDIR
 build_tools_dmg $TMPDIR $INSTDIR
@@ -38,18 +43,18 @@ if [[ "$_OPERATION" = "--cache" ]] || [[ "$_OPERATION" = "--extract" ]] ; then
 	fi
 	DEST=$1
 	shift
-	if [[ "$_OPERATION" == "--extract" ]] ; then
-		# For --extract, XDEST is where the package's contents get written (e.g. files/sdks)
-		XDEST=$1
-		shift
-	fi
 	DEST=${DEST%/*}
 	if [[ ! -d $DEST ]] ; then
 		message "Created $DEST folder"
 		mkdir -p $DEST
 	fi
+	if [[ "$_OPERATION" == "--extract" ]] ; then
+		# For --extract, XDEST is where the package's contents get written (e.g. files/sdks)
+		XDEST=$1
+		shift
+	fi
 	FILES=("$@")
-	CACHED_PACKAGES=( $(cache_packages $DMGFILE $DEST $KEEP_MOUNTED $KEY "${FILES[@]}") )
+	CACHED_PACKAGES=( $(cache_packages $DMGFILE $DEST $KEEP_MOUNTED $KEY $TMPDIR $MNTDIR "${FILES[@]}") )
 	echo "Cached packages ${CACHED_PACKAGES[@]}"
 	if [[ "$_OPERATION" == "--extract" ]] ; then
 		extract_packages_cached $XDEST ${CACHED_PACKAGES[@]}

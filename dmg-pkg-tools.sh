@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# Another reference, this time cctools version 809 from gentoo:
-# http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/sys-devel/binutils-apple/binutils-apple-4.2.ebuild?revision=1.2
+# It seems that 7z can handle both dmg and pkg files so, for Windows (at least)
+# we should use this (although I've made all of the tools compile on Windows,
+# we can't mount img files so this script can't be used on that platform)
 
 # Keeps a cache of the mounted DMG file in $(dirname $0)/.dmgtools.mounted
 # Keeps a cache of the loop device in $(dirname $0)/.dmgtools.loopdev
 #  to avoid re-mount un-necessarily.
 # Keeps a cache of copied-from-dmg files to avoid mounting un-necessarily.
-
-# Sample usages:
-# ./dmg-pkg-tools.sh --extract ../cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg files/pkgs MacOSX10.5.pkg iPhoneSDK4_3.pkg
 
 . ./bash-tools.sh
 
@@ -55,10 +53,8 @@ patch_mingw_types_h() {
 }
 
 downloadUntar() {
+	download "$1"
 	local _FNAME=$(basename $1)
-	if [[ ! -f $_FNAME ]] ; then
-		wget -c $1
-	fi
 	tar -zxf $_FNAME
 }
 
@@ -381,7 +377,7 @@ umount_dmg() {
 	if [[ -f $_MNT_LOOPDEV ]] ; then
 		local _MNT_DIR=( $(cat $_MNT_DIRCACHE) )
 
-		if [[ $UNAME == "Darwin" ]] ; then
+		if [[ "$(uname-bt)" == "Darwin" ]] ; then
 			$SUDO hdiutil detach $_MNT_DIR
 		else
 			# shouldn't we have a DEBUG var and only
@@ -440,7 +436,7 @@ mount_dmg() {
 		fi
 	fi
 	[[ -d $_MNT_DIR ]] || mkdir -p $_MNT_DIR
-	if [[ "$UNAME" == "Darwin" ]] ; then
+	if [[ "$(uname-bt)" == "Darwin" ]] ; then
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
 		sudo hdiutil attach -noverify -mountpoint $_MNT_DIR $_DMG
@@ -487,6 +483,10 @@ cache_packages() {
 	shift
 	local _KEY=$1
 	shift
+	local _TMPDIR=$1
+	shift
+	local _MNTDIR=$1
+	shift
 	local _PKGS=("$@")
 	shift
 
@@ -504,23 +504,21 @@ cache_packages() {
 	mkdir -p $_DST
 
 	if [[ ${_ALL_PKGS_FOUND} = 0 ]] ; then
-		mount_dmg $TMP_DIR $_DMG $MNT_DIR $_KEY
+		mount_dmg $_TMPDIR $_DMG $_MNTDIR $_KEY
 		_MOUNTED=1
 		for i in "${_PKGS[@]}"
 		do
 			local _EXT="${i##*.}"
 			local _CACHE_FILE=${_DST}/$(basename ${_DMG} ".dmg")##$(basename "${i}" ${_EXT})${_EXT}
-			if [[ ! -f ${_CACHE_FILE} ]] && [[ -f ${MNT_DIR}/$i ]] ; then
-				cp "${MNT_DIR}/$i" "${_CACHE_FILE}"
+			if [[ ! -f ${_CACHE_FILE} ]] && [[ -f ${_MNTDIR}/$i ]] ; then
+				cp "${_MNTDIR}/$i" "${_CACHE_FILE}"
 				echo "${_CACHE_FILE}"
 			fi
-#				if [[ ! -r ${MNT_DIR}/$i ]] ; then
-#					error "I tried to cache ${MNT_DIR}/$i but I couldn't find it!"
-#					echo $(ls ${MNT_DIR}/Packages)
-#					exit 1
-#				fi
-#			else
-#			fi
+			if [[ ! -r ${_MNTDIR}/$i ]] ; then
+				error "I tried to cache ${_MNTDIR}/$i but I couldn't find it!"
+				echo $(ls ${_MNTDIR}/Packages)
+				exit 1
+			fi
 		done
 	else
 		for i in "${_PKGS[@]}"
@@ -553,13 +551,15 @@ extract_packages_cached() {
 			cat Payload | zcat | cpio -id
 			rm Payload
 			popd
-#		else
-#			error "Failed to extract $_CACHE_FILE"
+		else
+			error "Failed to extract $_CACHE_FILE"
 		fi
 	done
 }
 
 extract_packages() {
+	echo "wtf"
+	echo "wtf"
 	message_status "in extract_packages"
 	local _OUTDIR=$1; shift
 	local _PKGSDIR=$1; shift

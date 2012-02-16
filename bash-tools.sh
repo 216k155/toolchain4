@@ -47,6 +47,28 @@ uname-bt() {
 	echo $_UNAME
 }
 
+download() {
+	local _LFNAME=$2
+	if [[ -z $_LFNAME ]] ; then
+		_LFNAME=$(basename $1)
+	fi
+	if [[ ! -f $_LFNAME ]] ; then
+		if [[ "$(uname-bt)" == "Darwin" ]] ; then
+			curl -S -L -O $1 -o $_LFNAME
+		else
+			wget -c $1 -O $2
+		fi
+	fi
+}
+
+downloadStdout() {
+	if [[ "$(uname-bt)" == "Darwin" ]] ; then
+		curl -S -L $1
+	else
+		wget -c $1 -O -
+	fi
+}
+
 # Beautified echo commands
 cecho() {
 	if [[ "$(uname-bt)" == "Windows" ]] ; then

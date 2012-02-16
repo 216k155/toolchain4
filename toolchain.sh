@@ -33,12 +33,11 @@
 
 # What version of the toolchain are we building?
 TOOLCHAIN_VERSION="4.3"
-#TOOLCHAIN_VERSION="3.1.2"
 OSXVER="10.6"
 MACOSX="MacOSX${OSXVER}"
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm
-# and my reference darwin-native-compiler is built as 32bit too.
+# and the reference darwin-native-compiler is built as 32bit too.
 FORCE_32BIT=1
 
 # what device are we building for?
@@ -72,8 +71,6 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 [ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src"
 [ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
 [ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
-
-
 
 # Usage
 # ======================
@@ -151,16 +148,18 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 #   Runs classdump on a selected iPhone over SSH in order to generate useable
 #   Objective-C headers for (mostly) private frameworks.
 
-# Error reporting, coloured printing.
+# Error reporting, coloured printing, downloading.
 . bash-tools.sh
+
 # function for building tools (xar, dmg2img, cpio, nano and all the libs they depend on)
 . dmg-pkg-tools.sh
 
 UNAME=$(uname-bt)
 if [[ "$UNAME" == "Windows" ]] ; then
 	EXEEXT=".exe"
-	LN=lns.exe
+	LN=lns.exe # Nokia's tool, patched and built by dmg-pkg-tools.sh.
 fi
+
 FILES_DIR="${IPHONEDEV_DIR}/files"
 SDKS_DIR="${IPHONEDEV_DIR}/sdks"
 TMP_DIR="${IPHONEDEV_DIR}/tmp"
@@ -168,14 +167,11 @@ MNT_DIR="${FILES_DIR}/mnt"
 FW_DIR="${FILES_DIR}/firmware"
 HOST_DIR="${IPHONEDEV_DIR}/host-install"
 
-#IPHONE_SDK="iphone_sdk_*.dmg"
-#IPHONE_SDK="*sdk_${TOOLCHAIN_VERSION}_final.dmg"
-#IPHONE_SDK="/usr/src/cross-mac/xcode_3.2.6_and_ios_sdk_4.3.dmg"
-#IPHONE_SDK="/usr/src/cross-mac/iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg"
-#[[ ! -f $IPHONE_SDK_DMG ]] && IPHONE_SDK_DMG="${FILES_DIR}/${IPHONE_SDK}"
-#echo IPHONE_SDK $IPHONE_SDK IPHONE_SDK $IPHONE_SDK
-IPHONE_SDK_DMG="$PWD/../xcode_3.2.6_and_ios_sdk_4.3.dmg"
-#IPHONE_SDK_DMG="$PWD/../iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg"
+IPHONE_SDK_DMG="$PWD/../dmgs/xcode_3.2.6_and_ios_sdk_4.3.dmg"
+#IPHONE_SDK_DMG="$PWD/../dmgs/iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg"
+# The layout of xcode_4.2.1_for_lion.dmg is significantly different from earlier dmgs
+# so this doesn't currently work.
+#IPHONE_SDK_DMG="$PWD/../dmgs/xcode_4.2.1_for_lion.dmg"
 
 # URLS
 IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
@@ -183,14 +179,16 @@ DARWIN_SOURCES_DIR="$FILES_DIR/darwin_sources"
 
 SUDO=sudo
 GAWK=gawk
+URLDL=wget
 if [[ "$(uname-bt)" == "Windows" ]] ; then
 	SUDO=
 fi
 if [[ "$(uname-bt)" == "Darwin" ]] ; then
 	GAWK=awk
+	URLDL=curl
 fi
 
-NEEDED_COMMANDS="gcc make mount $SUDO zcat tar wget unzip $GAWK bison flex patch"
+NEEDED_COMMANDS="gcc make mount $SUDO zcat tar $URLDL unzip $GAWK bison flex patch"
 
 HERE=`pwd`
 
@@ -222,19 +220,18 @@ ln_s() {
 	fi
 }
 
-# Builds dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
+# Builds lns (Windows), dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools() {
 
 	build_tools_dmg $PWD/tmp $HOST_DIR $PREFIX
-
+# Urgh, no thanks - will find a better way to do this.
 #	if [[ `strings /usr/bin/as | grep as_driver | wc -w` < 1 ]]; then
 #		cp /usr/bin/as /usr/bin/i386-redhat-linux-as
 #		message_status "Rename /usr/bin/as in /usr/bin/i386-redhat-linux-as"
 #		cp as_driver/as_driver /usr/bin/as
 #	fi
 #	message_status "as_driver installed in /usr/bin/as"
-
 }
 
 toolchain_extract_headers() {
@@ -286,8 +283,8 @@ toolchain_extract_headers() {
 
 	PLIST="${MPKG_NAME}.mpkg/Contents/version.plist"
 	message_status "cache_packages for $PLIST"
-	CACHED_PLIST=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "$PLIST") )
-	message_status "cache_packages done for $PLIST"
+	CACHED_PLIST=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 $TMP_DIR $MNT_DIR "$PLIST") )
+	message_status "cache_packages done for $PLIST, result is $CACHED_PLIST"
 	CACHED_PLIST_FILE=${CACHED_PLIST[0]}
 	SDK_VERSION=$(plist_key CFBundleShortVersionString "/" "${CACHED_PLIST_FILE}" | awk '
 		BEGIN { FS="." }
@@ -328,7 +325,7 @@ toolchain_extract_headers() {
 	PACKAGES[${#PACKAGES[*]}]="Packages/MacOSX10.6.pkg"
 
 	message_status "Caching packages ${PACKAGES[@]}"
-	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 "${PACKAGES[@]}") )
+	CACHED_PACKAGES=( $(cache_packages $IPHONE_SDK_DMG $PKG_DIR 0 0 $TMP_DIR $MNT_DIR "${PACKAGES[@]}") )
 
 	message_status "Extracting ${CACHED_PACKAGES[@]}"
 	extract_packages_cached ${TMP_SDKS_DIR} "${CACHED_PACKAGES[@]}"
@@ -375,7 +372,7 @@ toolchain_extract_firmware_old() {
 				else 
 					message_status "Downloading: $FW_FILE"
 					cd $TMP_DIR
-					wget -nc -c $APPLE_DL_URL
+					download $APPLE_DL_URL
 					mv $FW_FILE $FW_DIR
 					FW_FILE=$FW_DIR/$FW_FILE
 				fi
@@ -454,7 +451,7 @@ toolchain_extract_firmware_old() {
 		echo "I'm going to try to fetch it from $IPHONEWIKI_KEY_URL...."
 		echo "Checking $DEVICE and $FIRMWARE_VERSION"
 
-		IPHONEWIKI_KEY_URL=$( wget --quiet -O - $IPHONEWIKI_KEY_URL | awk '
+		IPHONEWIKI_KEY_URL=$( $(downloadStdout $IPHONEWIKI_KEY_URL) | awk '
 		    BEGIN { IGNORECASE = 1; }
 	    	/name="'${DEVICE}'/  { found_phone=1; }
 			/.*'${FIRMWARE_VERSION}'.*/ && found_phone { found_firmware=1; }
@@ -462,7 +459,7 @@ toolchain_extract_firmware_old() {
 		')
 
 		echo "Finding intermediate URL : http://www.theiphonewiki.com$IPHONEWIKI_KEY_URL"
-		DECRYPTION_KEY_SYSTEM=`wget --quiet -O - "http://www.theiphonewiki.com"$IPHONEWIKI_KEY_URL | awk '
+		DECRYPTION_KEY_SYSTEM=`$(downloadStdout http://www.theiphonewiki.com$IPHONEWIKI_KEY_URL) | awk '
  		    BEGIN { IGNORECASE = 1; }
 			/.*VFDecrypt<\/a>.*/  { print $5;}
 		'`
