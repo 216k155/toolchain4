@@ -33,7 +33,7 @@
 
 # What version of the toolchain are we building?
 TOOLCHAIN_VERSION="4.3"
-OSXVER="10.6"
+OSXVER="10.7"
 MACOSX="MacOSX${OSXVER}"
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm

@@ -7,9 +7,10 @@ set -e
 CCTOOLSNAME=cctools
 CCTOOLSVERS=782
 LD64NAME=ld64
-LD64VERS=85.2.1
+#LD64VERS=85.2.1
+LD64VERS=127.2
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
-OSXVER=10.5
+OSXVER=10.7
 
 TOPSRCDIR=`pwd`
 
@@ -82,19 +83,23 @@ if [[ ! "$(uname -s)" = "Darwin" ]] ; then
     LD64_CREATE_READER_TYPENAME_DIFF=ld64/ld_createReader_typename.diff
 fi
 
+if [[ "$LD64VERS" == "85.2.1" ]] ; then
+    LD64PATCHES="ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
+ld64/Options-config_h.diff ld64/Options-ctype.diff \
+ld64/Options-defcross.diff ld64/Options_h_includes.diff \
+ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
+ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
+ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
+ld64/cstdio.diff"
+fi
+
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff as/use_PRI_macros.diff \
 include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
-ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
-ld64/Options-config_h.diff ld64/Options-ctype.diff \
-ld64/Options-defcross.diff ld64/Options_h_includes.diff \
-ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
-ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
-ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
-ld64/cstdio.diff \
+${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
@@ -112,13 +117,7 @@ ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/driver.c.diff as/getc_unlocked.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff \
 include/stuff/bytesex-floatstate.diff \
-ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
-ld64/Options-config_h.diff ld64/Options-ctype.diff \
-ld64/Options-defcross.diff ld64/Options_h_includes.diff \
-ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
-ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
-ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
-ld64/cstdio.diff \
+${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
@@ -145,13 +144,13 @@ fi
 
 rm -rf ${DISTDIR}
 mkdir -p ${DISTDIR}
-[[ ! -f "${CCTOOLSDISTFILE}" ]] && wget -c http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
+[[ ! -f "${CCTOOLSDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
 
 tar ${TARSTRIP}=1 -xf ${CCTOOLSDISTFILE} -C ${DISTDIR} > /dev/null 2>&1
 # Fix dodgy timestamps.
 find ${DISTDIR} | xargs touch
 
-[[ ! -f "${LD64DISTFILE}" ]] && wget -c http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
+[[ ! -f "${LD64DISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
 mkdir -p ${DISTDIR}/ld64
 tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64
 rm -rf ${DISTDIR}/ld64/FireOpal
@@ -176,7 +175,7 @@ message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
 GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
 if [ ! -d $GCC_DIR ]; then
 	pushd $(dirname ${GCC_DIR})
-	wget -c http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
+	download http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
 	tar -zxf llvmgcc42-2336.1.tar.gz
 	popd
 fi
@@ -264,13 +263,20 @@ set -e
 
 message_status "Adding new files"
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
+mv ${DISTDIR}/ld64/Makefile.in.${LD64VERS} ${DISTDIR}/ld64/Makefile.in
+
+if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] && [[ $(uname-bt) = "Darwin" ]] ; then
+    cp ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
+    cp ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
+    cp ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
+fi
 
 if [ -z $FOREIGNHEADERS ] ; then
-	message_status "Removing include/foreign"
-	rm -rf ${DISTDIR}/include/foreign
+    message_status "Removing include/foreign"
+    rm -rf ${DISTDIR}/include/foreign
 else
-	message_status "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
-	rm -rf ${DISTDIR}/include/mach/ppc
+    message_status "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
+    rm -rf ${DISTDIR}/include/mach/ppc
 fi
 
 message_status "Deleting cruft"

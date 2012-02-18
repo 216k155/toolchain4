@@ -10,7 +10,7 @@ bindir		= @bindir@
 VPATH = @srcdir@
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ -DLTO_SUPPORT -DTRIE_SUPPORT
 WARNINGS	= @WARNINGS@
 MDYNAMICNOPIC   = @MDYNAMICNOPIC@
 CPPFLAGS        = @CPPFLAGS@
@@ -39,7 +39,7 @@ MYWARNINGS      =
 MYDEFS          = -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DLIPOPROG="\"$(LIPOPROG)\""
 MYLDFLAGS	= -L$(top_builddir)/libstuff
-MYLIBS		= -lstuff
+MYLIBS		= -lstuff -lprunetrie
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
