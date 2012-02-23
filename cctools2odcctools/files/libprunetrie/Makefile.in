@@ -1,0 +1,68 @@
+builddir = @builddir@
+top_builddir = @top_builddir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+bindir		= @bindir@
+
+VPATH = @srcdir@:@srcdir@/src
+
+CC		= @CC@
+AR		= @HOST_AR@
+RANLIB		= @HOST_RANLIB@
+CXX             = @CXX@
+CFLAGS          = @CFLAGS@ -m32
+CXXFLAGS	= @CXXFLAGS@
+WARNINGS	= @WARNINGS@
+MDYNAMICNOPIC   = @MDYNAMICNOPIC@
+CPPFLAGS        = @CPPFLAGS@
+DEFS            = @DEFS@ @ENDIAN_FLAG@
+LDFLAGS         = @LDFLAGS@
+HAVE_PRIVEXT    = @HAVE_PRIVEXT@
+HAVE_FOREIGN_HEADERS    = @HAVE_FOREIGN_HEADERS@
+
+ifeq ($(HAVE_PRIVEXT),NO)
+INCPRIVEXT      = -include $(top_srcdir)/include/extern.h
+endif
+
+ifeq ($(HAVE_FOREIGN_HEADERS),YES)
+FORHDRS         = -I$(top_srcdir)/include/foreign
+endif
+
+MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction $(INCPRIVEXT) $(FORHDRS)
+
+MYWARNINGS      =
+MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
+		  -DASPROG="\"$(ASPROG)\"" $(LTO_DEFS)
+
+MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
+		$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
+
+CXXFILES = PruneTrie.cpp
+
+OBJS = $(CXXFILES:.cpp=.o)
+OBJS += $(CFILES:.c=.o)
+
+.cpp.o:
+	mkdir -p `dirname $@`
+	$(CXX) $(MYCOMPILEFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+.c.o:
+	mkdir -p `dirname $@`
+	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
+
+.PHONY: default install clean
+
+default: libprunetrie.a
+
+libprunetrie.a: $(OBJS)
+	$(AR) cru $@ $^
+	$(RANLIB) $@
+
+clean:
+	rm -r -f *.o
+	rm -f libprunetrie.a
+
+install:

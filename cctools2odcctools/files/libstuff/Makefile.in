@@ -8,7 +8,7 @@ VPATH = @srcdir@
 CC		= @CC@
 AR		= @HOST_AR@
 RANLIB		= @HOST_RANLIB@
-CFLAGS		= @CFLAGS@
+CFLAGS		= @CFLAGS@  -DLTO_SUPPORT -DTRIE_SUPPORT
 WARNINGS	= @WARNINGS@
 MDYNAMICNOPIC	= @MDYNAMICNOPIC@
 CPPFLAGS	= @CPPFLAGS@
@@ -47,7 +47,7 @@ OBJS = $(CFILES:.c=.o)
 OBJS64 = $(CFILES:.c=.64o)
 
 
-.PHONY: default install clean distclean
+.PHONY: default install clean
 
 default: libstuff.a
 

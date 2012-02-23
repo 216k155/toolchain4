@@ -10,6 +10,10 @@ LD64NAME=ld64
 #LD64VERS=85.2.1
 LD64VERS=127.2
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
+DYLDNAME=dyld
+# For dyld.h.
+DYLDVERS=195.5
+DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
 OSXVER=10.7
 
 TOPSRCDIR=`pwd`
@@ -110,7 +114,6 @@ otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 include/mach/machine_armv7.diff \
 ld/ld-nomach.diff libstuff/cmd_with_prefix.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
-
 else
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
@@ -128,7 +131,6 @@ otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
  include/mach/machine_armv7.diff \
 ld/ld-nomach.diff libstuff/cmd_with_prefix.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
-
 fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
@@ -157,9 +159,19 @@ rm -rf ${DISTDIR}/ld64/FireOpal
 find ${DISTDIR}/ld64 ! -perm +200 -exec chmod u+w {} \;
 find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 
+[[ ! -f "${DYLDDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/dyld/${DYLDDISTFILE}
+mkdir -p ${DISTDIR}/dyld
+tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
+
+mkdir ${DISTDIR}/libprunetrie
+mkdir ${DISTDIR}/libprunetrie/mach-o
+cp ${DISTDIR}/ld64/src/other/prune_trie.h ${DISTDIR}/libprunetrie/
+cp ${DISTDIR}/ld64/src/other/prune_trie.h ${DISTDIR}/libprunetrie/mach-o/
+cp ${DISTDIR}/ld64/src/other/PruneTrie.cpp ${DISTDIR}/libprunetrie/
+
 # Clean the source a bit
 find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
-rm -rf ${DISTDIR}/{cbtlibs,dyld,file,gprof,libdyld,mkshlib,profileServer}
+rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer}
 
 if [[ "$(uname -s)" = "Darwin" ]] ; then
     SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
@@ -264,12 +276,29 @@ set -e
 message_status "Adding new files"
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
 mv ${DISTDIR}/ld64/Makefile.in.${LD64VERS} ${DISTDIR}/ld64/Makefile.in
+if [[ "${LD64VERS}" == "127.2" ]] ; then
+    echo -e "\n" > ${DISTDIR}/ld64/src/ld/configure.h
+fi
 
 if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] && [[ $(uname-bt) = "Darwin" ]] ; then
-    cp ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
-    cp ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
-    cp ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
+    cp -f ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
+    cp -f ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
+    cp -f ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
+    # causes arch.c failures (error: ?CPU_TYPE_VEO? undeclared here (not in a function)
+    # cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/include/mach/machine.h
 fi
+
+# This works for ld64, but breaks cctools-809 itself.
+# cp -f ${DISTDIR}/dyld/src/dyld.h ${DISTDIR}/include/mach-o/dyld.h
+mkdir -p ${DISTDIR}/ld64/include/mach-o/
+mkdir -p ${DISTDIR}/ld64/include/mach/
+#cp -f ${DISTDIR}/dyld/src/dyld.h ${DISTDIR}/ld64/include/mach-o/dyld.h
+#cp -f ${SDKROOT}/usr/include/mach-o/dyld.h ${DISTDIR}/ld64/include/mach-o/dyld.h
+cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
+#cp -f ${DISTDIR}/dyld/src/dyld_priv.h ${DISTDIR}/ld64/include/mach-o/dyld_priv.h
+cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
+#cp -f ${DISTDIR}/dyld/src/ImageLoader.h ${DISTDIR}/ld64/include/ImageLoader.h
+#cp -f ${DISTDIR}/dyld/src/CrashReporterClient.h ${DISTDIR}/ld64/include/CrashReporterClient.h
 
 if [ -z $FOREIGNHEADERS ] ; then
     message_status "Removing include/foreign"

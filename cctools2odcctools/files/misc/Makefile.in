@@ -34,12 +34,12 @@ LDPROG		= $(shell echo ld | sed '$(transform)')
 LIPOPROG	= $(shell echo lipo | sed '$(transform)')
 
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) $(FORHDRS)
+			-I$(top_srcdir)/include -I$(top_srcdir)/libprunetrie $(INCPRIVEXT) $(FORHDRS)
 MYWARNINGS      = 
 MYDEFS          = -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DLIPOPROG="\"$(LIPOPROG)\""
 MYLDFLAGS	= -L$(top_builddir)/libstuff
-MYLIBS		= -lstuff -lprunetrie
+MYLIBS		= -lstuff
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
@@ -134,7 +134,7 @@ install_name_tool: $(OBJS_install_name_tool)
 indr: $(OBJS_indr)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 strip: $(OBJS_strip)
-	$(CC) -o $@ $^ $(MYLINKFLAGS)
+	$(CC) -o $@ $^ $(MYLINKFLAGS) -L$(top_builddir)/libprunetrie -lprunetrie
 nmedit: $(OBJS_nmedit)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 segedit: $(OBJS_segedit)

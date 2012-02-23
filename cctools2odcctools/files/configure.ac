@@ -331,7 +331,7 @@ if test $ac_cv_sizeof_long >=8; then
 else
 	LD_CLASSIC=ld
 fi
-COMPONENTS="ar as include libstuff libmacho ${LD_CLASSIC} ld64 man misc otool"
+COMPONENTS="ar as include libprunetrie libstuff libmacho ${LD_CLASSIC} ld64 man misc otool"
 AC_SUBST([COMPONENTS], [$COMPONENTS])
 
 AC_CHECK_FUNC([uuid_generate_random],[],
@@ -349,7 +349,7 @@ AC_CHECK_LIB([LTO],[lto_get_version],[
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 
-AC_CONFIG_FILES([Makefile include/Makefile libstuff/Makefile libmacho/Makefile])
+AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
 AC_CONFIG_FILES([ar/Makefile])
 AC_CONFIG_FILES([as/Makefile])
 for ast in $ASTARGETS; do

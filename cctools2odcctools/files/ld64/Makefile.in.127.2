@@ -11,7 +11,7 @@ VPATH = @srcdir@:@srcdir@/src
 
 CC		= @CC@
 CXX             = @CXX@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ -m32
 CXXFLAGS	= @CXXFLAGS@
 WARNINGS	= @WARNINGS@
 MDYNAMICNOPIC   = @MDYNAMICNOPIC@
@@ -39,9 +39,13 @@ transform       = @program_transform_name@
 LDPROG          = $(shell echo ld_classic | sed '$(transform)')
 ASPROG          = $(shell echo as | sed '$(transform)')
 
-MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(srcdir) -I$(srcdir)/Readers \
-			-I$(srcdir)/Writers -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) $(FORHDRS)
+# -I$(builddir)
+MYINCLUDES      = -I$(srcdir)/include -I$(srcdir)/Readers \
+		-I$(srcdir)/Writers -I$(top_builddir)/include \
+		-I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/ld \
+		-I$(top_srcdir)/ld64/src/abstraction -I$(top_srcdir)/ld64/src/ld/parsers \
+		$(INCPRIVEXT) $(FORHDRS)
+
 MYWARNINGS      = 
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DASPROG="\"$(ASPROG)\"" $(LTO_DEFS)
@@ -50,20 +54,36 @@ MYLDFLAGS	= -L$(top_builddir)/libstuff
 MYLIBS		= -lstuff $(SSL_LIBS) $(UUID_LIBS) $(LTO_LIBS)
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
-	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
+		$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 
-CXXFILES = ld.cpp Options.cpp
-CFILES = debugline.c
+CXXFILES = src/ld/ld.cpp src/ld/Options.cpp src/ld/InputFiles.cpp \
+		src/ld/SymbolTable.cpp src/ld/Resolver.cpp src/ld/OutputFile.cpp \
+		src/ld/passes/branch_island.cpp src/ld/passes/branch_shim.cpp \
+		src/ld/passes/compact_unwind.cpp src/ld/passes/dtrace_dof.cpp \
+		src/ld/passes/dylibs.cpp src/ld/passes/got.cpp \
+		src/ld/passes/huge.cpp src/ld/passes/objc.cpp \
+		src/ld/passes/order_file.cpp src/ld/passes/stubs/stubs.cpp \
+		src/ld/passes/tlvp.cpp \
+		src/ld/parsers/opaque_section_file.cpp src/ld/parsers/lto_file.cpp \
+		src/ld/parsers/archive_file.cpp \
+		src/ld/parsers/macho_relocatable_file.cpp src/ld/parsers/macho_dylib_file.cpp
+
+# Probably want to build this program too:
+# src/other/dyldinfo.cpp
+
+CFILES = src/ld/debugline.c
 
 OBJS = $(CXXFILES:.cpp=.o)
 OBJS += $(CFILES:.c=.o) 
 
 .cpp.o:
+	mkdir -p `dirname $@`
 	$(CXX) $(MYCOMPILEFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 .c.o:
+	mkdir -p `dirname $@`
 	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
 
 .PHONY: default clean distclean install
