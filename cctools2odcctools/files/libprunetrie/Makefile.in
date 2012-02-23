@@ -59,7 +59,8 @@ default: libprunetrie.a
 
 libprunetrie.a: $(OBJS)
 	$(AR) cru $@ $^
-	$(RANLIB) $@
+
+#	$(RANLIB) $@
 
 clean:
 	rm -r -f *.o

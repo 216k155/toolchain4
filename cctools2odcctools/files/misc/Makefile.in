@@ -48,7 +48,7 @@ MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 
 PROGRAMS = checksyms lipo size strings nm libtool redo_prebinding seg_addr_table \
 		seg_hack install_name_tool indr strip nmedit segedit pagestuff \
-		ranlib
+		ranlib codesign_allocate
 
 CFILES_checksyms	= checksyms.c
 OBJS_checksyms	= $(CFILES_checksyms:.c=.o)
@@ -89,6 +89,9 @@ OBJS_indr	= $(CFILES_indr:.c=.o)
 CFILES_strip	= strip.c
 OBJS_strip	= $(CFILES_strip:.c=.o)
 
+CFILES_codesign_allocate	= codesign_allocate.c
+OBJS_codesign_allocate	= $(CFILES_codesign_allocate:.c=.o)
+
 CFILES_nmedit	= strip.c
 OBJS_nmedit	= nmedit.o
 
@@ -99,6 +102,9 @@ CFILES_pagestuff	= pagestuff.c
 OBJS_pagestuff	= $(CFILES_pagestuff:.c=.o)
 
 .c.o:
+	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
+
+.o:
 	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
 
 .PHONY: default clean distclean install
@@ -134,7 +140,9 @@ install_name_tool: $(OBJS_install_name_tool)
 indr: $(OBJS_indr)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 strip: $(OBJS_strip)
-	$(CC) -o $@ $^ $(MYLINKFLAGS) -L$(top_builddir)/libprunetrie -lprunetrie
+	$(CXX) -o $@ $^ $(MYLINKFLAGS) -L$(top_builddir)/libprunetrie -lprunetrie
+codesign_allocate: $(OBJS_codesign_allocate)
+	$(CC) -o $@ $^ $(MYLINKFLAGS)
 nmedit: $(OBJS_nmedit)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 segedit: $(OBJS_segedit)
