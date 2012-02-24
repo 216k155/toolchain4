@@ -556,6 +556,10 @@ toolchain_cctools() {
 		else
 			./extract.sh --updatepatch --vers ${CCTOOLSVER} --osxver ${OSXVER}
 		fi
+		if [[ ! $? = 0 ]] ; then
+		    error "extract.sh failed"
+		    exit 1
+		fi
 		mkdir -p "$SRC_DIR"
 		rm -fr "${CCTOOLS_DIR}"
 		cp -r odcctools-${CCTOOLS_VER_FH} "${CCTOOLS_DIR}"

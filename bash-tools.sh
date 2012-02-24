@@ -56,7 +56,7 @@ download() {
 		if [[ "$(uname-bt)" == "Darwin" ]] ; then
 			curl -S -L -O $1 -o $_LFNAME
 		else
-			wget -c $1 -O $2
+			wget -c $1 -O $_LFNAME
 		fi
 	fi
 }

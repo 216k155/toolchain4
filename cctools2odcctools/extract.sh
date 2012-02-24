@@ -147,12 +147,20 @@ fi
 rm -rf ${DISTDIR}
 mkdir -p ${DISTDIR}
 [[ ! -f "${CCTOOLSDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
+if [[ ! -f "${CCTOOLSDISTFILE}" ]] ; then
+	error "Failed to download ${CCTOOLSDISTFILE}"
+	exit 1
+fi
 
 tar ${TARSTRIP}=1 -xf ${CCTOOLSDISTFILE} -C ${DISTDIR} > /dev/null 2>&1
 # Fix dodgy timestamps.
 find ${DISTDIR} | xargs touch
 
 [[ ! -f "${LD64DISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
+if [[ ! -f "${LD64DISTFILE}" ]] ; then
+	error "Failed to download ${LD64DISTFILE}"
+	exit 1
+fi
 mkdir -p ${DISTDIR}/ld64
 tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64
 rm -rf ${DISTDIR}/ld64/FireOpal
@@ -160,6 +168,10 @@ find ${DISTDIR}/ld64 ! -perm +200 -exec chmod u+w {} \;
 find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 
 [[ ! -f "${DYLDDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/dyld/${DYLDDISTFILE}
+if [[ ! -f "${DYLDDISTFILE}" ]] ; then
+	error "Failed to download ${DYLDDISTFILE}"
+	exit 1
+fi
 mkdir -p ${DISTDIR}/dyld
 tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
 
@@ -186,10 +198,13 @@ cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
 message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
 GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
 if [ ! -d $GCC_DIR ]; then
-	pushd $(dirname ${GCC_DIR})
-	download http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
-	tar -zxf llvmgcc42-2336.1.tar.gz
-	popd
+    pushd $(dirname ${GCC_DIR})
+    if [[ ! $(download http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz) ]] ; then
+	error "Failed to download llvmgcc42-2336.1.tar.gz"
+	exit 1
+    fi
+    tar -zxf llvmgcc42-2336.1.tar.gz
+    popd
 fi
 cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
 
