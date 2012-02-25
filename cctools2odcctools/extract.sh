@@ -312,6 +312,16 @@ mkdir -p ${DISTDIR}/ld64/include/mach/
 cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
 #cp -f ${DISTDIR}/dyld/src/dyld_priv.h ${DISTDIR}/ld64/include/mach-o/dyld_priv.h
 cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
+
+# I had been localising stuff into ld64 (above), but a lot of it is
+# more generally needed?
+mkdir -p ${DISTDIR}/include/machine
+mkdir -p ${DISTDIR}/include/mach_debug
+cp -f ${SDKROOT}/usr/include/machine/_types.h ${DISTDIR}/include/machine/_types.h
+cp -f ${SDKROOT}/usr/include/mach_debug/mach_debug_types.h ${DISTDIR}/include/mach_debug/mach_debug_types.h
+cp -f ${SDKROOT}/usr/include/mach_debug/ipc_info.h ${DISTDIR}/include/mach_debug/ipc_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/vm_info.h ${DISTDIR}/include/mach_debug/vm_info.h
+
 #cp -f ${DISTDIR}/dyld/src/ImageLoader.h ${DISTDIR}/ld64/include/ImageLoader.h
 #cp -f ${DISTDIR}/dyld/src/CrashReporterClient.h ${DISTDIR}/ld64/include/CrashReporterClient.h
 
