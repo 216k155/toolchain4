@@ -145,7 +145,7 @@ message_action() {
 
 do-sed()
 {
-    if [ "$(uname-bt)" = "darwin" ]
+    if [ "$(uname-bt)" = "Darwin" ]
     then
         sed -i '.bak' "$1" $2
         rm ${2}.bak
@@ -154,29 +154,91 @@ do-sed()
     fi
 }
 
-# Comments out (using C comments) blocks of code in $1, delimited by $2 and $3, writing result is
-# to $4 (if provided, otherwise to $1)
+# Comments out (using C comments) blocks of code in $1, delimited by $2 and $3, writing result back to $1
 # This is to be used when tag for uniquely identifying the block appears at the start of the block.
-comment-out-fwd()
+# One problem with doing it using C comments is that you end up with comments within comments, so either
+# provide an option for using C++ comments or delete the comments within comments.
+comment-out-fwd-c()
 {
     local _INFILE="$1"
     local _START="$2"
     local _END="$3"
-    local _OUTFILE="$4"
+    local _REV="$4"
     local _TMPFILEF=$(tempfile)
-    if [[ $_OUTFILE = "" ]] ; then
-        _OUTFILE=$_INFILE
+    local _OUTFILE=$_INFILE
+    local _CSTART="/*"
+    local _CEND="*/"
+    if [[ "$_REV" = "1" ]] ; then
+        _CSTART="*/"
+        _CEND="/*"
     fi
-    awk '
-BEGIN { print "Start" }
-{ print }
-END { print "End"}
-    ' < $_INFILE > $_TMPFILEF
+    awk -vSTARTV="$_START" -vENDV="$_END" -vCSTART="$_CSTART" -vCEND="$_CEND" '
+BEGIN { inblock=0; }
+{if ( inblock==1 ) {
+if ( match($0,ENDV) ) {
+   inblock=0;
+   print;
+   print(CEND);
+  }
+  else {
+   print;
+  }
+ }
+else if ( inblock==0 ) {
+if ( match($0,STARTV) ) {
+   inblock=1;
+   print(CSTART);
+   print;
+  }
+  else {
+   print;
+  }
+ }
+}
+END {} ' < $_INFILE > $_TMPFILEF
     mv $_TMPFILEF $_OUTFILE
 }
 
-# Comments out (using C comments) blocks of code in $1, delimited by $2 and $3, writing result is
-# to $4 (if provided, otherwise to $1)
+comment-out-fwd-cxx()
+{
+    local _INFILE="$1"
+    local _START="$2"
+    local _END="$3"
+    local _REV="$4"
+    local _TMPFILEF=$(tempfile)
+    local _OUTFILE=$_INFILE
+    local _CSTART="/*"
+    local _CEND="*/"
+    if [[ "$_REV" = "1" ]] ; then
+        _CSTART="*/"
+        _CEND="/*"
+    fi
+    awk -vSTARTV="$_START" -vENDV="$_END" -vCSTART="$_CSTART" -vCEND="$_CEND" '
+BEGIN { inblock=0; }
+{if ( inblock==1 ) {
+if ( match($0,ENDV) ) {
+   inblock=0;
+   print("// " $0);
+  }
+  else {
+   print("// " $0);
+  }
+ }
+else if ( inblock==0 ) {
+if ( match($0,STARTV) ) {
+   inblock=1;
+   print("// " $0);
+  }
+  else {
+   print;
+  }
+ }
+}
+END {} ' < $_INFILE > $_TMPFILEF
+    mv $_TMPFILEF $_OUTFILE
+}
+
+# Comments out (using C comments) blocks of code in $1, delimited by $2 and $3, writing result back to $1.
 # This is to be used when tag for uniquely identifying the block appears at the end of the block.
 # For example:
 # "typedef union { some\nstuff\n } TAG;", where
@@ -185,6 +247,8 @@ END { print "End"}
 # and then calling tac once more to re-reverse the result of that.
 comment-out-rev()
 {
+    echo "Top of comment-out-rev"
+    echo "PWD is $PWD"
     local _INFILE="$1"
     local _START="$2"
     local _END="$3"
@@ -195,6 +259,6 @@ comment-out-rev()
         _OUTFILE=$_INFILE
     fi
     cat $_INFILE | tac > $_REVTMPFILE
-    $(comment-out-fwd "$_REVTMPFILE" "$_END" "$_START" $_TMPFILER)
-    cat $_TMPFILER | tac > $_OUTFILE
+    $(comment-out-fwd-cxx "$_REVTMPFILE" "$_END" "$_START" "1")
+    cat $_REVTMPFILE | tac > $_OUTFILE
 }

@@ -230,8 +230,11 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
 	mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
     fi
 
-    set -x
-    comment-out-rev ${DISTDIR}/include/i386/_types.h "typedef union {" "} __mbstate_t;"
+# Although this does what it's supposed to, it's not quite what's needed, as the linux version isn't
+# known about at this time...
+#    comment-out-rev ${DISTDIR}/include/i386/_types.h "typedef union {" "} __mbstate_t;"
+    do-sed $"s/} __mbstate_t/} NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
+    do-sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
 
 #    rm ${DISTDIR}/include/sys/cdefs.h
 #    rm ${DISTDIR}/include/sys/types.h
