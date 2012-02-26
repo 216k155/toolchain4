@@ -199,7 +199,7 @@ message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
 GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
 if [ ! -d $GCC_DIR ]; then
     pushd $(dirname ${GCC_DIR})
-    if [[ ! $(download http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz) ]] ; then
+    if [[ $(download http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz) ]] ; then
 	error "Failed to download llvmgcc42-2336.1.tar.gz"
 	exit 1
     fi
@@ -216,13 +216,22 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
     fi
 
     mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new
-    for i in mach architecture i386 libkern sys; do
+    if [[ "$(uname-bt)" = "Darwin" ]] ; then
+        SYSFLDR=sys
+    else
+        # Want to use the system's sys folder as much as possible.
+        SYSFLDR=sys/_types.h
+    fi
+    for i in mach architecture i386 libkern $SYSFLDR; do
 	tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
     done
 
     if [[ "$USE_OSX_MACHINE_H" = "1" ]] ; then
 	mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
     fi
+
+    set -x
+    comment-out-rev ${DISTDIR}/include/i386/_types.h "typedef union {" "} __mbstate_t;"
 
 #    rm ${DISTDIR}/include/sys/cdefs.h
 #    rm ${DISTDIR}/include/sys/types.h
@@ -295,12 +304,14 @@ if [[ "${LD64VERS}" == "127.2" ]] ; then
     echo -e "\n" > ${DISTDIR}/ld64/src/ld/configure.h
 fi
 
-if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] && [[ $(uname-bt) = "Darwin" ]] ; then
-    cp -f ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
-    cp -f ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
-    cp -f ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
-    # causes arch.c failures (error: ?CPU_TYPE_VEO? undeclared here (not in a function)
-    # cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/include/mach/machine.h
+if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; then
+    if [[ $(uname-bt) = "Darwin" ]] ; then
+        cp -f ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
+        cp -f ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
+        cp -f ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
+        # causes arch.c failures (error: ?CPU_TYPE_VEO? undeclared here (not in a function)
+        # cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/include/mach/machine.h
+    fi
 fi
 
 # This works for ld64, but breaks cctools-809 itself.
@@ -317,10 +328,16 @@ cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine
 # more generally needed?
 mkdir -p ${DISTDIR}/include/machine
 mkdir -p ${DISTDIR}/include/mach_debug
+cp -f ${SDKROOT}/usr/include/machine/types.h ${DISTDIR}/include/machine/types.h
 cp -f ${SDKROOT}/usr/include/machine/_types.h ${DISTDIR}/include/machine/_types.h
+cp -f ${SDKROOT}/usr/include/machine/endian.h ${DISTDIR}/include/machine/endian.h
 cp -f ${SDKROOT}/usr/include/mach_debug/mach_debug_types.h ${DISTDIR}/include/mach_debug/mach_debug_types.h
 cp -f ${SDKROOT}/usr/include/mach_debug/ipc_info.h ${DISTDIR}/include/mach_debug/ipc_info.h
 cp -f ${SDKROOT}/usr/include/mach_debug/vm_info.h ${DISTDIR}/include/mach_debug/vm_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/zone_info.h ${DISTDIR}/include/mach_debug/zone_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/page_info.h ${DISTDIR}/include/mach_debug/page_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/hash_info.h ${DISTDIR}/include/mach_debug/hash_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/lockgroup_info.h ${DISTDIR}/include/mach_debug/lockgroup_info.h
 
 #cp -f ${DISTDIR}/dyld/src/ImageLoader.h ${DISTDIR}/ld64/include/ImageLoader.h
 #cp -f ${DISTDIR}/dyld/src/CrashReporterClient.h ${DISTDIR}/ld64/include/CrashReporterClient.h

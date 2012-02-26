@@ -59,6 +59,12 @@ download() {
 			wget -c $1 -O $_LFNAME
 		fi
 	fi
+
+	if [[ -f $_LFNAME ]] ; then
+		return 0
+	fi
+
+	return 1
 }
 
 downloadStdout() {
@@ -146,4 +152,49 @@ do-sed()
     else
         sed "$1" -i $2
     fi
+}
+
+# Comments out (using C comments) blocks of code in $1, delimited by $2 and $3, writing result is
+# to $4 (if provided, otherwise to $1)
+# This is to be used when tag for uniquely identifying the block appears at the start of the block.
+comment-out-fwd()
+{
+    local _INFILE="$1"
+    local _START="$2"
+    local _END="$3"
+    local _OUTFILE="$4"
+    local _TMPFILEF=$(tempfile)
+    if [[ $_OUTFILE = "" ]] ; then
+        _OUTFILE=$_INFILE
+    fi
+    awk '
+BEGIN { print "Start" }
+{ print }
+END { print "End"}
+    ' < $_INFILE > $_TMPFILEF
+    mv $_TMPFILEF $_OUTFILE
+}
+
+# Comments out (using C comments) blocks of code in $1, delimited by $2 and $3, writing result is
+# to $4 (if provided, otherwise to $1)
+# This is to be used when tag for uniquely identifying the block appears at the end of the block.
+# For example:
+# "typedef union { some\nstuff\n } TAG;", where
+# $1 is "typedef union" and $2 is "} TAG;"
+# Works by using tac to reverse the input file, calling comment-out-fwd (with swapped delimiters)
+# and then calling tac once more to re-reverse the result of that.
+comment-out-rev()
+{
+    local _INFILE="$1"
+    local _START="$2"
+    local _END="$3"
+    local _OUTFILE="$4"
+    local _REVTMPFILE=$(tempfile)
+    local _TMPFILER=$(tempfile)
+    if [[ $_OUTFILE = "" ]] ; then
+        _OUTFILE=$_INFILE
+    fi
+    cat $_INFILE | tac > $_REVTMPFILE
+    $(comment-out-fwd "$_REVTMPFILE" "$_END" "$_START" $_TMPFILER)
+    cat $_TMPFILER | tac > $_OUTFILE
 }

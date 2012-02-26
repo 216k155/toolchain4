@@ -8,6 +8,7 @@ typedef mach_port_name_t *mach_port_name_array_t;
 
 typedef mach_port_name_t                mach_port_t;
 typedef mach_port_t                     *mach_port_array_t;
+typedef natural_t mach_port_seqno_t;		/* sequence number */
 
 
 #endif
