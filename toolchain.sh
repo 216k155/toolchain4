@@ -573,7 +573,7 @@ toolchain_cctools() {
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CC="gcc -m32" CFLAGS="-m32 -save-temps" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps" LDFLAGS="-m32 -L$HOST_DIR/lib" \
+                CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$HOST_DIR/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 

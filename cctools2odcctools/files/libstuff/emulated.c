@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-#include <sys/attr.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <mach/mach_time.h>
