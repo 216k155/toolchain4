@@ -318,14 +318,13 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; the
 fi
 
 # This works for ld64, but breaks cctools-809 itself.
-# cp -f ${DISTDIR}/dyld/src/dyld.h ${DISTDIR}/include/mach-o/dyld.h
 mkdir -p ${DISTDIR}/ld64/include/mach-o/
 mkdir -p ${DISTDIR}/ld64/include/mach/
-#cp -f ${DISTDIR}/dyld/src/dyld.h ${DISTDIR}/ld64/include/mach-o/dyld.h
-#cp -f ${SDKROOT}/usr/include/mach-o/dyld.h ${DISTDIR}/ld64/include/mach-o/dyld.h
 cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
-#cp -f ${DISTDIR}/dyld/src/dyld_priv.h ${DISTDIR}/ld64/include/mach-o/dyld_priv.h
 cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
+
+mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
+cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
 
 # I had been localising stuff into ld64 (above), but a lot of it is
 # more generally needed?
@@ -363,6 +362,7 @@ do-sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 
 cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h ${DISTDIR}/include/AvailabilityMacros.h
 
+#libstuff
 # Darwin has libc.h, Windows/Linux have a combination of stdio.h, stdlib.h, fcntl.h, unistd.h, io.h, sys/param.h (MAXPATHLEN)
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/execute.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
@@ -378,14 +378,30 @@ do-sed $"s^#include <sys/sysctl.h>^#include <stdint.h>\n#include <sys/sysctl.h>^
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/lto.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#include <stdint.h>\n#include <string.h>\n#endif^" ${DISTDIR}/libstuff/llvm.c
 
+# ar
 do-sed $"s^__unused^__attribute__((__unused__))^" ${DISTDIR}/include/mach/mig_errors.h
 do-sed $"s^__unused^__attribute__((__unused__))^" ${DISTDIR}/include/objc/objc-auto.h
 do-sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#ifndef __APPLE__\n#include <sys/file.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ar/archive.c
 do-sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
 
+# as
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-file.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-scrub.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/write_object.c
+
+# libprunetrie
+do-sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/libprunetrie/PruneTrie.cpp
+
+# ld
+if [[ "$(uname-bt)" = "Linux" ]] || [[ "$(uname-bt)" = "Darwin" ]] ; then
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass1.c
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass2.c
+elif [[ "$(uname-bt)" = "Windows" ]] ; then
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/ld.c
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass1.c
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass2.c
+fi
 
 message_status "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
