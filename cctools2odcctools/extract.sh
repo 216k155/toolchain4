@@ -320,16 +320,19 @@ fi
 # This works for ld64, but breaks cctools-809 itself.
 mkdir -p ${DISTDIR}/ld64/include/mach-o/
 mkdir -p ${DISTDIR}/ld64/include/mach/
+mkdir -p ${DISTDIR}/include/mach-o/
 cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
 cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
 
 mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
 cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
+cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/include/mach-o/
 
 # I had been localising stuff into ld64 (above), but a lot of it is
 # more generally needed?
 mkdir -p ${DISTDIR}/include/machine
 mkdir -p ${DISTDIR}/include/mach_debug
+mkdir -p ${DISTDIR}/include/CommonCrypto
 cp -f ${SDKROOT}/usr/include/machine/types.h ${DISTDIR}/include/machine/types.h
 cp -f ${SDKROOT}/usr/include/machine/_types.h ${DISTDIR}/include/machine/_types.h
 cp -f ${SDKROOT}/usr/include/machine/endian.h ${DISTDIR}/include/machine/endian.h
@@ -340,7 +343,12 @@ cp -f ${SDKROOT}/usr/include/mach_debug/zone_info.h ${DISTDIR}/include/mach_debu
 cp -f ${SDKROOT}/usr/include/mach_debug/page_info.h ${DISTDIR}/include/mach_debug/page_info.h
 cp -f ${SDKROOT}/usr/include/mach_debug/hash_info.h ${DISTDIR}/include/mach_debug/hash_info.h
 cp -f ${SDKROOT}/usr/include/mach_debug/lockgroup_info.h ${DISTDIR}/include/mach_debug/lockgroup_info.h
-
+cp -f ${SDKROOT}/usr/include/Availability.h ${DISTDIR}/include/Availability.h
+cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h ${DISTDIR}/include/AvailabilityInternal.h
+cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h ${DISTDIR}/include/CommonCrypto/CommonDigest.h
+cp -f ${SDKROOT}/usr/include/libunwind.h ${DISTDIR}/include/libunwind.h
+cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h ${DISTDIR}/include/AvailabilityMacros.h
+cp -f ${SDKROOT}/usr/include/dlfcn.h ${DISTDIR}/include/dlfcn.h
 
 #cp -f ${DISTDIR}/dyld/src/ImageLoader.h ${DISTDIR}/ld64/include/ImageLoader.h
 #cp -f ${DISTDIR}/dyld/src/CrashReporterClient.h ${DISTDIR}/ld64/include/CrashReporterClient.h
@@ -360,7 +368,8 @@ do-sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 do-sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/_structs.h
 do-sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/_structs.h
 
-cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h ${DISTDIR}/include/AvailabilityMacros.h
+do-sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/dlfcn.h
+do-sed $"s%#endif /\* not POSIX \*/%//#endif /\* not POSIX \*/%" ${DISTDIR}/include/dlfcn.h
 
 #libstuff
 # Darwin has libc.h, Windows/Linux have a combination of stdio.h, stdlib.h, fcntl.h, unistd.h, io.h, sys/param.h (MAXPATHLEN)
@@ -397,11 +406,44 @@ if [[ "$(uname-bt)" = "Linux" ]] || [[ "$(uname-bt)" = "Darwin" ]] ; then
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass1.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass2.c
+    do-sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
 elif [[ "$(uname-bt)" = "Windows" ]] ; then
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/ld.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass1.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass2.c
+    do-sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+    do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
 fi
+
+do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
+do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
+do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/compact_unwind.cpp
+do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/dtrace_dof.cpp
+do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/dtrace_dof.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/dylibs.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/got.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/huge.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/order_file.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/stubs/stubs.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/tlvp.cpp
+do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/opaque_section_file.cpp
+do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/opaque_section_file.cpp
+do-sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/archive_file.cpp
+do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
+
+#include <unistd.h>
+
+
+do-sed $"s^#define VM_SYNC_DEACTIVATE^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
 
 message_status "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
