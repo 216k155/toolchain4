@@ -14,6 +14,10 @@ DYLDNAME=dyld
 # For dyld.h.
 DYLDVERS=195.5
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
+GCCLLVMNAME=gcc42
+GCCLLVMVERS=2336.1
+GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
+
 OSXVER=10.7
 
 TOPSRCDIR=`pwd`
@@ -151,7 +155,6 @@ if [[ ! -f "${CCTOOLSDISTFILE}" ]] ; then
 	error "Failed to download ${CCTOOLSDISTFILE}"
 	exit 1
 fi
-
 tar ${TARSTRIP}=1 -xf ${CCTOOLSDISTFILE} -C ${DISTDIR} > /dev/null 2>&1
 # Fix dodgy timestamps.
 find ${DISTDIR} | xargs touch
@@ -162,7 +165,7 @@ if [[ ! -f "${LD64DISTFILE}" ]] ; then
 	exit 1
 fi
 mkdir -p ${DISTDIR}/ld64
-tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64
+tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64 > /dev/null 2>&1
 rm -rf ${DISTDIR}/ld64/FireOpal
 find ${DISTDIR}/ld64 ! -perm +200 -exec chmod u+w {} \;
 find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
@@ -174,6 +177,16 @@ if [[ ! -f "${DYLDDISTFILE}" ]] ; then
 fi
 mkdir -p ${DISTDIR}/dyld
 tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
+
+[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
+if [[ ! -f "$${GCCLLVMDISTFILE}" ]] ; then
+	error "Failed to download ${GCCLLVMDISTFILE}"
+	exit 1
+fi
+mkdir -p ${DISTDIR}/llvmgcc42-${GCCLLVMVERS}
+tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C ${DISTDIR}/llvmgcc42-${GCCLLVMVERS}
+
+
 
 mkdir ${DISTDIR}/libprunetrie
 mkdir ${DISTDIR}/libprunetrie/mach-o
@@ -440,10 +453,48 @@ do-sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#ifndef __APPLE__\n#include 
 do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/archive_file.cpp
 do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
 
-#include <unistd.h>
+# qsort_r on linux has the last 2 parameters swapped wrt darwin...
+# Also, the swap function is all swapped around, darwin it's:
+# int (*)(void*, const void*, const void*)
+# Linux it's
+# int (*)(const void*, const void*, void*)
+# That is not handled yet...
+if [[ "$(uname-bt)" = "Linux" ]] ; then
+    do-sed $"s^symbol_address_compare);^\&has_stabs);^"  ${DISTDIR}/ld/pass1.c
+    do-sed $"s^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), \&has_stabs,^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), symbol_address_compare,^" ${DISTDIR}/ld/pass1.c
+    do-sed $"s^(void \*fail_p, const void \*a_p, const void \*b_p)^(const void \*a_p, const void \*b_p, void \*fail_p)^" ${DISTDIR}/ld/pass1.c
+    do-sed $"s^qsort_r(array, _machOSectionsCount, sizeof(uint32_t), this, \&sectionIndexSorter);^qsort_r(array, _machOSectionsCount, sizeof(uint32_t), \&sectionIndexSorter, this);^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
+    do-sed $"s^qsort_r(array, _symbolsInSections, sizeof(uint32_t), \&extra, \&symbolIndexSorter);^qsort_r(array, _symbolsInSections, sizeof(uint32_t), \&symbolIndexSorter, \&extra);^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
+    do-sed $"s^(void\* extra, const void\* l, const void\* r)^(const void\* l, const void\* r,void\* extra)^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
+fi
 
+if [[ ! "$(uname-bt)" = "Darwin" ]] ; then
+    do-sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
+fi
 
 do-sed $"s^#define VM_SYNC_DEACTIVATE^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
+
+do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/macho_dylib_file.cpp
+
+# Get to the linking stage for ld64 now...
+# problems:
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1699: undefined reference to `CC_MD5_Init'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1708: undefined reference to `CC_MD5_Update'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1709: undefined reference to `CC_MD5_Final'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1714: undefined reference to `CC_MD5'
+# src/ld/parsers/lto_file.o: In function `lto::Parser::fileKind(unsigned char const*, unsigned long long)':
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:283: undefined reference to `lto_module_is_object_file_in_memory_for_target'
+# src/ld/parsers/lto_file.o: In function `lto::libLTOisLoaded()':
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:844: undefined reference to `lto_get_version'
+# src/ld/parsers/lto_file.o: In function `File':
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:341: undefined reference to `lto_module_create_from_memory'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:348: undefined reference to `lto_module_get_num_symbols'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:351: undefined reference to `lto_module_get_symbol_name'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:352: undefined reference to `lto_module_get_symbol_attribute'
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:343: undefined reference to `lto_get_error_message
+# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/libunwind/AddressSpace.hpp:140: undefined reference to `__assert_rtn'
+# CC is CommonCrypto
+# Darwin itself uses -lLTO -> I think this is something some of the older toolchains supported, they built bits of llvm AFAIR.
 
 message_status "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;

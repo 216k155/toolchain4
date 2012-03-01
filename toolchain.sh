@@ -34,6 +34,7 @@
 # What version of the toolchain are we building?
 TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
+DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm
@@ -593,7 +594,33 @@ toolchain_cctools() {
 	fi
 }
 
-toolchain_llvmgcc() {
+# Makes liblto which is needed to build ld64.
+toolchain_llvmgcc_core() {
+	GCCLLVMNAME=gcc42
+	GCCLLVMVERS=2336.1
+	GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
+	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
+	mkdir -p llvmgcc42-${GCCLLVMVERS}-core
+	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C llvmgcc42-${GCCLLVMVERS}-core
+	pushd llvmgcc42-${GCCLLVMVERS}-core
+		patch -p0 < patches/llvmgcc42-2336.1-redundant.patch
+		patch -p0 < patches/llvmgcc42-2336.1-mempcpy.patch
+		patch -p0 < patches/llvmgcc42-2336.1-relocatable.patch
+	popd
+	mkdir -p bld/llvmgcc42-core
+	pushd bld/llvmgcc42-core
+	CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+		../llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
+		--prefix=$PREFIX \
+		--enable-optimized \
+		--disable-assertions \
+		--target=i686-apple-darwin${DARWINVER}
+	make
+	DESTDIR=$PWD/bld/ make install # optional
+	popd
+}
+
+toolchain_llvmgcc_saurik() {
 	local GCC_DIR="$SRC_DIR/gcc"
 	local TARGET="arm-apple-darwin9"
 	if [ -z $(which ${TARGET}-ar) ] ; then 
@@ -1252,9 +1279,10 @@ case $1 in
 		export TOOLCHAIN_CHECKED=1
 		( ./toolchain.sh headers && \
 		  ./toolchain.sh darwin_sources && \
-		  ./toolchain.sh firmware &&
-		  ./toolchain.sh cctools &&
-		  ./toolchain.sh llvmgcc &&
+		  ./toolchain.sh firmware && \
+		  ./toolchain.sh llvmgcc-core && \
+		  ./toolchain.sh cctools && \
+		  ./toolchain.sh llvmgcc && \
 		  ./toolchain.sh build ) || exit 1
 
 		confirm "Do you want to clean up the source files used to build the toolchain?" && ./toolchain.sh clean
@@ -1291,8 +1319,15 @@ case $1 in
 
 	llvmgcc)
 		check_environment
-		message_action "Building llvmgcc..."
-		toolchain_llvmgcc
+		message_action "Building llvmgcc (saurik)..."
+		toolchain_llvmgcc_saurik
+		message_action "llvmgcc (saurik) build."
+		;;
+
+	llvmgcc-core)
+		check_environment
+		message_action "Building llvmgcc-core..."
+		llvmgcc-core
 		message_action "llvmgcc build."
 		;;
 
@@ -1424,7 +1459,10 @@ case $1 in
 		echo -e "    \tAcquire and build cctools."
 		echo
 		echo	"    ${BOLD}llvmgcc${ENDF}"
-		echo -e "    \tAcquire and build llvmgcc."
+		echo -e "    \tAcquire and build llvmgcc (saurik)"
+		echo
+		echo	"    ${BOLD}llvmgcc-core${ENDF}"
+		echo -e "    \tAcquire and build llvmgcc-core (needed for cctools ld64)."
 		echo
 		echo	"    ${BOLD}ldid${ENDF}"
 		echo -e "    \tAcquire and build ldid."
