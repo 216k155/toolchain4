@@ -14,9 +14,9 @@ DYLDNAME=dyld
 # For dyld.h.
 DYLDVERS=195.5
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
-GCCLLVMNAME=gcc42
-GCCLLVMVERS=2336.1
-GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
+#GCCLLVMNAME=llvmgcc42
+#GCCLLVMVERS=2336.1
+#GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 
 OSXVER=10.7
 
@@ -177,16 +177,6 @@ if [[ ! -f "${DYLDDISTFILE}" ]] ; then
 fi
 mkdir -p ${DISTDIR}/dyld
 tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
-
-[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
-if [[ ! -f "$${GCCLLVMDISTFILE}" ]] ; then
-	error "Failed to download ${GCCLLVMDISTFILE}"
-	exit 1
-fi
-mkdir -p ${DISTDIR}/llvmgcc42-${GCCLLVMVERS}
-tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C ${DISTDIR}/llvmgcc42-${GCCLLVMVERS}
-
-
 
 mkdir ${DISTDIR}/libprunetrie
 mkdir ${DISTDIR}/libprunetrie/mach-o

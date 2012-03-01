@@ -60,6 +60,14 @@ fi
 
 CCTOOLS_VER_FH="${CCTOOLSVER}${FOREIGNHEADERS}"
 
+if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
+    TARSTRIP=--strip-components
+elif [ "`tar --help | grep bsdtar 2> /dev/null`" ]; then
+    TARSTRIP=--strip-components
+else
+    TARSTRIP=--strip-path
+fi
+
 # Manualy change this if needed
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
 
@@ -596,21 +604,23 @@ toolchain_cctools() {
 
 # Makes liblto which is needed to build ld64.
 toolchain_llvmgcc_core() {
-	GCCLLVMNAME=gcc42
+	GCCLLVMNAME=llvmgcc42
 	GCCLLVMVERS=2336.1
 	GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
+	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
+	rm -rf llvmgcc42-${GCCLLVMVERS}-core
 	mkdir -p llvmgcc42-${GCCLLVMVERS}-core
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C llvmgcc42-${GCCLLVMVERS}-core
 	pushd llvmgcc42-${GCCLLVMVERS}-core
-		patch -p0 < patches/llvmgcc42-2336.1-redundant.patch
-		patch -p0 < patches/llvmgcc42-2336.1-mempcpy.patch
-		patch -p0 < patches/llvmgcc42-2336.1-relocatable.patch
+		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
+		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
+		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
 	mkdir -p bld/llvmgcc42-core
 	pushd bld/llvmgcc42-core
 	CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
+		../../llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
 		--disable-assertions \
@@ -1327,7 +1337,7 @@ case $1 in
 	llvmgcc-core)
 		check_environment
 		message_action "Building llvmgcc-core..."
-		llvmgcc-core
+		toolchain_llvmgcc_core
 		message_action "llvmgcc build."
 		;;
 

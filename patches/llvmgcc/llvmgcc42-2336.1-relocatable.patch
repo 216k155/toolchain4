@@ -1,5 +1,5 @@
---- ../../llvmgcc42-2336.1/gcc/gcc.c-orig	2012-01-02 16:18:23.191682444 +0000
-+++ ../../llvmgcc42-2336.1/gcc/gcc.c	2012-01-02 16:33:14.606534363 +0000
+--- gcc/gcc.c-orig	2012-01-02 16:18:23.191682444 +0000
++++ gcc/gcc.c	2012-01-02 16:33:14.606534363 +0000
 @@ -1569,25 +1569,33 @@
  #define MD_STARTFILE_PREFIX_1 ""
  #endif
@@ -197,8 +197,8 @@
        printf (_("programs: %s\n"),
  	      build_search_list (&exec_prefixes, "", false, false));
        printf (_("libraries: %s\n"),
---- ../../llvmgcc42-2336.1/gcc/Makefile.in-orig	2012-01-02 16:18:36.988606817 +0000
-+++ ../../llvmgcc42-2336.1/gcc/Makefile.in	2012-01-02 16:34:10.773731541 +0000
+--- gcc/Makefile.in-orig	2012-01-02 16:18:36.988606817 +0000
++++ gcc/Makefile.in	2012-01-02 16:34:10.773731541 +0000
 @@ -4382,6 +4382,7 @@
  	@echo "set HOSTCFLAGS \"$(CFLAGS)\"" >> ./tmp0
  	@echo "set TESTING_IN_BUILD_TREE 1" >> ./tmp0
