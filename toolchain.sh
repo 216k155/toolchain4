@@ -538,7 +538,7 @@ toolchain_download_darwin_sources() {
 
 toolchain_cctools() {
 	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
-	local TARGET="arm-apple-darwin9"
+	local TARGET="arm-apple-darwin${DARWINVER}"
 
 	build_as=1
 	if [ -f "${PREFIX}/bin/${TARGET}-as" ]; then
@@ -582,10 +582,9 @@ toolchain_cctools() {
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$HOST_DIR/lib" \
+		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
-
 		make clean > /dev/null
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
@@ -596,8 +595,8 @@ toolchain_cctools() {
 		fi
 
 # default linker is now ld64
-#		mv "${PREFIX}/bin/arm-apple-darwin9-ld" "${PREFIX}/bin/arm-apple-darwin9-ld_classic"
-#		ln -s "${PREFIX}/bin/arm-apple-darwin9-ld64" "${PREFIX}/bin/arm-apple-darwin9-ld"
+#		mv "${PREFIX}/bin/arm-apple-darwin${DARWINVER}-ld" "${PREFIX}/bin/arm-apple-darwin${DARWINVER}-ld_classic"
+#		ln -s "${PREFIX}/bin/arm-apple-darwin${DARWINVER}-ld64" "${PREFIX}/bin/arm-apple-darwin${DARWINVER}-ld"
 
 	fi
 }
@@ -626,13 +625,13 @@ toolchain_llvmgcc_core() {
 		--disable-assertions \
 		--target=i686-apple-darwin${DARWINVER}
 	make
-	DESTDIR=$PWD/bld/ make install # optional
+	make install # optional
 	popd
 }
 
 toolchain_llvmgcc_saurik() {
 	local GCC_DIR="$SRC_DIR/gcc"
-	local TARGET="arm-apple-darwin9"
+	local TARGET="arm-apple-darwin${DARWINVER}"
 	if [ -z $(which ${TARGET}-ar) ] ; then 
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
@@ -705,7 +704,7 @@ toolchain_build_sys3() {
 	local GCC_DIR="$SRC_DIR/gcc"
 	local CSU_DIR="$SRC_DIR/csu"
 	export PATH="$PREFIX/bin":"${PATH}"
-	local TARGET="arm-apple-darwin9"
+	local TARGET="arm-apple-darwin${DARWINVER}"
 	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="arm-apple-darwin8"
 
 	mkdir -p "${TOOLCHAIN}"
@@ -1017,7 +1016,7 @@ toolchain_sys50() {
 	local IPHONE_SIMULATOR_SDK="${SDKS_DIR}/iPhoneSimulator${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local TARGET="arm-apple-darwin9"
+	local TARGET="arm-apple-darwin${DARWINVER}"
 	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="arm-apple-darwin8"
 
 	mkdir -p "${TOOLCHAIN}"
@@ -1077,7 +1076,7 @@ toolchain_sys43() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local TARGET="arm-apple-darwin9"
+	local TARGET="arm-apple-darwin${DARWINVER}"
 	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="arm-apple-darwin8"
 
 	mkdir -p "${TOOLCHAIN}"
@@ -1124,7 +1123,7 @@ toolchain_sys() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local TARGET="arm-apple-darwin9"
+	local TARGET="arm-apple-darwin${DARWINVER}"
 	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="arm-apple-darwin8"
 
 	mkdir -p "${TOOLCHAIN}"

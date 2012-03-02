@@ -10,10 +10,14 @@ LD64NAME=ld64
 #LD64VERS=85.2.1
 LD64VERS=127.2
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
-DYLDNAME=dyld
 # For dyld.h.
+DYLDNAME=dyld
 DYLDVERS=195.5
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
+CCRYPTONAME=CommonCrypto
+CCRYPTOVERS=55010
+CCRYPTOFILE=${CCRYPTONAME}-${CCRYPTOVERS}.tar.gz
+
 #GCCLLVMNAME=llvmgcc42
 #GCCLLVMVERS=2336.1
 #GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
@@ -177,6 +181,14 @@ if [[ ! -f "${DYLDDISTFILE}" ]] ; then
 fi
 mkdir -p ${DISTDIR}/dyld
 tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
+
+[[ ! -f "${CCRYPTOFILE}" ]] && download http://www.opensource.apple.com/tarballs/CommonCrypto/${CCRYPTOFILE}
+if [[ ! -f "${CCRYPTOFILE}" ]] ; then
+	error "Failed to download ${CCRYPTOFILE}"
+	exit 1
+fi
+mkdir -p ${DISTDIR}/CommonCrypto
+tar ${TARSTRIP}=1 -xf ${CCRYPTOFILE} -C ${DISTDIR}/CommonCrypto
 
 mkdir ${DISTDIR}/libprunetrie
 mkdir ${DISTDIR}/libprunetrie/mach-o
