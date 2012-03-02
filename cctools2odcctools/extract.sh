@@ -316,6 +316,16 @@ done
 set -e
 
 message_status "Adding new files"
+
+if [[ "$(uname-bt)" = "Windows" ]] ; then
+    # Make sys/cdefs.h
+    mkdir -p ${DISTDIR}/include/sys/
+    echo "#ifndef __SYS_CDEFS_H_" > ${DISTDIR}/include/sys/cdefs.h
+    echo "#define __SYS_CDEFS_H_" >> ${DISTDIR}/include/sys/cdefs.h
+    echo -e "#endif\n" >> ${DISTDIR}/include/sys/cdefs.h
+    # Also need to create a sys/endian.h and/or sys/_endian.h
+fi
+
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
 mv ${DISTDIR}/ld64/Makefile.in.${LD64VERS} ${DISTDIR}/ld64/Makefile.in
 if [[ "${LD64VERS}" == "127.2" ]] ; then
