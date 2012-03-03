@@ -22,6 +22,8 @@ DEFS            = @DEFS@ @ENDIAN_FLAG@
 LDFLAGS         = @LDFLAGS@
 HAVE_PRIVEXT    = @HAVE_PRIVEXT@
 HAVE_FOREIGN_HEADERS    = @HAVE_FOREIGN_HEADERS@
+LTO_DEFS	= @LTO_DEFS@
+LTO_LIBS	= @LTO_LIBS@
 
 ifeq ($(HAVE_PRIVEXT),NO)
 INCPRIVEXT      = -include $(top_srcdir)/include/extern.h
@@ -31,7 +33,7 @@ ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS         = -I$(top_srcdir)/include/foreign
 endif
 
-MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction $(INCPRIVEXT) $(FORHDRS)
+MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include $(INCPRIVEXT) $(FORHDRS)
 
 MYWARNINGS      =
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \

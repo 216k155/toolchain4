@@ -37,7 +37,7 @@ MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(top_builddir)/include \
 MYWARNINGS      = 
 MYDEFS          =
 MYLDFLAGS	= -L$(top_builddir)/libstuff
-MYLIBS		=
+MYLIBS		= -ldl
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 

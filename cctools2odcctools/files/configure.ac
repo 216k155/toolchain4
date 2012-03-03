@@ -283,7 +283,7 @@ AC_COMPILE_IFELSE(
     ]
 )
 
-AC_CHECK_FUNCS([strmode qsort_r qsort getattrlist NSIsSymbolNameDefined strlcpy strlcat])
+AC_CHECK_FUNCS([strmode qsort_r qsort getattrlist NSIsSymbolNameDefined strlcpy strlcat _NSGetExecutablePath])
 AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h],[],[SSL_LIBS=-lssl])
 AC_SUBST(SSL_LIBS)
 
@@ -331,7 +331,7 @@ if test $ac_cv_sizeof_long >=8; then
 else
 	LD_CLASSIC=ld
 fi
-COMPONENTS="ar as include libprunetrie libstuff libmacho ${LD_CLASSIC} ld64 man misc otool"
+COMPONENTS="libstuff ar as include libprunetrie libmacho ${LD_CLASSIC} misc otool man ld64"
 AC_SUBST([COMPONENTS], [$COMPONENTS])
 
 AC_CHECK_FUNC([uuid_generate_random],[],

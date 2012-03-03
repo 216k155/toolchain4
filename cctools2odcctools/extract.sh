@@ -1,26 +1,32 @@
 #!/bin/bash
 
+# References. This work stands on the work done in these projects.
+# Some people who provide ports of debian packages for MinGW!
+# http://svn.clazzes.org/svn/mingw-pkg/trunk/macosx-deb/macosx-intel64-cctools/patches/cctools-806-nondarwin.patch  <--  with Windows fixes.
+# Their home page:
+# https://www.clazzes.org/projects/mingw-debian-packaging/
+# Andrew's toolchain:
+# https://github.com/tatsh/xchain
+# Chromium uses this I think:
+# http://code.google.com/p/toolwhip/
+# Javacom:
+# https://github.com/javacom/toolchain4
+# One of the originals:
+# http://code.google.com/p/iphonedevonlinux/
+
 set -e
 
 . ../bash-tools.sh
 
 CCTOOLSNAME=cctools
-CCTOOLSVERS=782
+CCTOOLSVERS=809
 LD64NAME=ld64
-#LD64VERS=85.2.1
 LD64VERS=127.2
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
 # For dyld.h.
 DYLDNAME=dyld
 DYLDVERS=195.5
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
-CCRYPTONAME=CommonCrypto
-CCRYPTOVERS=55010
-CCRYPTOFILE=${CCRYPTONAME}-${CCRYPTOVERS}.tar.gz
-
-#GCCLLVMNAME=llvmgcc42
-#GCCLLVMVERS=2336.1
-#GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 
 OSXVER=10.7
 
@@ -182,14 +188,6 @@ fi
 mkdir -p ${DISTDIR}/dyld
 tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
 
-[[ ! -f "${CCRYPTOFILE}" ]] && download http://www.opensource.apple.com/tarballs/CommonCrypto/${CCRYPTOFILE}
-if [[ ! -f "${CCRYPTOFILE}" ]] ; then
-	error "Failed to download ${CCRYPTOFILE}"
-	exit 1
-fi
-mkdir -p ${DISTDIR}/CommonCrypto
-tar ${TARSTRIP}=1 -xf ${CCRYPTOFILE} -C ${DISTDIR}/CommonCrypto
-
 mkdir ${DISTDIR}/libprunetrie
 mkdir ${DISTDIR}/libprunetrie/mach-o
 cp ${DISTDIR}/ld64/src/other/prune_trie.h ${DISTDIR}/libprunetrie/
@@ -342,12 +340,13 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; the
     fi
 fi
 
-# This works for ld64, but breaks cctools-809 itself.
 mkdir -p ${DISTDIR}/ld64/include/mach-o/
 mkdir -p ${DISTDIR}/ld64/include/mach/
 mkdir -p ${DISTDIR}/include/mach-o/
 cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
 cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
+cp -f ${SDKROOT}/usr/include/TargetConditionals.h ${DISTDIR}/include/TargetConditionals.h
+do-sed $"s^#if defined(__GNUC__) && ( defined(__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__MACOS_CLASSIC__) )^#if defined(__GNUC__)^" ${DISTDIR}/include/TargetConditionals.h
 
 mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
 cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
@@ -426,7 +425,8 @@ do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DIS
 # libprunetrie
 do-sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/libprunetrie/PruneTrie.cpp
 
-# ld
+# ld, misc.
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/misc/checksyms.c
 if [[ "$(uname-bt)" = "Linux" ]] || [[ "$(uname-bt)" = "Darwin" ]] ; then
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass1.c
@@ -437,16 +437,28 @@ if [[ "$(uname-bt)" = "Linux" ]] || [[ "$(uname-bt)" = "Darwin" ]] ; then
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/misc/lipo.c
 elif [[ "$(uname-bt)" = "Windows" ]] ; then
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/ld.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass1.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass2.c
     do-sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
     do-sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
+    do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <io.h>\n#endif^" ${DISTDIR}/misc/lipo.c
 fi
+do-sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)\n^" ${DISTDIR}/ld64/src/ld/ld.cpp
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/libtool.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/redo_prebinding.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/indr.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/strip.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/segedit.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/otool/main.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#include <sys/stat.h>\n#endif^" ${DISTDIR}/otool/ofile_print.c
+do-sed $"s^#define __dr7 dr7^#define __dr7 dr7\n#ifndef __APPLE__\n#define FP_PREC_24B 0\n#define FP_PREC_53B 2\n#define FP_PREC_64B 3\n#define FP_RND_NEAR 0\n#define FP_RND_DOWN 1\n#define FP_RND_UP 2\n#define FP_CHOP 3\n#endif^" ${DISTDIR}/otool/ofile_print.c
 
 do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
 do-sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
@@ -485,28 +497,9 @@ if [[ ! "$(uname-bt)" = "Darwin" ]] ; then
 fi
 
 do-sed $"s^#define VM_SYNC_DEACTIVATE^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
-
 do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/macho_dylib_file.cpp
-
-# Get to the linking stage for ld64 now...
-# problems:
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1699: undefined reference to `CC_MD5_Init'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1708: undefined reference to `CC_MD5_Update'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1709: undefined reference to `CC_MD5_Final'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/OutputFile.cpp:1714: undefined reference to `CC_MD5'
-# src/ld/parsers/lto_file.o: In function `lto::Parser::fileKind(unsigned char const*, unsigned long long)':
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:283: undefined reference to `lto_module_is_object_file_in_memory_for_target'
-# src/ld/parsers/lto_file.o: In function `lto::libLTOisLoaded()':
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:844: undefined reference to `lto_get_version'
-# src/ld/parsers/lto_file.o: In function `File':
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:341: undefined reference to `lto_module_create_from_memory'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:348: undefined reference to `lto_module_get_num_symbols'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:351: undefined reference to `lto_module_get_symbol_name'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:352: undefined reference to `lto_module_get_symbol_attribute'
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/lto_file.cpp:343: undefined reference to `lto_get_error_message
-# /home/nonesuch/src/toolchain4/src/cctools-809/ld64/src/ld/parsers/libunwind/AddressSpace.hpp:140: undefined reference to `__assert_rtn'
-# CC is CommonCrypto
-# Darwin itself uses -lLTO -> I think this is something some of the older toolchains supported, they built bits of llvm AFAIR.
+do-sed $"s^#include <CommonCrypto/CommonDigest.h>^#include <openssl/md5.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+do-sed $"s^CC_MD5^MD5^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
 
 message_status "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;

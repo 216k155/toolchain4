@@ -284,3 +284,22 @@ strlcat(char *dst, const char *src, size_t siz)
 }
 
 #endif
+
+#ifndef HAVE__NSGETEXECUTABLEPATH
+/**
+ * Based on MonetDB's get_bin_path
+ * http://dev.monetdb.org/hg/MonetDB/file/54ad354daff8/common/utils/mutils.c#l340
+ */
+int _NSGetExecutablePath(char *buf, unsigned long *bufsize) {
+#if defined(_MSC_VER)
+	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
+		return strlen;
+	}
+	return -1;
+#elif defined(HAVE_READLINK) /* Linux */
+	return readlink("/proc/self/exe", buf, *bufsize);
+#else
+	return -1; /* Fail on all other systems for now */
+#endif /* _MSC_VER */
+}
+#endif/* HAVE__NSGETEXECUTABLEPATH */

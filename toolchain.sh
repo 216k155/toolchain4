@@ -582,14 +582,15 @@ toolchain_cctools() {
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
-		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
+		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
-		if ! ( make CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h" &>make.log && make install &>install.log ); then
+		# make CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h"
+		if ! ( make &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
 		fi
