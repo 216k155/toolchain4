@@ -686,6 +686,128 @@ toolchain_llvmgcc_saurik() {
 	fi
 }
 
+toolchain_gcc()
+{
+	local TARGET="arm-apple-darwin${DARWINVER}"
+	local TARGET="arm-apple-darwin${DARWINVER}"
+	if [ -z $(which ${TARGET}-ar) ] ; then
+		export PATH="${PREFIX}/bin":"${PATH}"
+	fi
+
+	download http://opensource.apple.com/tarballs/gcc/gcc-5666.3.tar.gz
+	if [ ! -d gcc-5666.3 ] ; then
+		tar xvf gcc-5666.3.tar.gz
+		pushd gcc-5666.3
+		patch -p1 < ../patches/gcc/gcc-5666.3-cflags.patch
+		patch -p1 < ../patches/gcc/gcc-5666.3-t-darwin_prefix.patch
+		patch -p1 < ../patches/gcc/gcc-5666.3-strip_for_target.patch
+		patch -p1 < ../patches/gcc/gcc-5666.3-relocatable.patch
+	popd
+	fi
+	mkdir gcc-build-${DARWINVER}
+	pushd gcc-build-${DARWINVER}
+	# Without -D_CTYPE_H (to prevent /usr/include/ctype.h), get
+	# #error "safe-ctype.h and ctype.h may not be used simultaneously"
+	# from toolchain4/gcc-5666.3/include/safe-ctype.h
+	CFLAGS="-m32 -O2 -msse2 -D_CTYPE_H" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+		../gcc-5666.3/configure --prefix=$PREFIX/usr \
+		--disable-checking \
+		--enable-languages=c,objc,c++,obj-c++ \
+		--with-as=$PREFIX/bin/$TARGET-as \
+		--with-ld=$PREFIX/bin/$TARGET-ld \
+		--target=$TARGET \
+		--with-sysroot=$PREFIX \
+		--enable-static \
+		--enable-shared \
+		--enable-nls \
+		--disable-multilib \
+		--disable-werror \
+		--enable-libgomp \
+		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
+		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
+		--with-lipo=$PREFIX/bin/$TARGET-lipo
+	make
+	make install
+	popd
+	pushd $PREFIX/bin
+		ln -sf ${TARGET}-gcc ${TARGET}-gcc-4.2.1
+		ln -sf ${TARGET}-g++ ${TARGET}-g++-4.2.1
+	popd
+}
+
+build_llvm_gcc()
+{
+ # Because LLVM is the future right?
+ # First, force the use of ld64 everywhere (yes you can keep this as permanent):
+ pushd $PREFIX/usr/bin
+ # Use the existence of ld.classic to determine whether ld is already ld64
+ if [ ! -f ${TARGET}-ld_classic ] ; then
+  mv ${TARGET}-ld ${TARGET}-ld_classic
+  ln -sf ${TARGET}-ld64 ${TARGET}-ld
+ fi
+ popd
+
+ # Need to build Apple's LLVM first.
+ # This is somewhat intensive (lots of C++) so if you don't have a powerful PC do not use -j flag with make.
+ downloadIfNotExists llvmgcc42-2336.1.tar.gz ] http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
+ # Clean up because this is a two stage process and we patch between the stages.
+ # rm -rf llvmgcc42-2336.1
+ tar zxvf llvmgcc42-2336.1.tar.gz
+ pushd llvmgcc42-2336.1
+  patch -p0 < ../xchain${XCHAIN_VER}/patches/llvmgcc42-2336.1-redundant.patch
+  patch -p0 < ../xchain${XCHAIN_VER}/patches/llvmgcc42-2336.1-mempcpy.patch
+  patch -p0 < ../xchain${XCHAIN_VER}/patches/llvmgcc42-2336.1-relocatable.patch
+ popd
+
+ mkdir llvm-obj-build-${DARWINVER}
+ pushd llvm-obj-build-${DARWINVER}
+  CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+	  ../llvmgcc42-2336.1/llvmCore/configure \
+	  --prefix=$PREFIX/usr \
+	  --enable-optimized \
+	  --disable-assertions \
+	  --target=$TARGET
+  make
+  make install # optional
+ popd
+
+ # Build outside the directory.
+ mkdir llvmgcc-build-${DARWINVER}
+ pushd llvmgcc-build-${DARWINVER}
+  CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+	  ../llvmgcc42-2336.1/configure \
+	  --target=$TARGET \
+	  --with-sysroot=$PREFIX \
+	  --prefix=$PREFIX/usr \
+	  --enable-languages=objc,c++,obj-c++ \
+	  --disable-bootstrap \
+	  --enable--checking \
+	  --enable-llvm=$PWD/../llvm-obj-build-${DARWIN_VER} \
+	  --enable-shared \
+	  --enable-static \
+	  --enable-libgomp \
+	  --disable-werror \
+	  --disable-multilib \
+	  --program-transform-name=/^[cg][^.-]*$/s/$/-4.2/ \
+	  --with-gxx-include-dir=$PREFIX/usr/include/c++/4.2.1 \
+	  --program-prefix=$TARGET-llvm- \
+	  --with-slibdir=$PREFIX/lib \
+	  --with-ld=$PREFIX/bin/$TARGET-ld64 \
+	  --with-tune=generic \
+	  --with-as=$PREFIX/usr/bin/$TARGET-as \
+	  --with-ranlib=$PREFIX/usr/bin/$TARGET-ranlib \
+	  --with-lipo=$PREFIX/usr/bin/$TARGET-lipo
+  make
+  make install
+ popd
+ pushd $PREFIX/usr/bin
+  ln -sf ${TARGET}-llvm-gcc ${TARGET}-llvm-gcc-4.2
+  ln -sf ${TARGET}-llvm-g++ ${TARGET}-llvm-g++-4.2
+ popd
+}
+
+
+
 # Follows the build routine for the toolchain described by saurik here:
 # www.saurik.com/id/4
 #
@@ -1339,6 +1461,13 @@ case $1 in
 		message_action "Building llvmgcc-core..."
 		toolchain_llvmgcc_core
 		message_action "llvmgcc build."
+		;;
+
+	gcc)
+		check_environment
+		message_action "Building gcc..."
+		toolchain_gcc
+		message_action "gcc build."
 		;;
 
 	build32)
