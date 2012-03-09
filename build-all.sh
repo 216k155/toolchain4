@@ -2,12 +2,16 @@
 
 . ./bash-tools.sh
 
-rm -rf bld src
+rm -rf bld src pre
 
 # CCTOOLSVER=782 FOREIGNHEADERS=0 ./toolchain.sh $1
 # CCTOOLSVER=782 FOREIGNHEADERS=1 ./toolchain.sh $1
-CCTOOLSVER=809 FOREIGNHEADERS=0 ./toolchain.sh $1
+# CCTOOLSVER=809 FOREIGNHEADERS=0 ./toolchain.sh $1
 # CCTOOLSVER=809 FOREIGNHEADERS=1 ./toolchain.sh $1
+
+./toolchain.sh llvmgcc-core
+./toolchain.sh cctools
+./toolchain.sh gcc
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
 
