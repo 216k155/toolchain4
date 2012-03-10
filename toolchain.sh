@@ -41,6 +41,7 @@ TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
+TARGET=${TARGET}
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm
 # and the reference darwin-native-compiler is built as 32bit too.
@@ -543,7 +544,6 @@ toolchain_download_darwin_sources() {
 
 toolchain_cctools() {
 	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
-	local TARGET="i686-apple-darwin${DARWINVER}"
 
 	build_as=1
 	if [ -f "${PREFIX}/bin/${TARGET}-as" ]; then
@@ -600,10 +600,6 @@ toolchain_cctools() {
 			exit 1
 		fi
 
-# default linker is now ld64
-#		mv "${PREFIX}/bin/i686-apple-darwin${DARWINVER}-ld" "${PREFIX}/bin/i686-apple-darwin${DARWINVER}-ld_classic"
-#		ln -s "${PREFIX}/bin/i686-apple-darwin${DARWINVER}-ld64" "${PREFIX}/bin/i686-apple-darwin${DARWINVER}-ld"
-
 	fi
 }
 
@@ -615,22 +611,22 @@ GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 toolchain_llvmgcc_core() {
 	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
-	rm -rf llvmgcc42-${GCCLLVMVERS}-core
-	mkdir -p llvmgcc42-${GCCLLVMVERS}-core
-	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C llvmgcc42-${GCCLLVMVERS}-core
-	pushd llvmgcc42-${GCCLLVMVERS}-core
+	rm -rf src/llvmgcc42-${GCCLLVMVERS}-core
+	mkdir -p src/llvmgcc42-${GCCLLVMVERS}-core
+	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C src/llvmgcc42-${GCCLLVMVERS}-core
+	pushd src/llvmgcc42-${GCCLLVMVERS}-core
 		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
 		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
 		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
-	mkdir -p bld/llvmgcc42-core
-	pushd bld/llvmgcc42-core
+	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-core
+	pushd bld/llvmgcc42-${GCCLLVMVERS}-core
 	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../../llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
+		../../src/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
 		--disable-assertions \
-		--target=i686-apple-darwin${DARWINVER}
+		--target=${TARGET}
 	make
 	make install # optional
 	popd
@@ -638,7 +634,6 @@ toolchain_llvmgcc_core() {
 
 toolchain_llvmgcc_saurik() {
 	local GCC_DIR="$SRC_DIR/gcc"
-	local TARGET="i686-apple-darwin${DARWINVER}"
 	if [ -z $(which ${TARGET}-ar) ] ; then 
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
@@ -694,25 +689,23 @@ toolchain_llvmgcc_saurik() {
 
 toolchain_gcc()
 {
-	local TARGET="i686-apple-darwin${DARWINVER}"
-	local TARGET="i686-apple-darwin${DARWINVER}"
 	if [ -z $(which ${TARGET}-ar) ] ; then
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
 
 	download http://opensource.apple.com/tarballs/gcc/gcc-5666.3.tar.gz
-	if [ ! -d gcc-5666.3 ] ; then
-		tar xvf gcc-5666.3.tar.gz
-		pushd gcc-5666.3
-		patch -p1 < ../patches/gcc/gcc-5666.3-cflags.patch
-		patch -p1 < ../patches/gcc/gcc-5666.3-t-darwin_prefix.patch
-		patch -p1 < ../patches/gcc/gcc-5666.3-strip_for_target.patch
-		patch -p1 < ../patches/gcc/gcc-5666.3-relocatable.patch
-		patch -p1 < ../patches/gcc/gcc-5666.3-lib-system.patch
+	if [ ! -d src/gcc-5666.3 ] ; then
+		tar xvf gcc-5666.3.tar.gz -C src/gcc-5666.3
+		pushd src/gcc-5666.3
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-cflags.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-t-darwin_prefix.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-strip_for_target.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
 	popd
 	fi
-	mkdir gcc-build-${DARWINVER}
-	pushd gcc-build-${DARWINVER}
+	mkdir bld/gcc-5666.3-${DARWINVER}
+	pushd bld/gcc-5666.3-${DARWINVER}
 #	PREFIXGCC=$PREFIX/usr
 	PREFIXGCC=$PREFIX
 	# Without -D_CTYPE_H (to prevent /usr/include/ctype.h), get
@@ -725,7 +718,7 @@ toolchain_gcc()
 	fi
 	if [[ ! -f $PREFIXGCC/$TARGET/include/stdio.h ]] ; then
 		[[ ! -d $PREFIXGCC/$TARGET/ ]] && mkdir -p $PREFIXGCC/$TARGET/
-		cp -R -p ../sdks/${MACOSX}.sdk/usr/include $PREFIXGCC/$TARGET/
+		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIXGCC/$TARGET/
 	fi
 	# Without this, get:
 	# The directory that should contain system headers does not exist:
@@ -737,34 +730,25 @@ toolchain_gcc()
 	# libs needed:
 	if [[ ! -d $PREFIXGCC/$TARGET/lib ]] ; then
 		mkdir -p $PREFIXGCC/$TARGET/lib
-		cp -f ../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXGCC/$TARGET/lib/
-		cp -f ../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXGCC/$TARGET/lib/
+		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXGCC/$TARGET/lib/
+		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXGCC/$TARGET/lib/
 		# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
 		# must be available (the unneeded one is libkxld.dylib)
 		# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
 		# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
 		# LD_FLAGS_FOR_TARGET hack to work.
-		cp -fR ../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXGCC/$TARGET/lib
+		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXGCC/$TARGET/lib
 	fi
-	# Oddly needed during host phase (lipo is run on it)
+	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
 	if [[ ! -f $PREFIXGCC/lib/libSystem.B.dylib ]] ; then
-		# Related to patches/gcc/gcc-5666.3-t-darwin_prefix.patch, Apple try to avoid building fat
-		# compilers on thin systems (so no x86_64 built on 32bit OSes basically)..
-		# Shouldn't matter, we'll have both...
-		# Because...
-		# ranlib libdecnumber.a
-		# make[2]: Leaving directory `$SRCDIR/gcc-build-11/libdecnumber'
-		# lipo: can't open input file: $SRCDIR/pre/usr/lib/libSystem.B.dylib (No such file or directory)
-		# lipo: can't open input file: $SRCDIR/pre/usr/lib/libSystem.B.dylib (No such file or directory)
-		# make[2]: Entering directory `$SRCDIR/gcc-build-11/gcc'
 		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/
-		cp -fR ../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
+		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
 	fi
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
 	CFLAGS="-m32 -O2 -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../gcc-5666.3/configure --prefix=$PREFIXGCC \
+		../../gcc-5666.3/configure --prefix=$PREFIXGCC \
 		--disable-checking \
 		--enable-languages=c,objc,c++,obj-c++ \
 		--with-as=$PREFIX/bin/$TARGET-as \
@@ -796,111 +780,44 @@ toolchain_gcc()
 toolchain_llvmgcc() {
 	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
-	rm -rf llvmgcc42-${GCCLLVMVERS}-gcc
-	mkdir -p llvmgcc42-${GCCLLVMVERS}-gcc
-	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C llvmgcc42-${GCCLLVMVERS}-gcc
-	#
-	pushd llvmgcc42-${GCCLLVMVERS}-gcc
-		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
-		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
-		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+	rm -rf src/llvmgcc42-${GCCLLVMVERS}
+	mkdir -p src/llvmgcc42-${GCCLLVMVERS}
+	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C src/llvmgcc42-${GCCLLVMVERS}
+	pushd src/llvmgcc42-${GCCLLVMVERS}
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
-	mkdir -p bld/llvmgcc42-full
-	pushd bld/llvmgcc42-full
-	mkdir llvmgcc-build-${DARWIN_VER}
-	pushd llvmgcc-build-${DARWIN_VER}
-	CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../llvmgcc42-2336.1/configure \
+	rm -rf bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	pushd bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+		../../src/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
 		--prefix=$PREFIX/usr \
 		--enable-languages=objc,c++,obj-c++ \
 		--disable-bootstrap \
 		--enable--checking \
-		--enable-llvm=$PWD/../llvm-obj-build-${DARWIN_VER} \
-		--enable-shared \
+		--enable-llvm=$PWD/../llvmgcc42-core \
+		--disable-shared \
 		--enable-static \
 		--enable-libgomp \
 		--disable-werror \
 		--disable-multilib \
 		--program-transform-name=/^[cg][^.-]*$/s/$/-4.2/ \
-		--with-gxx-include-dir=$PREFIX/usr/include/c++/4.2.1 \
+		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
 		--program-prefix=$TARGET-llvm- \
-		--with-slibdir=$PREFIX/usr/lib \
-		--with-ld=$PREFIX/usr/bin/$TARGET-ld64 \
+		--with-slibdir=$PREFIX/lib \
+		--with-ld=$PREFIX/bin/$TARGET-ld \
 		--with-tune=generic \
-		--with-as=$PREFIX/usr/bin/$TARGET-as \
-		--with-ranlib=$PREFIX/usr/bin/$TARGET-ranlib \
-		--with-lipo=$PREFIX/usr/bin/$TARGET-lipo
+		--with-as=$PREFIX/bin/$TARGET-as \
+		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
+		--with-lipo=$PREFIX/bin/$TARGET-lipo
 	make
 	make install
-
 	popd
 }
-
-build_llvm_gcc()
-{
- # Because LLVM is the future right?
- # Need to build Apple's LLVM first.
- # This is somewhat intensive (lots of C++) so if you don't have a powerful PC do not use -j flag with make.
- downloadIfNotExists llvmgcc42-2336.1.tar.gz ] http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz
- # Clean up because this is a two stage process and we patch between the stages.
- # rm -rf llvmgcc42-2336.1
- tar zxvf llvmgcc42-2336.1.tar.gz
- pushd llvmgcc42-2336.1
-  patch -p0 < ../xchain${XCHAIN_VER}/patches/llvmgcc42-2336.1-redundant.patch
-  patch -p0 < ../xchain${XCHAIN_VER}/patches/llvmgcc42-2336.1-mempcpy.patch
-  patch -p0 < ../xchain${XCHAIN_VER}/patches/llvmgcc42-2336.1-relocatable.patch
- popd
-
- mkdir llvm-obj-build-${DARWINVER}
- pushd llvm-obj-build-${DARWINVER}
-  CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-	  ../llvmgcc42-2336.1/llvmCore/configure \
-	  --prefix=$PREFIX/usr \
-	  --enable-optimized \
-	  --disable-assertions \
-	  --target=$TARGET
-  make
-  make install # optional
- popd
-
- # Build outside the directory.
- mkdir llvmgcc-build-${DARWINVER}
- pushd llvmgcc-build-${DARWINVER}
-  CFLAGS="-m32" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-	  ../llvmgcc42-2336.1/configure \
-	  --target=$TARGET \
-	  --with-sysroot=$PREFIX \
-	  --prefix=$PREFIX/usr \
-	  --enable-languages=objc,c++,obj-c++ \
-	  --disable-bootstrap \
-	  --enable--checking \
-	  --enable-llvm=$PWD/../llvm-obj-build-${DARWIN_VER} \
-	  --enable-shared \
-	  --enable-static \
-	  --enable-libgomp \
-	  --disable-werror \
-	  --disable-multilib \
-	  --program-transform-name=/^[cg][^.-]*$/s/$/-4.2/ \
-	  --with-gxx-include-dir=$PREFIX/usr/include/c++/4.2.1 \
-	  --program-prefix=$TARGET-llvm- \
-	  --with-slibdir=$PREFIX/lib \
-	  --with-ld=$PREFIX/bin/$TARGET-ld64 \
-	  --with-tune=generic \
-	  --with-as=$PREFIX/usr/bin/$TARGET-as \
-	  --with-ranlib=$PREFIX/usr/bin/$TARGET-ranlib \
-	  --with-lipo=$PREFIX/usr/bin/$TARGET-lipo
-  make
-  make install
- popd
- pushd $PREFIX/usr/bin
-  ln -sf ${TARGET}-llvm-gcc ${TARGET}-llvm-gcc-4.2
-  ln -sf ${TARGET}-llvm-g++ ${TARGET}-llvm-g++-4.2
- popd
-}
-
-
 
 # Follows the build routine for the toolchain described by saurik here:
 # www.saurik.com/id/4
@@ -921,8 +838,6 @@ toolchain_build_sys3() {
 	local GCC_DIR="$SRC_DIR/gcc"
 	local CSU_DIR="$SRC_DIR/csu"
 	export PATH="$PREFIX/bin":"${PATH}"
-	local TARGET="i686-apple-darwin${DARWINVER}"
-	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="i686-apple-darwin${DARWINVER}"
 
 	mkdir -p "${TOOLCHAIN}"
 	if [ ! -d "${LEOPARD_SDK}" ] ; then
@@ -1233,8 +1148,6 @@ toolchain_sys50() {
 	local IPHONE_SIMULATOR_SDK="${SDKS_DIR}/iPhoneSimulator${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local TARGET="i686-apple-darwin${DARWINVER}"
-	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="i686-apple-darwin${DARWINVER}"
 
 	mkdir -p "${TOOLCHAIN}"
 	mkdir -p "${SYS_DIR}"
@@ -1293,8 +1206,6 @@ toolchain_sys43() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local TARGET="i686-apple-darwin${DARWINVER}"
-	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="i686-apple-darwin${DARWINVER}"
 
 	mkdir -p "${TOOLCHAIN}"
 	mkdir -p "${SYS_DIR}"
@@ -1340,8 +1251,6 @@ toolchain_sys() {
 	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
-	local TARGET="i686-apple-darwin${DARWINVER}"
-	[ ! "`vercmp $TOOLCHAIN_VERSION 2.0`" == "newer" ] && local TARGET="i686-apple-darwin${DARWINVER}"
 
 	mkdir -p "${TOOLCHAIN}"
 	mkdir -p "${SYS_DIR}"
@@ -1543,7 +1452,7 @@ case $1 in
 		message_action "cctools built."
 		;;
 
-	llvmgcc)
+	llvmgcc-saurik)
 		check_environment
 		message_action "Building llvmgcc (saurik)..."
 		toolchain_llvmgcc_saurik
@@ -1554,6 +1463,13 @@ case $1 in
 		check_environment
 		message_action "Building llvmgcc-core..."
 		toolchain_llvmgcc_core
+		message_action "llvmgcc built."
+		;;
+
+	llvmgcc)
+		check_environment
+		message_action "Building llvmgcc..."
+		toolchain_llvmgcc
 		message_action "llvmgcc built."
 		;;
 
@@ -1692,6 +1608,9 @@ case $1 in
 		echo -e "    \tAcquire and build cctools."
 		echo
 		echo	"    ${BOLD}llvmgcc${ENDF}"
+		echo -e "    \tAcquire and build llvmgcc"
+		echo
+		echo	"    ${BOLD}llvmgcc-saurik${ENDF}"
 		echo -e "    \tAcquire and build llvmgcc (saurik)"
 		echo
 		echo	"    ${BOLD}llvmgcc-core${ENDF}"
