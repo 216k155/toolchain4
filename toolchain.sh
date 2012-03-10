@@ -588,7 +588,7 @@ toolchain_cctools() {
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
 		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
-			--target="${TARGET}" \
+			--target="i686-apple-darwin${DARWINVER}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
@@ -615,9 +615,9 @@ toolchain_llvmgcc_core() {
 	mkdir -p src/llvmgcc42-${GCCLLVMVERS}-core
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C src/llvmgcc42-${GCCLLVMVERS}-core
 	pushd src/llvmgcc42-${GCCLLVMVERS}-core
-		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
-		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
-		patch -b -p0 < ../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
 	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-core
 	pushd bld/llvmgcc42-${GCCLLVMVERS}-core
