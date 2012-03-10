@@ -41,7 +41,7 @@ TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
-TARGET=${TARGET}
+TARGET=i686-apple-darwin${DARWINVER}
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm
 # and the reference darwin-native-compiler is built as 32bit too.
@@ -588,7 +588,7 @@ toolchain_cctools() {
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 
 		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
-			--target="i686-apple-darwin${DARWINVER}" \
+			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
@@ -689,13 +689,14 @@ toolchain_llvmgcc_saurik() {
 
 toolchain_gcc()
 {
-	if [ -z $(which ${TARGET}-ar) ] ; then
+	if [[ -z $(which ${TARGET}-ar) ]] ; then
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
 
 	download http://opensource.apple.com/tarballs/gcc/gcc-5666.3.tar.gz
-	if [ ! -d src/gcc-5666.3 ] ; then
-		tar xvf gcc-5666.3.tar.gz -C src/gcc-5666.3
+	if [[ ! -d src/gcc-5666.3 ]] ; then
+		mkdir src/gcc-5666.3
+		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C src/gcc-5666.3
 		pushd src/gcc-5666.3
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-cflags.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-t-darwin_prefix.patch
@@ -748,7 +749,7 @@ toolchain_gcc()
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
 	CFLAGS="-m32 -O2 -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../../gcc-5666.3/configure --prefix=$PREFIXGCC \
+		../../src/gcc-5666.3/configure --prefix=$PREFIXGCC \
 		--disable-checking \
 		--enable-languages=c,objc,c++,obj-c++ \
 		--with-as=$PREFIX/bin/$TARGET-as \
@@ -786,7 +787,8 @@ toolchain_llvmgcc() {
 	pushd src/llvmgcc42-${GCCLLVMVERS}
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+#		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch # Patch broken, may not be needed either.
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 	popd
 	rm -rf bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
@@ -795,12 +797,12 @@ toolchain_llvmgcc() {
 		../../src/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
-		--prefix=$PREFIX/usr \
+		--prefix=$PREFIX \
 		--enable-languages=objc,c++,obj-c++ \
 		--disable-bootstrap \
 		--enable--checking \
-		--enable-llvm=$PWD/../llvmgcc42-core \
-		--disable-shared \
+		--enable-llvm=$PWD/../llvmgcc42-${GCCLLVMVERS}-core \
+		--enable-shared \
 		--enable-static \
 		--enable-libgomp \
 		--disable-werror \
@@ -815,7 +817,7 @@ toolchain_llvmgcc() {
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
 		--with-lipo=$PREFIX/bin/$TARGET-lipo
 	make
-	make install
+	make install -k
 	popd
 }
 

@@ -1,0 +1,22 @@
+--- configure.orig	2012-03-10 12:09:06.105856068 +0000
++++ configure	2012-03-10 12:09:49.737307541 +0000
+@@ -3486,7 +3486,7 @@
+ # being built; programs in there won't even run.
+ if test "${build}" = "${host}" && test -d ${srcdir}/gcc; then
+   # Search for pre-installed headers if nothing else fits.
+-  FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -B$(build_tooldir)/bin/ -B$(build_tooldir)/lib/ -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include'
++  FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -B$(build_tooldir)/bin/ -B$(build_tooldir)/lib/ -B$(build_tooldir)/lib/system -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include'
+ fi
+ 
+ if test "x${use_gnu_ld}" = x &&
+--- configure.in.orig	2012-03-10 12:09:00.105931496 +0000
++++ configure.in	2012-03-10 12:09:36.577472987 +0000
+@@ -2193,7 +2193,7 @@
+ # being built; programs in there won't even run.
+ if test "${build}" = "${host}" && test -d ${srcdir}/gcc; then
+   # Search for pre-installed headers if nothing else fits.
+-  FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -B$(build_tooldir)/bin/ -B$(build_tooldir)/lib/ -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include'
++  FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -B$(build_tooldir)/bin/ -B$(build_tooldir)/lib/ -B$(build_tooldir)/lib/system -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include'
+ fi
+ 
+ if test "x${use_gnu_ld}" = x &&
