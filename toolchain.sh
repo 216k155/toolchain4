@@ -768,14 +768,86 @@ toolchain_gcc()
 	# -k as "No rule to make target `install'" in libiberty.
 	make install -k
 	popd
-	pushd $PREFIXGCC/bin
-		[[ ! -f ${TARGET}-gcc-4.2.1 ]] && cp ${TARGET}-gcc ${TARGET}-gcc-4.2.1
-		[[ ! -f ${TARGET}-g++-4.2.1 ]] && cp ${TARGET}-g++ ${TARGET}-g++-4.2.1
-	popd
 	if [[ ! "$PREFIXGCC" = "$PREFIX" ]] ; then
 		cp -R -a $PREFIXGCC/* $PREFIX
 		rm -rf $PREFIXGCC
 	fi
+}
+
+patch_binary() {
+	local _BINARY="$1"
+	local _SEARCH="$2"
+	local _REPLACE="$3"
+	local _PATCH=$PWD/patches/binmay-add-padding.patch
+	message_status "patch_binary $_BINARY, looking for $_SEARCH, replacing with $_REPLACE"
+
+	if [[ -z $(which binmay) ]] ; then
+		download http://www.filewut.com/spages/pages/software/binmay/files/binmay-110615.tar.gz
+		[[ ! -d ${TMP_DIR}/binmay-110615 ]] && mkdir -p ${TMP_DIR}/binmay-110615
+		tar -xf binmay-110615.tar.gz -C ${TMP_DIR}/
+		pushd ${TMP_DIR}/binmay-110615
+		patch -p0 < $_PATCH
+		make
+		cp binmay $HOST_DIR/bin
+		popd
+		message_status "binmay built."
+	fi
+#	[[ ! -f ${_BINARY}.unpatched ]] && cp $_BINARY ${_BINARY}.unpatched
+#	binmay -a -i $_BINARY.unpatched -s "t:$_SEARCH" -r "t:$_REPLACE" -o ${_BINARY}
+}
+
+patch_gcc() {
+	pushd $PREFIX/bin
+
+	patch_binary ${TARGET}-as $PREFIX/bin .
+
+	patch_binary ${TARGET}-cpp $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-cpp $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-cpp $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-c++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-c++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-c++ $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-g++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-g++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-g++ $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-gcc $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-gcc $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-gcc $PREFIX/bin/ ./
+
+
+	patch_binary ${TARGET}-llvm-cpp $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-llvm-cpp $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-llvm-cpp $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-llvm-c++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-llvm-c++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-llvm-c++ $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-llvm-g++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-llvm-g++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-llvm-g++ $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-llvm-gcc $PREFIX/bin/${TARGET}-as ./${TARGET}-as
+	patch_binary ${TARGET}-llvm-gcc $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	patch_binary ${TARGET}-llvm-gcc $PREFIX/bin/ ./
+
+	patch_binary ${TARGET}-libtool $PREFIX/bin .
+	patch_binary ${TARGET}-ranlib $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+
+	popd
+
+	pushd $PREFIX/libexec/gcc/${TARGET}/4.2.1
+	patch_binary collect2 $PREFIX/bin/i686-apple-darwin11-ld i686-apple-darwin11-ld
+	pushd install-tools
+	do-sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../..^" mkheaders
+	popd
+	popd
+
+#	done
+	popd
 }
 
 toolchain_llvmgcc() {
@@ -1570,6 +1642,13 @@ case $1 in
 		fi
 		;;
 
+	testpatchbinary)
+#		message_status "Testing patch binary..."
+#		echo -e "THIS STRING WANTS REPLACING\0" > testpatch.bin
+#		patch_binary testpatch.bin "THIS STRING WANTS REPLACING" "WITH THIS STRING"
+		patch_gcc
+		;;
+
 	*)
 		# Shows usage information to the user
 		if [[ ! "$UNAME" == "Windows" ]] ; then
@@ -1632,5 +1711,9 @@ case $1 in
 		echo -e "    \tRemove source files, extracted dmgs and ipsws and"
 		echo -e "    \ttemporary files, leaving only the compiled toolchain"
 		echo -e "    \tand headers."
+		echo
+		echo	"    ${BOLD}testpatchbinary${ENDF}"
+		echo -e "    \tTests patch binary functionality, temporary until it's working"
+		echo
 		;;
 esac

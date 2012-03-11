@@ -12,6 +12,7 @@ rm -rf bld src pre
 ./toolchain.sh llvmgcc-core
 ./toolchain.sh cctools
 ./toolchain.sh gcc
+./toolchain.sh llvmgcc
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
 
