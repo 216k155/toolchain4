@@ -203,7 +203,7 @@ if [[ "$(uname-bt)" == "Darwin" ]] ; then
 	URLDL=curl
 fi
 
-NEEDED_COMMANDS="gcc make mount $SUDO zcat tar $URLDL unzip $GAWK bison flex patch"
+NEEDED_COMMANDS="gcc make mount $SUDO zcat tar $URLDL unzip $GAWK bison flex patch xxd"
 
 HERE=`pwd`
 
@@ -751,7 +751,7 @@ toolchain_gcc()
 	CFLAGS="-m32 -O2 -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
 		../../src/gcc-5666.3/configure --prefix=$PREFIXGCC \
 		--disable-checking \
-		--enable-languages=c,objc,c++,obj-c++ \
+		--enable-languages=c,c++,objc,obj-c++ \
 		--with-as=$PREFIX/bin/$TARGET-as \
 		--with-ld=$PREFIX/bin/$TARGET-ld \
 		--target=$TARGET \
@@ -774,14 +774,9 @@ toolchain_gcc()
 	fi
 }
 
-patch_binary() {
-	local _BINARY="$1"
-	local _SEARCH="$2"
-	local _REPLACE="$3"
-	local _PATCH=$PWD/patches/binmay-add-padding.patch
-	message_status "patch_binary $_BINARY, looking for $_SEARCH, replacing with $_REPLACE"
-
+build_binmay() {
 	if [[ -z $(which binmay) ]] ; then
+		local _PATCH=$PWD/patches/binmay-add-padding.patch
 		download http://www.filewut.com/spages/pages/software/binmay/files/binmay-110615.tar.gz
 		[[ ! -d ${TMP_DIR}/binmay-110615 ]] && mkdir -p ${TMP_DIR}/binmay-110615
 		tar -xf binmay-110615.tar.gz -C ${TMP_DIR}/
@@ -792,61 +787,105 @@ patch_binary() {
 		popd
 		message_status "binmay built."
 	fi
-#	[[ ! -f ${_BINARY}.unpatched ]] && cp $_BINARY ${_BINARY}.unpatched
-#	binmay -a -i $_BINARY.unpatched -s "t:$_SEARCH" -r "t:$_REPLACE" -o ${_BINARY}
+}
+
+patch_binary() {
+	local _BINARY="$1"
+	local _SEARCH="$2"
+	local _REPLACE="$3"
+	build_binmay
+	message_status "patch_binary $_BINARY, looking for $_SEARCH, replacing with $_REPLACE"
+	local _TMPFILE=$(mktemp)
+	cp $_BINARY $_TMPFILE
+	binmay -a -i $_TMPFILE -s "t:$_SEARCH" -r "t:$_REPLACE" -o ${_BINARY}
+}
+
+patch_binary_hex() {
+	local _BINARY="$1"
+	local _SEARCH="$2"
+	local _REPLACE="$3"
+	build_binmay
+	message_status "patch_binary_hex $_BINARY, looking for $_SEARCH, replacing with $_REPLACE"
+	local _TMPFILE=$(mktemp)
+	cp $_BINARY $_TMPFILE
+	binmay -a -i $_TMPFILE -s "h:$_SEARCH" -r "h:$_REPLACE" -o ${_BINARY}
 }
 
 patch_gcc() {
-	pushd $PREFIX/bin
+	pushd $(dirname $PREFIX)
 
+	rm -rf pre-reloc
+	cp -R -p pre pre-reloc
+
+	pushd pre-reloc
+
+	pushd bin
+	# The bin patches in this folder are obvious and obviously safe (assuming patching works at all, that is)
+	# The lib/libexec patches less so.
+
+	# Assembler.
 	patch_binary ${TARGET}-as $PREFIX/bin .
 
-	patch_binary ${TARGET}-cpp $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-cpp $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-cpp $PREFIX/bin/ ./
+	# GCC and LLVM GCC.
+	for _PROG in ${TARGET}-cpp ${TARGET}-c++ ${TARGET}-g++ ${TARGET}-gcc ${TARGET}-llvm-cpp ${TARGET}-llvm-c++ ${TARGET}-llvm-g++ ${TARGET}-llvm-gcc
+	do
+		patch_binary $_PROG $PREFIX/bin/${TARGET}-as      ./${TARGET}-as
+		patch_binary $_PROG $PREFIX/bin/${TARGET}-ld      ./${TARGET}-ld
+		patch_binary $_PROG $PREFIX/bin/                  ./
+		patch_binary $_PROG $PREFIX/lib/gcc/              ../lib/gcc/
+		patch_binary $_PROG $PREFIX/libexec/gcc/          ../libexec/gcc/
 
-	patch_binary ${TARGET}-c++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-c++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-c++ $PREFIX/bin/ ./
+		# Fix syslibroot (part of the specs)
+		# This one's trickier, it's not a null terminated string.
+		# Time for hex; introduces another dependency though (xxd)
+		local _ORIGSTRNG="-syslibroot $PREFIX}"
+		local _ORIGLEN=`echo ${#_ORIGSTRNG}`
+		local _REPLSTRNG="$(printf "%-${_ORIGLEN}s" "-syslibroot ..}")"
+		local _HEXSEARCH=$(echo -n "$_ORIGSTRNG" | xxd -p -c 9999)
+		local _HEXREPLCE=$(echo -n "$_REPLSTRNG" | xxd -p -c 9999)
+		patch_binary_hex $_PROG $_HEXSEARCH $_HEXREPLCE
+	done
 
-	patch_binary ${TARGET}-g++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-g++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-g++ $PREFIX/bin/ ./
-
-	patch_binary ${TARGET}-gcc $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-gcc $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-gcc $PREFIX/bin/ ./
-
-
-	patch_binary ${TARGET}-llvm-cpp $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-llvm-cpp $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-llvm-cpp $PREFIX/bin/ ./
-
-	patch_binary ${TARGET}-llvm-c++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-llvm-c++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-llvm-c++ $PREFIX/bin/ ./
-
-	patch_binary ${TARGET}-llvm-g++ $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-llvm-g++ $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-llvm-g++ $PREFIX/bin/ ./
-
-	patch_binary ${TARGET}-llvm-gcc $PREFIX/bin/${TARGET}-as ./${TARGET}-as
-	patch_binary ${TARGET}-llvm-gcc $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
-	patch_binary ${TARGET}-llvm-gcc $PREFIX/bin/ ./
-
-	patch_binary ${TARGET}-libtool $PREFIX/bin .
-	patch_binary ${TARGET}-ranlib $PREFIX/bin/${TARGET}-ld ./${TARGET}-ld
+	# Binutils bits.
+	patch_binary ${TARGET}-ar $PREFIX/bin                    .
+	patch_binary ${TARGET}-libtool $PREFIX/bin               .
+	patch_binary ${TARGET}-ranlib $PREFIX/bin/${TARGET}-ld   ./${TARGET}-ld
 
 	popd
 
-	pushd $PREFIX/libexec/gcc/${TARGET}/4.2.1
+	pushd libexec/gcc/${TARGET}/4.2.1
 	patch_binary collect2 $PREFIX/bin/i686-apple-darwin11-ld i686-apple-darwin11-ld
 	pushd install-tools
-	do-sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../..^" mkheaders
-	popd
+	do-sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../../..^" mkheaders
 	popd
 
-#	done
+	# This is where it becomes, err, patchy. I've no idea what the working directory
+	# is at the point when it's running the libexec programs, so this may take some
+	# iteration to get right, the most likely candidates are ../../../.. and just ..
+	# strace is invaluable for discovering what's going on.
+
+	local _LIBEXECPREFIX=../../../..
+	# The c++ include path seems wrong here anyway. Not sure if the headers didn't get
+	# installed due to libibery install failure (though I do use -k so it shouldn't matter).
+	# Maybe libstdc++ isn't being built?
+	for _PROG in cc1 cc1plus cc1obj cc1objplus
+	do
+		patch_binary $_PROG $PREFIX/include/c++/4.2.1                                      $_LIBEXECPREFIX/include/c++/4.2.1
+		patch_binary $_PROG $PREFIX/include/c++/4.2.1/${TARGET}                            $_LIBEXECPREFIX/include/c++/4.2.1/${TARGET}
+		patch_binary $_PROG $PREFIX/include/c++/4.2.1/backward                             $_LIBEXECPREFIX/include/c++/4.2.1/backward
+		patch_binary $_PROG $PREFIX/lib/gcc/${TARGET}/4.2.1/include                        $_LIBEXECPREFIX/lib/gcc/${TARGET}/4.2.1/include
+		patch_binary $_PROG $PREFIX/lib/gcc/${TARGET}/4.2.1/../../../../${TARGET}/include  $_LIBEXECPREFIX/lib/gcc/${TARGET}/4.2.1/../../../../${TARGET}/include
+		patch_binary $_PROG $PREFIX/lib/gcc/${TARGET}/4.2.1/include                        $_LIBEXECPREFIX/lib/gcc/${TARGET}/4.2.1/include
+		patch_binary $_PROG $PREFIX/lib/gcc/${TARGET}/4.2.1/include-gnu-runtime            $_LIBEXECPREFIX/lib/gcc/${TARGET}/4.2.1/include-gnu-runtime
+		patch_binary $_PROG $PREFIX/share/locale                                           $_LIBEXECPREFIX/share/locale
+		patch_binary $_PROG $PREFIX/etc/llvm                                               $_LIBEXECPREFIX/etc/llvm
+		patch_binary $_PROG $PREFIX/lib                                                    $_LIBEXECPREFIX/lib
+	done
+
+	popd
+
+	popd
+
 	popd
 }
 
@@ -865,12 +904,13 @@ toolchain_llvmgcc() {
 	rm -rf bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	# Note we're not enabling c here?!
 	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
 		../../src/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
 		--prefix=$PREFIX \
-		--enable-languages=objc,c++,obj-c++ \
+		--enable-languages=c++,objc,obj-c++ \
 		--disable-bootstrap \
 		--enable--checking \
 		--enable-llvm=$PWD/../llvmgcc42-${GCCLLVMVERS}-core \
@@ -1642,7 +1682,7 @@ case $1 in
 		fi
 		;;
 
-	testpatchbinary)
+	makerelocatable)
 #		message_status "Testing patch binary..."
 #		echo -e "THIS STRING WANTS REPLACING\0" > testpatch.bin
 #		patch_binary testpatch.bin "THIS STRING WANTS REPLACING" "WITH THIS STRING"
@@ -1712,8 +1752,10 @@ case $1 in
 		echo -e "    \ttemporary files, leaving only the compiled toolchain"
 		echo -e "    \tand headers."
 		echo
-		echo	"    ${BOLD}testpatchbinary${ENDF}"
-		echo -e "    \tTests patch binary functionality, temporary until it's working"
+		echo	"    ${BOLD}makerelocatable${ENDF}"
+		echo -e "    \tTo be used once a fully working, but unrelocatable"
+		echo -e "    \ttoolchain has been built in pre. Creates pre-reloc,"
+		echo -e "    \tleaving pre untouched in case it's wanted."
 		echo
 		;;
 esac
