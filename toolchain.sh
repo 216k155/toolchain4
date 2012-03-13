@@ -32,11 +32,22 @@
 # http://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/sys-devel/binutils-apple/binutils-apple-4.2.ebuild?revision=1.2
 # https://github.com/rotten-apples/cctools
 
+# Current status: everything builds, ld64 is much more up to date now (127.2) and links
+# statically with llvmCore (hence massive executables), but I don't like shared libraries
+# being used in core toolchain components like linkers. It just feels wrong somehow.
 
-#/home/nonesuch/src/toolchain4/gcc-build-11/./gcc/xgcc -B/home/nonesuch/src/toolchain4/gcc-build-11/./gcc/ -B/home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/bin/ -B/home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/lib/ -isystem /home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/include -isystem /home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/sys-include  -O2 -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE   -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition  -isystem ./include  -I. -I. -I../../gcc-5666.3/gcc -I../../gcc-5666.3/gcc/. -I../../gcc-5666.3/gcc/../include -I../../gcc-5666.3/gcc/../libcpp/include  -I../../gcc-5666.3/gcc/../libdecnumber -I../libdecnumber  -mlongcall -fno-tree-dominator-opts -c ../../gcc-5666.3/gcc/config/darwin-crt3.c -o crt3.o
-# cd nonesuch@ubuntu-vb:~/src/toolchain4/gcc-build-11/gcc
-# nonesuch@ubuntu-vb:~/src/toolchain4/gcc-build-11/gcc$ /home/nonesuch/src/toolchain4/gcc-build-11/./gcc/xgcc -B/home/nonesuch/src/toolchain4/gcc-build-11/./gcc/ -B/home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/bin/ -B/home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/lib/ -isystem /home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/include -isystem /home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/sys-include  -O2  -O2 -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE   -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition  -isystem ./include  -fPIC -pipe -g -DHAVE_GTHR_DEFAULT -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED  -dynamiclib -nodefaultlibs -install_name /home/nonesuch/src/toolchain4/pre/usr/i686-apple-darwin11/lib/libgcc_s`if test . = ppc64 ; then echo _. ; fi`.1.dylib -single_module -o ./libgcc_s.1.dylib.tmp -Wl,-exported_symbols_list,libgcc/./libgcc.map -compatibility_version 1 -current_version 1.0  libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc -L../../pre/usr/i686-apple-darwin11/lib/system
-# What version of the toolchain are we building?
+# The toolchain can't be moved though; not relocatable at all.
+# I've tried a few different approaches to fixing this, including:
+# 1. A source patch to GCC.
+# 2. Binary patching of the built binaries so they contain relative paths.
+# Both failed. It's probably worth persuing a source code approach.
+# The other option is to go with 2, but as an install script that I supply
+# with the toolchain. There'd be a restriction on the install prefixes length
+# such that it mustn't be longer than the one I used when building, but in
+# theory it'd work (and the hard part is already done, currently patch_gcc
+# patches with relative paths, these would need changing to the absolute
+# install location instead.
+
 TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
 DARWINVER=11
@@ -811,6 +822,9 @@ patch_binary_hex() {
 	binmay -a -i $_TMPFILE -s "h:$_SEARCH" -r "h:$_REPLACE" -o ${_BINARY}
 }
 
+# Does what it says on the tin, but doesn't then behave correctly. If I was patching new absolute
+# locations then it's likely that this would work, but my 'put relative paths into the binaries' idea
+# is a failure, still it'll serve as a useful reference for how to do it.
 patch_gcc() {
 	pushd $(dirname $PREFIX)
 
@@ -824,7 +838,7 @@ patch_gcc() {
 	# The lib/libexec patches less so.
 
 	# Assembler.
-	patch_binary ${TARGET}-as $PREFIX/bin .
+	patch_binary ${TARGET}-as $PREFIX/bin                 .
 
 	# GCC and LLVM GCC.
 	for _PROG in ${TARGET}-cpp ${TARGET}-c++ ${TARGET}-g++ ${TARGET}-gcc ${TARGET}-llvm-cpp ${TARGET}-llvm-c++ ${TARGET}-llvm-g++ ${TARGET}-llvm-gcc
@@ -858,12 +872,10 @@ patch_gcc() {
 	pushd install-tools
 	do-sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../../..^" mkheaders
 	popd
-
-	# This is where it becomes, err, patchy. I've no idea what the working directory
+	# This is where it becomes even more patchy. I've no idea what the working directory
 	# is at the point when it's running the libexec programs, so this may take some
 	# iteration to get right, the most likely candidates are ../../../.. and just ..
 	# strace is invaluable for discovering what's going on.
-
 	local _LIBEXECPREFIX=../../../..
 	# The c++ include path seems wrong here anyway. Not sure if the headers didn't get
 	# installed due to libibery install failure (though I do use -k so it shouldn't matter).
@@ -881,7 +893,6 @@ patch_gcc() {
 		patch_binary $_PROG $PREFIX/etc/llvm                                               $_LIBEXECPREFIX/etc/llvm
 		patch_binary $_PROG $PREFIX/lib                                                    $_LIBEXECPREFIX/lib
 	done
-
 	popd
 
 	popd
