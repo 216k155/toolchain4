@@ -246,11 +246,37 @@ ln_s() {
 	fi
 }
 
+# Because I'm tired of bsd/macosx sed. Emitting newlines is particularly onerous!
+build_gnused() {
+    local _TMP=$1
+    local _PREFIX=$2
+    if [[ "$(uname-bt)" == "Darwin" ]] ; then
+	if [[ -z $(which gsed) ]] ; then
+		download http://ftp.gnu.org/gnu/sed/sed-4.2.1.tar.gz
+		tar -zxf sed-4.2.1.tar.gz
+		pushd sed-4.2.1
+			./configure --prefix=$_PREFIX --program-prefix=g --disable-shared --enable-static
+			if [[ ! make ]] || [[ ! $(make install) ]] ; then
+			    error "Failed to make gnu sed"
+			    exit 1
+			fi
+		popd
+	fi
+	if [[ -z $(which gsed) ]] ; then
+		export PATH=$_PREFIX/bin:$PATH
+	fi
+	if [[ -z $(which gsed) ]] ; then
+		error "Failed find made gnu sed?!"
+	fi
+	message_status "gnu sed is ready!"
+    fi
+}
+
 # Builds lns (Windows), dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools() {
-
 	build_tools_dmg $PWD/tmp $HOST_DIR $PREFIX
+	build_gnused $PWD/tmp $HOST_DIR $PREFIX
 # Urgh, no thanks - will find a better way to do this.
 #	if [[ `strings /usr/bin/as | grep as_driver | wc -w` < 1 ]]; then
 #		cp /usr/bin/as /usr/bin/i386-redhat-linux-as

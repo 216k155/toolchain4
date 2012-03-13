@@ -142,13 +142,18 @@ message_action() {
 	cecho blue $*
 }
 
-
+# bsd sed doesn't do newlines the same way as gnu sed.
 do-sed()
 {
-    if [ "$(uname-bt)" = "Darwin" ]
+    if [[ "$(uname-bt)" = "Darwin" ]]
     then
-        sed -i '.bak' "$1" $2
-        rm ${2}.bak
+	if [[ ! $(which gsed) ]]
+	then
+	    sed -i '.bak' "$1" $2
+	    rm ${2}.bak
+	else
+	    gsed "$1" -i $2
+	fi
     else
         sed "$1" -i $2
     fi

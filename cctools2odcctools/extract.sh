@@ -496,10 +496,14 @@ if [[ ! "$(uname-bt)" = "Darwin" ]] ; then
     do-sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
 fi
 
-do-sed $"s^#define VM_SYNC_DEACTIVATE^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
+do-sed $"s^#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
+
 do-sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/macho_dylib_file.cpp
-do-sed $"s^#include <CommonCrypto/CommonDigest.h>^#include <openssl/md5.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-do-sed $"s^CC_MD5^MD5^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+
+if [[ ! "$(uname-bt)" = "Darwin" ]] ; then
+	do-sed $"s^#include <CommonCrypto/CommonDigest.h>^#include <openssl/md5.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+	do-sed $"s^CC_MD5^MD5^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+fi
 
 message_status "Deleting cruft"
 find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
