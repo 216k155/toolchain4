@@ -670,8 +670,8 @@ toolchain_llvmgcc_core() {
 		--enable-optimized \
 		--disable-assertions \
 		--target=${TARGET}
-	make
-	make install # optional
+	make &>make.log
+	make install &>install.log # optional
 	popd
 }
 
@@ -824,11 +824,11 @@ toolchain_gcc()
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
-	make -k
+	make -k &>make.log
 	# this might get us the 'tooldir' setup that GCC is expecting; though it doesn't fit in with Apple's way
 	# of combining all the arches into one assembler (it looks in
 	# -k as "No rule to make target `install'" in libiberty.
-	make install -k
+	make install -k &>install.log
 	popd
 	if [[ ! "$PREFIXGCC" = "$PREFIX" ]] ; then
 		cp -R -a $PREFIXGCC/* $PREFIX
@@ -844,7 +844,7 @@ build_binmay() {
 		tar -xf binmay-110615.tar.gz -C ${TMP_DIR}/
 		pushd ${TMP_DIR}/binmay-110615
 		patch -p0 < $_PATCH
-		make
+		make &>make-binmay.log
 		cp binmay $HOST_DIR/bin
 		popd
 		message_status "binmay built."
@@ -990,8 +990,8 @@ toolchain_llvmgcc() {
 		--with-as=$PREFIX/bin/$TARGET-as \
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
 		--with-lipo=$PREFIX/bin/$TARGET-lipo
-	make
-	make install -k
+	make &>make.log
+	make install -k &>install.log
 	popd
 }
 
