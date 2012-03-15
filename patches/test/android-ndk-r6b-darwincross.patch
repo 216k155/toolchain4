@@ -1,0 +1,299 @@
+diff -burN android-ndk-r6b/build/tools/build-gcc.sh android-ndk-r6b-darwincross/build/tools/build-gcc.sh
+--- android-ndk-r6b/build/tools/build-gcc.sh	2011-07-05 19:39:42.000000000 +0200
++++ android-ndk-r6b-darwincross/build/tools/build-gcc.sh	2012-01-01 21:38:30.768980123 +0100
+@@ -64,6 +64,7 @@
+ register_var_option "--keep-libstdcxx" KEEP_LIBSTDCXX "Experimental: keep libstdc++ inside toolchain"
+ 
+ register_mingw_option
++register_darwincross_option
+ register_try64_option
+ 
+ extract_parameters "$@"
+@@ -221,14 +222,14 @@
+ run make -j$JOBS
+ if [ $? != 0 ] ; then
+     # Unfortunately, there is a bug in the GCC build scripts that prevent
+-    # parallel mingw builds to work properly on some multi-core machines
++    # parallel mingw or darwin cross builds to work properly on some multi-core machines
+     # (but not all, sounds like a race condition). Detect this and restart
+     # in single-process mode!
+-    if [ "$MINGW" = "yes" ] ; then
+-        dump "Parallel mingw build failed - continuing in single process mode!"
++    if [ "$MINGW" = "yes" -o "$DARWINCROSS" = "yes" ] ; then
++        dump "Parallel mingw or darwin cross build failed - continuing in single process mode!"
+         run make -j1
+         if [ $? != 0 ] ; then
+-            echo "Error while building mingw toolchain. See $TMPLOG"
++            echo "Error while building mingw or darwin cross toolchain. See $TMPLOG"
+             exit 1
+         fi
+     else
+diff -burN android-ndk-r6b/build/tools/build-ndk-stack.sh android-ndk-r6b-darwincross/build/tools/build-ndk-stack.sh
+--- android-ndk-r6b/build/tools/build-ndk-stack.sh	2011-07-05 19:39:42.000000000 +0200
++++ android-ndk-r6b-darwincross/build/tools/build-ndk-stack.sh	2012-01-01 21:40:35.944002649 +0100
+@@ -50,6 +50,7 @@
+ register_var_option "--debug" DEBUG "Build debug version"
+ 
+ register_mingw_option
++register_darwincross_option
+ 
+ extract_parameters "$@"
+ 
+@@ -60,13 +61,18 @@
+ fi
+ 
+ # Choose a host compiler if not specified by --cc
+-# Note that --mingw implies we use the mingw32 cross-compiler.
++# Note that --mingw implies we use the mingw32 cross-compiler
++# and --darwincross implies we use the darwin cross-compiler
+ if [ -z "$CUSTOM_CC" ]; then
+     if [ "$MINGW" = "yes" ]; then
+         CC=i586-mingw32msvc-g++
+     else
++        if [ "$DARWINCROSS" = "yes" ]; then
++            CC=i686-apple-darwin9-g++
++        else
+         CC=g++
+     fi
++    fi
+     log "Auto-config: --cc=$CC"
+ fi
+ 
+diff -burN android-ndk-r6b/build/tools/dev-rebuild-ndk.sh android-ndk-r6b-darwincross/build/tools/dev-rebuild-ndk.sh
+--- android-ndk-r6b/build/tools/dev-rebuild-ndk.sh	2011-08-19 16:08:12.000000000 +0200
++++ android-ndk-r6b-darwincross/build/tools/dev-rebuild-ndk.sh	2012-01-01 21:42:06.913019017 +0100
+@@ -61,8 +61,8 @@
+ # Set the list of Build Targets based on this Host OS
+ case "$HOST_OS" in
+ linux )
+-    # Build for Local Linux and Cross-compile for Windows (MINGW)
+-    BUILD_TARGET_PLATFORMS="linux-x86 windows"
++    # Build for Local Linux and Cross-compile for Windows (MINGW) and Darwin (darwincross)
++    BUILD_TARGET_PLATFORMS="linux-x86 windows darwin-x86"
+     ;;
+ darwin )
+     # Build for Local Mac OS X
+@@ -188,7 +188,8 @@
+             ;;
+         darwin-x86 )
+             TARGET_PLATFORM_OS="Mac OS X"
+-            TARGET_PLATFORM_FLAGS=""
++            TARGET_PLATFORM_FLAGS="--darwincross"
++#            TARGET_PLATFORM_FLAGS=""
+ #            TARGET_PLATFORM_FLAGS="--darwin-ssh=$MAC_BUILD_HOST"
+ #            # Skip this Target Platform in Quick Build Mode
+ #            if [ "$OPTION_QUICK_BUILD" = "yes" ]; then break ; fi
+diff -burN android-ndk-r6b/build/tools/make-release.sh android-ndk-r6b-darwincross/build/tools/make-release.sh
+--- android-ndk-r6b/build/tools/make-release.sh	2011-07-05 19:39:42.000000000 +0200
++++ android-ndk-r6b-darwincross/build/tools/make-release.sh	2012-01-01 21:45:58.999060780 +0100
+@@ -61,11 +61,16 @@
+ HOST_SYSTEMS="$HOST_TAG"
+ 
+ MINGW_GCC=
++DARWINCROSS_GCC=
+ if [ "$HOST_TAG" == "linux-x86" ] ; then
+     find_program MINGW_GCC i586-mingw32msvc-gcc
++    find_program DARWINCROSS_GCC i686-apple-darwin9
+     if [ -n "$MINGW_GCC" ] ; then
+         HOST_SYSTEMS="$HOST_SYSTEMS windows"
+     fi
++    if [ -n "$DARWINCROSS_GCC" ] ; then
++        HOST_SYSTEMS="$HOST_SYSTEMS darwin-x86"
++    fi
+ fi
+ if [ -n "$DARWIN_SSH" ] ; then
+     HOST_SYSTEMS="$HOST_SYSTEMS darwin-x86"
+@@ -118,7 +123,7 @@
+ 
+ Note that on Linux, if you have the 'mingw32' package installed, the script
+ will also automatically generate a windows release package. You can prevent
+-that by using the --platforms option.
++that by using the --platforms option. The same is true for darwincross.
+ 
+ IMPORTANT:
+         If you intend to package NDK releases often, please read the
+@@ -214,6 +219,14 @@
+             timestamp_set build-mingw-prebuilt
+         fi
+     fi
++    if [ -n "$DARWINCROSS_GCC" ] ; then
++        if timestamp_check build-darwin-prebuilts; then
++            dump "Building (cross) darwin toolchain binaries..."
++            $ANDROID_NDK_ROOT/build/tools/rebuild-all-prebuilt.sh --toolchain-src-dir="$TOOLCHAIN_SRCDIR" --package-dir="$PREBUILT_DIR" --build-dir="$RELEASE_DIR/build-darwin" --darwincross
++            fail_panic "Can't (cross) build darwin binaries."
++            timestamp_set build-darwin-prebuilt
++        fi
++    fi
+     timestamp_set build-prebuilts
+     timestamp_clear make-packages
+ fi
+diff -burN android-ndk-r6b/build/tools/prebuilt-common.sh android-ndk-r6b-darwincross/build/tools/prebuilt-common.sh
+--- android-ndk-r6b/build/tools/prebuilt-common.sh	2011-07-05 19:39:42.000000000 +0200
++++ android-ndk-r6b-darwincross/build/tools/prebuilt-common.sh	2012-01-01 21:53:28.992141755 +0100
+@@ -254,6 +254,16 @@
+     fi
+ }
+ 
++DARWINCROSS=no
++do_darwincross_option () { DARWINCROSS=yes; }
++
++register_darwincross_option ()
++{
++    if [ "$HOST_OS" = "linux" ] ; then
++        register_option "--darwincross" do_darwincross_option "Generate Darwin binaries on Linux."
++    fi
++}
++
+ TRY64=no
+ do_try64_option () { TRY64=yes; }
+ 
+@@ -548,9 +558,9 @@
+     # binaries.
+     #
+     # We only do this if the CC variable is not defined to a given value
+-    # and the --mingw or --try-64 options are not used.
++    # and the --mingw, --darwincross and --try-64 options are not used.
+     #
+-    if [ "$HOST_OS" = "linux" -a -z "$CC" -a "$MINGW" != "yes" -a "$TRY64" != "yes" ]; then
++    if [ "$HOST_OS" = "linux" -a -z "$CC" -a "$MINGW" != "yes" -a "$DARWINCROSS" != "yes" -a "$TRY64" != "yes" ]; then
+         LEGACY_TOOLCHAIN_DIR="$ANDROID_NDK_ROOT/../prebuilt/linux-x86/toolchain/i686-linux-glibc2.7-4.4.3"
+         if [ -d "$LEGACY_TOOLCHAIN_DIR" ] ; then
+             dump "Forcing generation of Linux binaries with legacy toolchain"
+@@ -570,6 +580,8 @@
+             # Otherwise with Leopard SDK
+             elif check_darwin_sdk /Developer/SDKs/MacOSX10.5.sdk 10.5; then
+                 log "Generating Leopard-compatible binaries!"
++            elif check_darwin_sdk ~/i686-apple-darwin9/Developer/SDKs/MacOSX10.5.sdk 10.5; then
++                log "Generating Leopard-compatible binaries! (darwincross?)"                
+             else
+                 local version=`sw_vers -productVersion`
+                 log "Generating $version-compatible binaries!"
+@@ -640,6 +652,30 @@
+         # GMP configure scripts will not be called with the right options
+         HOST_GMP_ABI=
+     fi
++
++    # Now handle the --darwincross flag
++    if [ "$DARWINCROSS" = "yes" ] ; then
++        case $HOST_TAG in
++            linux-*)
++                ;;
++            *)
++                echo "ERROR: Can only enable darwincross on Linux platforms !"
++                exit 1
++                ;;
++        esac
++        if [ "$TRY64" = "yes" ]; then
++            ABI_CONFIGURE_HOST=x86_64-apple-darwin
++        else
++            ABI_CONFIGURE_HOST=i686=apple-darwin
++        fi
++        HOST_OS=darwin
++        HOST_TAG=darwin
++        HOST_EXE=
++        # It turns out that we need to undefine this to be able to
++        # perform a canadian-cross build with mingw. Otherwise, the
++        # GMP configure scripts will not be called with the right options
++        HOST_GMP_ABI=
++    fi
+ }
+ 
+ parse_toolchain_name ()
+@@ -718,6 +754,9 @@
+     if [ "$MINGW" = "yes" ]; then
+         RET=windows
+     fi
++    if [ "$DARWINCROSS" = "yes" ]; then
++        RET=darwin-x86
++    fi
+     case $RET in
+         linux-x86_64)
+             if [ "$TRY64" = "no" ]; then
+diff -burN android-ndk-r6b/build/tools/rebuild-all-prebuilt.sh android-ndk-r6b-darwincross/build/tools/rebuild-all-prebuilt.sh
+--- android-ndk-r6b/build/tools/rebuild-all-prebuilt.sh	2011-07-05 19:39:42.000000000 +0200
++++ android-ndk-r6b-darwincross/build/tools/rebuild-all-prebuilt.sh	2012-01-01 21:57:17.046182794 +0100
+@@ -68,6 +68,7 @@
+ fi
+ 
+ register_mingw_option
++register_darwincross_option
+ 
+ PROGRAM_PARAMETERS=
+ PROGRAM_DESCRIPTION=\
+@@ -87,7 +88,8 @@
+ 
+ extract_parameters "$@"
+ 
+-# Needed to set HOST_TAG to windows if --mingw is used.
++# Needed to set HOST_TAG to windows if --mingw is used or
++# to darwin-x86 if --darwincross is used
+ prepare_host_flags
+ 
+ if [ -n "$PACKAGE_DIR" -a -n "$NDK_DIR" ] ; then
+@@ -142,6 +144,9 @@
+ if [ "$MINGW" = "yes" ] ; then
+     FLAGS="$FLAGS --mingw"
+ fi
++if [ "$DARWINCROSS" = "yes" ] ; then
++    FLAGS="$FLAGS --darwincross"
++fi
+ 
+ # If --toolchain-src-dir is not given, get the toolchain sources, either
+ # by downloading, or by extracting the, from a tarball given by the
+@@ -241,6 +246,9 @@
+ if [ "$MINGW" = yes ]; then
+     NDK_STACK_FLAGS=$NDK_STACK_FLAGS" --mingw"
+ fi
++if [ "$DARWINCROSS" = "yes" ]; then
++    NDK_STACK_FLAGS=$NDK_STACK_FLAGS" --darwincross"
++fi
+ if [ "$VERBOSE" = "yes" ]; then
+     NDK_STACK_FLAGS=$NDK_STACK_FLAGS" --verbose"
+ fi
+@@ -273,8 +281,8 @@
+ 
+ build_gdbserver ()
+ {
+-    if [ "$MINGW" = yes ] ; then
+-        dump "Skipping gdbserver build (--mingw option being used)."
++    if [ "$MINGW" = yes -o "$DARWINCROSS" = yes ] ; then
++        dump "Skipping gdbserver build (--mingw or --darwincross option being used)."
+         return
+     fi
+     dump "Build $1 gdbserver..."
+@@ -302,7 +310,7 @@
+ 
+ if [ -z "$HOST_ONLY" ]; then
+     # We need to package the libsupc++ binaries on Linux since the GCC build
+-    # scripts cannot build them with --mingw option.
++    # scripts cannot build them with --mingw or --darwincross option.
+     if [ "$HOST_OS" = "linux" ] ; then
+         case "$ARCH" in
+         arm )
+@@ -317,7 +325,7 @@
+         esac
+     fi
+ 
+-    if [ "$MINGW" != "yes" ] ; then
++    if [ "$MINGW" != "yes" -a "$DARWINCROSS" != "yes" ] ; then
+         package_it "GNU libstdc++ headers" "gnu-libstdc++-headers" "sources/cxx-stl/gnu-libstdc++/include"
+ 
+         case "$ARCH" in
+@@ -332,7 +340,7 @@
+     fi
+ 
+     # Rebuild STLport prebuilt libraries
+-    if [ "$MINGW" != "yes" ] ; then
++    if [ "$MINGW" != "yes" -a "$DARWINCROSS" != "yes" ] ; then
+         dump "Building STLport binaries"
+         BUILD_STLPORT_FLAGS="--ndk-dir=\"$NDK_DIR\" --package-dir=\"$PACKAGE_DIR\""
+         if [ $VERBOSE = yes ] ; then
+@@ -348,7 +356,7 @@
+             ;;
+         esac
+     else
+-        dump "Skipping STLport binaries build (--mingw option being used)"
++        dump "Skipping STLport binaries build (--mingw or --darwincross option being used)"
+     fi
+ fi # !HOST_ONLY
+ 

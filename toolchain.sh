@@ -91,10 +91,16 @@ fi
 # Everything is built relative to IPHONEDEV_DIR
 IPHONEDEV_DIR="`pwd`"
 
+if [ -z $PREFIX_SUFFIX ] ; then
+    error "Set $PREFIX_SUFFIX before calling this!"
+fi
+
+PREFIX_SUFFIX=-$PREFIX_SUFFIX
+
 TOOLCHAIN="${IPHONEDEV_DIR}"
-[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld"
-[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre"
-[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src"
+[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld$PREFIX_SUFFIX"
+[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre$PREFIX_SUFFIX"
+[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src$PREFIX_SUFFIX"
 [ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
 [ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
 
@@ -648,18 +654,18 @@ GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 toolchain_llvmgcc_core() {
 	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
-	rm -rf src/llvmgcc42-${GCCLLVMVERS}-core
-	mkdir -p src/llvmgcc42-${GCCLLVMVERS}-core
-	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C src/llvmgcc42-${GCCLLVMVERS}-core
-	pushd src/llvmgcc42-${GCCLLVMVERS}-core
+	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
+	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
+	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
+	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
-	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-core
-	pushd bld/llvmgcc42-${GCCLLVMVERS}-core
+	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
+	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../../src/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
+		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
 		--disable-assertions \
@@ -731,19 +737,26 @@ toolchain_gcc()
 	fi
 
 	download http://opensource.apple.com/tarballs/gcc/gcc-5666.3.tar.gz
-	if [[ ! -d src/gcc-5666.3 ]] ; then
-		mkdir src/gcc-5666.3
-		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C src/gcc-5666.3
-		pushd src/gcc-5666.3
+	if [[ ! -d $SRC_DIR/gcc-5666.3 ]] ; then
+		mkdir $SRC_DIR/gcc-5666.3
+		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
+		pushd $SRC_DIR/gcc-5666.3
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-cflags.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-t-darwin_prefix.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-strip_for_target.patch
+		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
+		# but there's 3 patches on the bug report and this only includes one of
+		# them. The other two can be dealt with once I get the first one working
+		# as I need it to.
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
+		cp gcc/gcc.c.orig gcc/gcc.c.orig.orig
+		# More patching to try to get relocation working.
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
+#		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
 	popd
 	fi
-	mkdir bld/gcc-5666.3-${DARWINVER}
-	pushd bld/gcc-5666.3-${DARWINVER}
+	mkdir $BUILD_DIR/gcc-5666.3-${DARWINVER}
+	pushd $BUILD_DIR/gcc-5666.3-${DARWINVER}
 #	PREFIXGCC=$PREFIX/usr
 	PREFIXGCC=$PREFIX
 	# Without -D_CTYPE_H (to prevent /usr/include/ctype.h), get
@@ -784,9 +797,18 @@ toolchain_gcc()
 	fi
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
+	# I've set -exec-prefix as the same path as --prefix but string-wise different.
+	# The idea is to get a gcc_tooldir that doesn't include $(target_noncanonical).
+	# See configure.ac:3537 for reference. This may avoid the need to hack around
+	# the source code to fix the toolchain relocatability bug.
+	# The other way to fix this would be to install cctools to into
+	# pre/bin/i686-apple-darwin11 instead of pre, but the thing is, that's nonsense
+	# considering cctools targets multiple arches.
+#		--exec-prefix=$PREFIXGCC/. \	    # Didn't work.
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="-m32 -O2 -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../../src/gcc-5666.3/configure --prefix=$PREFIXGCC \
+	CFLAGS="-m32 -O0 -g -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+		$SRC_DIR/gcc-5666.3/configure \
+		--prefix=$PREFIXGCC \
 		--disable-checking \
 		--enable-languages=c,c++,objc,obj-c++ \
 		--with-as=$PREFIX/bin/$TARGET-as \
@@ -801,7 +823,10 @@ toolchain_gcc()
 		--enable-libgomp \
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib
-	make
+	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
+	make -k
+	# this might get us the 'tooldir' setup that GCC is expecting; though it doesn't fit in with Apple's way
+	# of combining all the arches into one assembler (it looks in
 	# -k as "No rule to make target `install'" in libiberty.
 	make install -k
 	popd
@@ -929,21 +954,21 @@ patch_gcc() {
 toolchain_llvmgcc() {
 	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
-	rm -rf src/llvmgcc42-${GCCLLVMVERS}
-	mkdir -p src/llvmgcc42-${GCCLLVMVERS}
-	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C src/llvmgcc42-${GCCLLVMVERS}
-	pushd src/llvmgcc42-${GCCLLVMVERS}
+	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
+	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
+	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
+	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
 #		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch # Patch broken, may not be needed either.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 	popd
-	rm -rf bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
-	mkdir -p bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
-	pushd bld/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	rm -rf $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	# Note we're not enabling c here?!
 	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
-		../../src/llvmgcc42-${GCCLLVMVERS}/configure \
+		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
 		--prefix=$PREFIX \

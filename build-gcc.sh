@@ -7,14 +7,8 @@ if [[ -z $1 ]] ; then
     exit 1
 fi
 
-rm -rf bld-$1 src-$1 pre-$1
-PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core
-PREFIX_SUFFIX=$1 ./toolchain.sh cctools
+rm -rf bld-$1/gcc-5665.3-11 src-$1/gcc-5666.3
 PREFIX_SUFFIX=$1 ./toolchain.sh gcc
-PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc
-
-#rm -rf bld/gcc-5665.3-11 src/gcc-5666.3
-#./toolchain.sh gcc
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
 
