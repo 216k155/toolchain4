@@ -646,7 +646,6 @@ toolchain_cctools() {
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
 		fi
-
 	fi
 }
 
@@ -669,6 +668,8 @@ toolchain_llvmgcc_core() {
 		# them. The other two can be dealt with once I get the first one working
 		# as I need it to. I also modified it a bit to make sure out bin folder
 		# (and executable filename prefix) is searched when looking for tools.
+		# The patch to collect2.c could've been avoided by putting a link to ld
+		# into the libexec tree.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
@@ -761,6 +762,8 @@ toolchain_gcc()
 		# them. The other two can be dealt with once I get the first one working
 		# as I need it to. I also modified it a bit to make sure out bin folder
 		# (and executable filename prefix) is searched when looking for tools.
+		# The patch to collect2.c could've been avoided by putting a link to ld
+		# into the libexec tree.
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
 		cp gcc/gcc.c.orig gcc/gcc.c.orig.orig
 		# More patching to try to get relocation working.
@@ -981,6 +984,8 @@ toolchain_llvmgcc() {
 		# them. The other two can be dealt with once I get the first one working
 		# as I need it to. I also modified it a bit to make sure out bin folder
 		# (and executable filename prefix) is searched when looking for tools.
+		# The patch to collect2.c could've been avoided by putting a link to ld
+		# into the libexec tree.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 	popd
