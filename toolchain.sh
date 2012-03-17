@@ -77,6 +77,8 @@ fi
 
 CCTOOLS_VER_FH="${CCTOOLSVER}${FOREIGNHEADERS}"
 
+ONLY_PATCH=0
+
 if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
     TARSTRIP=--strip-components
 elif [ "`tar --help | grep bsdtar 2> /dev/null`" ]; then
@@ -629,7 +631,9 @@ toolchain_cctools() {
 		cd "${CCTOOLS_DIR}"
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
-
+		if [[ "$ONLY_PATCH" = "1" ]] ; then
+			exit 1
+		fi
 		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
@@ -667,6 +671,9 @@ toolchain_llvmgcc_core() {
 		# (and executable filename prefix) is searched when looking for tools.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
+	if [[ "$ONLY_PATCH" = "1" ]] ; then
+		exit 1
+	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
@@ -760,6 +767,9 @@ toolchain_gcc()
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
 	popd
+	if [[ "$ONLY_PATCH" = "1" ]] ; then
+		exit 1
+	fi
 	fi
 	mkdir $BUILD_DIR/gcc-5666.3-${DARWINVER}
 	pushd $BUILD_DIR/gcc-5666.3-${DARWINVER}
@@ -974,6 +984,9 @@ toolchain_llvmgcc() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 	popd
+	if [[ "$ONLY_PATCH" = "1" ]] ; then
+		exit 1
+	fi
 	rm -rf $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}

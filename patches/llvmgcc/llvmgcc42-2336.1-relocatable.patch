@@ -1,5 +1,5 @@
---- ../../llvmgcc42-2336.1/gcc/gcc.c.orig	2012-03-17 17:01:39.032143612 +0000
-+++ ../../llvmgcc42-2336.1/gcc/gcc.c	2012-03-17 17:07:18.000000000 +0000
+--- gcc/gcc.c.orig	2009-12-18 23:12:36.000000000 +0000
++++ gcc/gcc.c	2012-03-17 18:01:32.058973143 +0000
 @@ -1569,25 +1569,33 @@
  #define MD_STARTFILE_PREFIX_1 ""
  #endif
@@ -105,7 +105,7 @@
 +          if (strrchr(base_prefix,DIR_SEPARATOR)!=NULL)
 +            {
 +          *(strrchr(base_prefix,DIR_SEPARATOR)+1) = '\0';
-+          char *bin_prefix = concat (base_prefix, spec_machine, "-", NULL);
++          char *bin_prefix = concat (base_prefix, "bin", dir_separator_str, spec_machine, "-", NULL);
 +          /* Add for both gcc and binutils for good measure. */
 +          add_prefix (&exec_prefixes, bin_prefix, "GCC",
 +                       PREFIX_PRIORITY_LAST, 0, 0);
