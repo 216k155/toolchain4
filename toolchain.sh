@@ -589,25 +589,25 @@ toolchain_cctools() {
 	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
 
 	build_as=1
-	if [ -f "${PREFIX}/bin/${TARGET}-as" ]; then
-		if ! confirm -N "Build cctools again?"; then
-			build_as=0
-		fi
-	fi
+#	if [ -f "${PREFIX}/bin/${TARGET}-as" ]; then
+#		if ! confirm -N "Build cctools again?"; then
+#			build_as=0
+#		fi
+#	fi
 	if [ "x$build_as" == "x1" ]; then
 	   download_cctools=1
-	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER_FH}" ]; then
-		if ! confirm -N "Download cctools again?"; then
-			download_cctools=0
-		fi
-	   fi
-	   if [ "x$download_cctools" == "x1" ]; then
+#	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER_FH}" ]; then
+#		if ! confirm -N "Download cctools again?"; then
+#			download_cctools=0
+#		fi
+#	   fi
+           if [ "x$download_cctools" == "x1" ]; then
 		pushd cctools2odcctools
-		if [ -d odcctools-${CCTOOLS_VER_FH} ]; then
-		  if confirm "remove downloaded cctools?"; then
-			rm -fr odcctools-${CCTOOLS_VER_FH}
-		  fi
-		fi
+#		if [ -d odcctools-${CCTOOLS_VER_FH} ]; then
+#		  if confirm "remove downloaded cctools?"; then
+                        rm -fr odcctools-${CCTOOLS_VER_FH}
+#		  fi
+#		fi
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
 			./extract.sh --updatepatch --vers ${CCTOOLSVER} --foreignheaders --osxver ${OSXVER}
 		else
