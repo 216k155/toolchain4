@@ -334,3 +334,45 @@
  # If newlib has been configured, we need to pass -B to gcc so it can find
  # newlib's crt0.o if it exists.  This will cause a "path prefix not used"
  # message if it doesn't, but the testsuite is supposed to ignore the message -
+--- gcc/collect2.c.orig	2012-03-17 19:15:47.830956507 +0000
++++ gcc/collect2.c	2012-03-17 19:28:08.425646059 +0000
+@@ -802,6 +802,7 @@
+   const char **object;
+   int first_file;
+   int num_c_args	= argc+9;
++  char bin_dir[1024];
+ 
+   no_demangle = !! getenv ("COLLECT_NO_DEMANGLE");
+ 
+@@ -904,6 +905,31 @@
+   prefix_from_env ("COMPILER_PATH", &cpath);
+   prefix_from_env ("PATH", &path);
+ 
++  {
++   int slashes = 5;
++#if defined(__linux__) || defined(__CYGWIN__)
++  {
++      int len;
++      if ((len = readlink("/proc/self/exe", bin_dir, sizeof(bin_dir)-1)) != -1)
++        {
++          bin_dir[len] = '\0';
++        }
++  }
++#else
++  strcpy(bin_dir,argv[0]);
++#endif
++  /* From: $PREFIX/libexec/gcc/i686-apple-darwin11/4.2.1/collect2
++   *   to: $PREFIX/bin/
++   *   is: remove 5 /'s then append /bin/
++   */
++   while (--slashes && strrchr (bin_dir,DIR_SEPARATOR))
++   {
++     *strrchr (bin_dir,DIR_SEPARATOR) = '\0';
++   }
++   strcat (bin_dir,"/bin/");
++   add_prefix (&path, bin_dir);
++  }
++
+   /* Try to discover a valid linker/nm/strip to use.  */
+ 
+   /* Maybe we know the right file to use (if not cross).  */
