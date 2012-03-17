@@ -660,6 +660,11 @@ toolchain_llvmgcc_core() {
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
+		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
+		# but there's 3 patches on the bug report and this only includes one of
+		# them. The other two can be dealt with once I get the first one working
+		# as I need it to. I also modified it a bit to make sure out bin folder
+		# (and executable filename prefix) is searched when looking for tools.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 	popd
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
@@ -747,7 +752,8 @@ toolchain_gcc()
 		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
 		# but there's 3 patches on the bug report and this only includes one of
 		# them. The other two can be dealt with once I get the first one working
-		# as I need it to.
+		# as I need it to. I also modified it a bit to make sure out bin folder
+		# (and executable filename prefix) is searched when looking for tools.
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
 		cp gcc/gcc.c.orig gcc/gcc.c.orig.orig
 		# More patching to try to get relocation working.
@@ -960,7 +966,12 @@ toolchain_llvmgcc() {
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
-#		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch # Patch broken, may not be needed either.
+		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
+		# but there's 3 patches on the bug report and this only includes one of
+		# them. The other two can be dealt with once I get the first one working
+		# as I need it to. I also modified it a bit to make sure out bin folder
+		# (and executable filename prefix) is searched when looking for tools.
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 	popd
 	rm -rf $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
