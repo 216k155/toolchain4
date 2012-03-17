@@ -17,32 +17,44 @@ if [[ ! -d android-ndk-r6b ]] ; then
 	popd
 fi
 
+if [[ ! -z $1 ]] ; then
+	LEFT=$1
+else
+	LEFT=fixed
+fi
+
+if [[ ! -z $2 ]] ; then
+	RIGHT=$2
+else
+	RIGHT=moved
+fi
+
 OUTDIR=$PWD
 
-FIXED_TOOLCHAIN=$PWD/pre-fixed/bin/i686-apple-darwin11
-MOVED_TOOLCHAIN=$PWD/pre-moved/bin/i686-apple-darwin11
+FIXED_TOOLCHAIN=$PWD/pre-$LEFT/bin/i686-apple-darwin11
+MOVED_TOOLCHAIN=$PWD/pre-$RIGHT/bin/i686-apple-darwin11
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
 pushd android-ndk-r6b/sources/host-tools/ndk-stack
 
-${STRACE} ${FIXED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-fixed --sysroot $SDK/ -B$SDK/usr/lib/system > $OUTDIR/strace-pre-fixed.txt 2>&1
-# ${STRACE} ${MOVED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-moved --sysroot $SDK/ -B$SDK/usr/lib/system > $OUTDIR/strace-pre-moved.txt 2>&1
-GCC_EXEC_PREFIX=/usr/home/nonesuch/src/pre-moved/bin/ ${STRACE} ${MOVED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-moved --sysroot $SDK/ -B$SDK/usr/lib/system > $OUTDIR/strace-pre-moved-GCC_EXEC_PREFIX.txt 2>&1
-${FIXED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-fixed.txt 2>&1
-${MOVED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-moved.txt 2>&1
-${FIXED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-fixed.txt 2>&1
-${MOVED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-moved.txt 2>&1
+${STRACE} ${FIXED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$LEFT --sysroot $SDK -B$SDK/usr/lib/system > $OUTDIR/strace-pre-$LEFT.txt 2>&1
+${STRACE} ${MOVED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$RIGHT --sysroot $SDK -B$SDK/usr/lib/system > $OUTDIR/strace-pre-$RIGHT.txt 2>&1
+#GCC_EXEC_PREFIX=/usr/home/nonesuch/src/pre-moved/bin/ ${STRACE} ${MOVED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-moved --sysroot $SDK -B$SDK/usr/lib/system > $OUTDIR/strace-pre-moved-GCC_EXEC_PREFIX.txt 2>&1
+${FIXED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-$LEFT.txt 2>&1
+${MOVED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-$RIGHT.txt 2>&1
+${FIXED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-$LEFT.txt 2>&1
+${MOVED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-$RIGHT.txt 2>&1
 
-${STRACE} ${FIXED_TOOLCHAIN}-g++ -print-prog-name=as > $OUTDIR/print-prog-name-as-pre-fixed.txt 2>&1
-${STRACE} ${MOVED_TOOLCHAIN}-g++ -print-prog-name=as > $OUTDIR/print-prog-name-as-pre-moved.txt 2>&1
+${STRACE} ${FIXED_TOOLCHAIN}-g++ -print-prog-name=as > $OUTDIR/print-prog-name-as-pre-$LEFT.txt 2>&1
+${STRACE} ${MOVED_TOOLCHAIN}-g++ -print-prog-name=as > $OUTDIR/print-prog-name-as-pre-$RIGHT.txt 2>&1
 
 popd
 
-bcompare strace-pre-fixed.txt strace-pre-moved-GCC_EXEC_PREFIX.txt &
-bcompare search-dirs-pre-fixed.txt search-dirs-pre-moved.txt &
-bcompare specs-pre-fixed.txt specs-pre-moved.txt &
-bcompare print-prog-name-as-pre-fixed.txt print-prog-name-as-pre-moved.txt &
+bcompare strace-pre-$LEFT.txt strace-pre-$RIGHT.txt &
+bcompare search-dirs-pre-$LEFT.txt search-dirs-pre-$RIGHT.txt &
+bcompare specs-pre-$LEFT.txt specs-pre-$RIGHT.txt &
+bcompare print-prog-name-as-pre-$LEFT.txt print-prog-name-as-pre-$RIGHT.txt &
 
 # /home/nonesuch/src/toolchain4/pre-moved/bin/../libexec/gcc/i686-apple-darwin11/4.2.1/cc1plus -iprefix /home/nonesuch/src/toolchain4/pre-moved/bin/../lib/gcc/i686-apple-darwin11/4.2.1/ -isysroot /home/nonesuch/src/toolchain4/sdks/MacOSX10.7.sdk -D__DYNAMIC__ ndk-stack-parser.c -fPIC -mmacosx-version-min=10.4 -dumpbase ndk-stack-parser.c -m32 -mtune=core2 -auxbase ndk-stack-parser -D__private_extern__=extern -o /tmp/ccvJfDxs.s
 
