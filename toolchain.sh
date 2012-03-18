@@ -53,6 +53,7 @@ OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 TARGET=i686-apple-darwin${DARWINVER}
+HOST_DEBUG_CFLAGS="-O0 -g"
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm
 # and the reference darwin-native-compiler is built as 32bit too.
@@ -683,7 +684,7 @@ toolchain_llvmgcc_core() {
 		--enable-optimized \
 		--disable-assertions \
 		--target=${TARGET}
-	make &>make.log
+	make -j8 &>make.log
 	make install &>install.log # optional
 	popd
 }
@@ -735,7 +736,7 @@ toolchain_llvmgcc_saurik() {
 		make clean > /dev/null
 		message_status "Building gcc-4.2-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/gcc-4.2-iphone/make.log"
-		if ! ( make -j2 &>make.log && make install &>install.log ); then
+		if ! ( make -j8 &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
 		fi
@@ -777,6 +778,18 @@ toolchain_gcc()
 	mkdir $BUILD_DIR/gcc-5666.3-${DARWINVER}
 	pushd $BUILD_DIR/gcc-5666.3-${DARWINVER}
 #	PREFIXGCC=$PREFIX/usr
+	# This probably should be $PREFIX/usr, but only because of what appears to be a bug in
+	# make_relative_prefix:
+	# Given three strings PROGNAME, BIN_PREFIX, PREFIX, return a string that gets
+	# to PREFIX starting with the directory portion of PROGNAME and a relative
+	# pathname of the difference between BIN_PREFIX and PREFIX.
+        # char *tmp_prefix = make_relative_prefix (argv_zero,
+	# 				       standard_bindir_prefix,
+	# 				       target_system_root);
+	# make_relative_prefix( "/home/nonesuch/src/toolchain4/pre-moved-old/bin/i686-apple-darwin11-g++",
+	#                       "/home/nonesuch/src/toolchain4/pre-configured/bin/"
+	#			"/home/nonesuch/src/toolchain4/pre-configured")
+	PREFIXSYSROOT=$PREFIX
 	PREFIXGCC=$PREFIX
 	# Without -D_CTYPE_H (to prevent /usr/include/ctype.h), get
 	# #error "safe-ctype.h and ctype.h may not be used simultaneously"
@@ -786,28 +799,23 @@ toolchain_gcc()
 		cp $TARGET-lipo lipo
 		popd
 	fi
-	if [[ ! -f $PREFIXGCC/$TARGET/include/stdio.h ]] ; then
-		[[ ! -d $PREFIXGCC/$TARGET/ ]] && mkdir -p $PREFIXGCC/$TARGET/
-		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIXGCC/$TARGET/
-	fi
-	# Without this, get:
-	# The directory that should contain system headers does not exist:
-	# $SRCDIR/pre/usr/include
-	if [[ ! "$PREFIXGCC" = "$PREFIX/usr" ]] ; then
-		[[ ! -d $PREFIXGCC/usr ]] && mkdir $PREFIXGCC/usr
-		ln -s $PREFIXGCC/$TARGET/include $PREFIXGCC/usr/include
-	fi
+	[[ ! -d $PREFIXSYSROOT/usr ]] && mkdir -p $PREFIXSYSROOT/usr
+	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIXSYSROOT/usr
+	# Could either copy to $TARGET/include or $TARGET/sys-include here.
+	[[ ! -d $PREFIX/$TARGET ]] && mkdir -p $PREFIX/$TARGET
+	[[ -d $PREFIX/$TARGET/sys-include ]] && rm -rf $PREFIX/$TARGET/sys-include
+	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIX/$TARGET/sys-include
 	# libs needed:
-	if [[ ! -d $PREFIXGCC/$TARGET/lib ]] ; then
-		mkdir -p $PREFIXGCC/$TARGET/lib
-		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXGCC/$TARGET/lib/
-		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXGCC/$TARGET/lib/
+	if [[ ! -d $PREFIXSYSROOT/usr/lib ]] ; then
+		mkdir -p $PREFIXSYSROOT/usr/lib
+		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXSYSROOT/usr/lib/
+		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXSYSROOT/usr/lib/
 		# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
 		# must be available (the unneeded one is libkxld.dylib)
 		# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
 		# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
 		# LD_FLAGS_FOR_TARGET hack to work.
-		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXGCC/$TARGET/lib
+		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXSYSROOT/usr/lib
 	fi
 	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
 	if [[ ! -f $PREFIXGCC/lib/libSystem.B.dylib ]] ; then
@@ -816,16 +824,8 @@ toolchain_gcc()
 	fi
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
-	# I've set -exec-prefix as the same path as --prefix but string-wise different.
-	# The idea is to get a gcc_tooldir that doesn't include $(target_noncanonical).
-	# See configure.ac:3537 for reference. This may avoid the need to hack around
-	# the source code to fix the toolchain relocatability bug.
-	# The other way to fix this would be to install cctools to into
-	# pre/bin/i686-apple-darwin11 instead of pre, but the thing is, that's nonsense
-	# considering cctools targets multiple arches.
-#		--exec-prefix=$PREFIXGCC/. \	    # Didn't work.
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="-m32 -O0 -g -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+	CFLAGS="-m32 $HOST_DEBUG_CFLAGS -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -833,7 +833,7 @@ toolchain_gcc()
 		--with-as=$PREFIX/bin/$TARGET-as \
 		--with-ld=$PREFIX/bin/$TARGET-ld \
 		--target=$TARGET \
-		--with-sysroot=$PREFIX \
+		--with-sysroot=$PREFIXSYSROOT \
 		--enable-static \
 		--enable-shared \
 		--enable-nls \
@@ -893,8 +893,8 @@ patch_binary_hex() {
 }
 
 # Does what it says on the tin, but doesn't then behave correctly. If I was patching new absolute
-# locations then it's likely that this would work, but my 'put relative paths into the binaries' idea
-# is a failure, still it'll serve as a useful reference for how to do it.
+# locations then it's likely that this would work; my 'put relative paths into the binaries' idea
+# is a failure, still it serves as reference for how to do it.
 patch_gcc() {
 	pushd $(dirname $PREFIX)
 
@@ -1019,7 +1019,7 @@ toolchain_llvmgcc() {
 		--with-as=$PREFIX/bin/$TARGET-as \
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
 		--with-lipo=$PREFIX/bin/$TARGET-lipo
-	make &>make.log
+	make -j8 &>make.log
 	make install -k &>install.log
 	popd
 }
