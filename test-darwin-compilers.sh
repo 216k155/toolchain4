@@ -30,16 +30,22 @@ fi
 
 OUTDIR=$PWD
 
-FIXED_TOOLCHAIN=$PWD/pre-$LEFT/bin/i686-apple-darwin11
-MOVED_TOOLCHAIN=$PWD/pre-$RIGHT/bin/i686-apple-darwin11
+#FIXED_TOOLCHAIN=$PWD/pre-$LEFT/bin/i686-apple-darwin11
+#MOVED_TOOLCHAIN=$PWD/pre-$RIGHT/bin/i686-apple-darwin11
+
+FIXED_TOOLCHAIN=/tmp/$LEFT/bin/i686-apple-darwin11
+MOVED_TOOLCHAIN=/tmp/$RIGHT/bin/i686-apple-darwin11
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
 pushd android-ndk-r6b/sources/host-tools/ndk-stack
-# -B$SDK/usr/lib/system
-${STRACE} ${FIXED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$LEFT --sysroot $SDK > $OUTDIR/strace-pre-$LEFT.txt 2>&1
-${STRACE} ${MOVED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$RIGHT --sysroot $SDK > $OUTDIR/strace-pre-$RIGHT.txt 2>&1
-#GCC_EXEC_PREFIX=/usr/home/nonesuch/src/pre-moved/bin/ ${STRACE} ${MOVED_TOOLCHAIN}-g++ -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-moved --sysroot $SDK -B$SDK/usr/lib/system > $OUTDIR/strace-pre-moved-GCC_EXEC_PREFIX.txt 2>&1
+
+ARCHS="-m32"
+#cc1plus: error: unrecognised command line option "-arch"
+#ARCHS="-arch x86_64 -arch i386"
+${STRACE} ${FIXED_TOOLCHAIN}-g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$LEFT --sysroot $SDK > $OUTDIR/strace-pre-$LEFT.txt 2>&1
+${STRACE} ${MOVED_TOOLCHAIN}-g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$RIGHT --sysroot $SDK > $OUTDIR/strace-pre-$RIGHT.txt 2>&1
+
 ${FIXED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-$LEFT.txt 2>&1
 ${MOVED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-$RIGHT.txt 2>&1
 ${FIXED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-$LEFT.txt 2>&1
@@ -57,3 +63,8 @@ bcompare print-prog-name-as-pre-$LEFT.txt print-prog-name-as-pre-$RIGHT.txt &
 
 # Ok, finally...
 # "-syslibroot", "/home/nonesuch/src/toolchain4/pre-fixed"
+
+# For QtCreator debugging:
+# Executable: /tmp/darwin-gcc-moved/bin/i686-apple-darwin11-g++
+# Arguments : -lstdc++ -m32 ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-darwin-gcc-moved --sysroot /home/nonesuch/src/toolchain4/sdks/MacOSX10.7.sdk
+# WorkingDir: /home/nonesuch/src/toolchain4/android-ndk-r6b/sources/host-tools/ndk-stack

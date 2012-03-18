@@ -2,7 +2,7 @@
 
 # Copyright (c) 2008,2009 iphonedevlinux <iphonedevlinux@googlemail.com>
 # Copyright (c) 2008, 2009 m4dm4n <m4dm4n@gmail.com>
-# Copyright (c) 2011, 2012 Ray Donnelly <mingw.android@gmail.com?
+# Copyright (c) 2011, 2012 Ray Donnelly <mingw.android@gmail.com>
 # Updated by Denis Froschauer Jan 30, 2011
 # Mar,4 2011 : added mkdir $SRC_DIR
 # Mar,4 2011 : added cp files/misc/Makefile.in odcctools/misc in cctools2odcctools/extract.sh
@@ -36,23 +36,19 @@
 # statically with llvmCore (hence massive executables), but I don't like shared libraries
 # being used in core toolchain components like linkers. It just feels wrong somehow.
 
-# The toolchain can't be moved though; not relocatable at all.
-# I've tried a few different approaches to fixing this, including:
-# 1. A source patch to GCC.
-# 2. Binary patching of the built binaries so they contain relative paths.
-# Both failed. It's probably worth persuing a source code approach.
-# The other option is to go with 2, but as an install script that I supply
-# with the toolchain. There'd be a restriction on the install prefixes length
-# such that it mustn't be longer than the one I used when building, but in
-# theory it'd work (and the hard part is already done, currently patch_gcc
-# patches with relative paths, these would need changing to the absolute
-# install location instead.
+# The toolchain is now fully relocatable, however, "-arch x86_64" doesn't work, cc1plus
+# doesn't understand it. For reference of how Apple builds for 
+# multiple arches, see gcc-5666.3/build_gcc
+# This task keeps getting bigger...
+# ...and this is as much as I've done for x86_64 support ;-)
+# TARGETS="i686,x86_64,arm"
 
 TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 TARGET=i686-apple-darwin${DARWINVER}
+
 HOST_DEBUG_CFLAGS="-O0 -g"
 
 # Uses -m32 to force 32bit build of everything. 64bit is broken atm
@@ -98,12 +94,13 @@ if [ -z $PREFIX_SUFFIX ] ; then
     error "Set $PREFIX_SUFFIX before calling this!"
 fi
 
-PREFIX_SUFFIX=-$PREFIX_SUFFIX
+#PREFIX_SUFFIX=-$PREFIX_SUFFIX
 
 TOOLCHAIN="${IPHONEDEV_DIR}"
-[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld$PREFIX_SUFFIX"
-[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre$PREFIX_SUFFIX"
-[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src$PREFIX_SUFFIX"
+[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld-$PREFIX_SUFFIX"
+#[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre$PREFIX_SUFFIX"
+[ -z $PREFIX ] && PREFIX="/tmp/$PREFIX_SUFFIX"
+[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
 [ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
 [ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
 
@@ -764,10 +761,10 @@ toolchain_gcc()
 		# as I need it to. I also modified it a bit to make sure out bin folder
 		# (and executable filename prefix) is searched when looking for tools.
 		# The patch to collect2.c could've been avoided by putting a link to ld
-		# into the libexec tree.
+		# into the libexec tree. The target_system_root (-syslibroot bit)
+		# is also needed for ld to operate correctly.
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
-		cp gcc/gcc.c.orig gcc/gcc.c.orig.orig
-		# More patching to try to get relocation working.
+#		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable-darwin-h-LINK_SYSROOT_SPEC.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
 	popd
@@ -806,17 +803,27 @@ toolchain_gcc()
 	[[ -d $PREFIX/$TARGET/sys-include ]] && rm -rf $PREFIX/$TARGET/sys-include
 	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIX/$TARGET/sys-include
 	# libs needed:
+	# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
+	# must be available (the unneeded one is libkxld.dylib)
+	# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
+	# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
+	# LD_FLAGS_FOR_TARGET hack to work.
+	
+	# Some redundancy here. Probably only the 2nd block is needed but it won't really hurt to do
+	# both.
 	if [[ ! -d $PREFIXSYSROOT/usr/lib ]] ; then
 		mkdir -p $PREFIXSYSROOT/usr/lib
 		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXSYSROOT/usr/lib/
 		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXSYSROOT/usr/lib/
-		# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
-		# must be available (the unneeded one is libkxld.dylib)
-		# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
-		# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
-		# LD_FLAGS_FOR_TARGET hack to work.
 		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXSYSROOT/usr/lib
 	fi
+	if [[ ! -d $PREFIXSYSROOT/$TARGET/lib/system ]] ; then
+		mkdir -p $PREFIXSYSROOT/$TARGET/lib/system
+		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXSYSROOT/$TARGET/lib/system
+		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXSYSROOT/$TARGET/lib/system
+		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXSYSROOT/$TARGET/lib
+	fi
+
 	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
 	if [[ ! -f $PREFIXGCC/lib/libSystem.B.dylib ]] ; then
 		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/

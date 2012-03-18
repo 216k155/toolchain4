@@ -7,8 +7,8 @@ if [[ -z $1 ]] ; then
     exit 1
 fi
 
-rm -rf bld-$1/gcc-5665.3-11 src-$1/gcc-5666.3
-mkdir -p src-$1 bld-$1 pre-$1
+rm -rf bld$1/gcc-5665.3-11 src$1/gcc-5666.3
+mkdir -p src$1 bld$1 /tmp/$1
 PREFIX_SUFFIX=$1 ./toolchain.sh gcc
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z

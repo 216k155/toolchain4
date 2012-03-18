@@ -7,14 +7,19 @@ if [[ -z $1 ]] ; then
     exit 1
 fi
 
-rm -rf bld-$1 src-$1 pre-$1
+rm -rf bld$1 src$1 pre$1
 PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core
 PREFIX_SUFFIX=$1 ./toolchain.sh cctools
 PREFIX_SUFFIX=$1 ./toolchain.sh gcc
 PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc
+rm -rf /tmp/$1/i686-apple-darwin11/sys-include
+pushd /tmp/$1/bin
+#strip *
+popd
 
-#rm -rf bld/gcc-5665.3-11 src/gcc-5666.3
-#./toolchain.sh gcc
+pushd /tmp/$1
+7za a -mx=9 multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-linux-i686.7z *
+popd
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
 
