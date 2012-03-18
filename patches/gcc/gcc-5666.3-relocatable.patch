@@ -335,7 +335,7 @@
    prefix_from_env ("PATH", &path);
  
 +  {
-+   int slashes = 5;
++   int slashes = 6;
 +#if defined(__linux__) || defined(__CYGWIN__)
 +  {
 +      int len;
