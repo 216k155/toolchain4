@@ -341,14 +341,17 @@ AC_CHECK_FUNC([uuid_generate_random],[],
 			     [No uuid_generate_random function found])])])
 AC_SUBST([UUID_LIBS])
 
+case $host_os in
+	 darwin*)
 # Dynamically linked LTO
-# AC_CHECK_LIB([LTO],[lto_get_version],[
-# 	     LTO_LIBS=-lLTO
-# 	     LTO_DEFS="-DLTO_SUPPORT=1"
-# 	     ])
-# AC_SUBST(LTO_LIBS)
-# AC_SUBST(LTO_DEFS)
-
+AC_CHECK_LIB([LTO],[lto_get_version],[
+		 LTO_LIBS=-lLTO
+		 LTO_DEFS="-DLTO_SUPPORT=1"
+		 ])
+AC_SUBST(LTO_LIBS)
+AC_SUBST(LTO_DEFS)
+;;
+	 *)
 # Statically linked LTO (though static llvmgcc itself isn't yet done)
 # ...requires a large list of libraries. Using gnumake's $(wildcard might be a better plan.
 AC_CHECK_LIB([LTO],[lto_get_version],[
@@ -357,6 +360,8 @@ AC_CHECK_LIB([LTO],[lto_get_version],[
 		 ])
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
+;;
+esac
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
 AC_CONFIG_FILES([ar/Makefile])
