@@ -45,7 +45,7 @@ patch_mingw_types_h() {
 			MINGWTYPES_H=/usr/include/sys/types.h
 		fi
 		if [[ ! $(egrep uid_t $MINGWTYPES_H) ]] ; then
-			pushd $(dirname $(dirname $MINGW_TYPES_H))
+			pushd $(dirname $(dirname $MINGWTYPES_H))
 			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
 			popd
 		fi
