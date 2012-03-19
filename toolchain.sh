@@ -1038,13 +1038,13 @@ toolchain_llvmgcc() {
 	rm -rf $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
-	# Note we're not enabling c here?!
+	export PATH=$PREFIX/bin:$PATH
 	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
 		--prefix=$PREFIX \
-		--enable-languages=c++,objc,obj-c++ \
+		--enable-languages=c,c++,objc,obj-c++ \
 		--disable-bootstrap \
 		--enable--checking \
 		--enable-llvm=$PWD/../llvmgcc42-${GCCLLVMVERS}-core \
@@ -1058,11 +1058,15 @@ toolchain_llvmgcc() {
 		--program-prefix=$TARGET-llvm- \
 		--with-slibdir=$PREFIX/lib \
 		--with-ld=$PREFIX/bin/$TARGET-ld \
-		--with-tune=generic \
+		--with-ar=$PREFIX/bin/$TARGET-ar \
 		--with-as=$PREFIX/bin/$TARGET-as \
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
-		--with-lipo=$PREFIX/bin/$TARGET-lipo
-	make -j8 &>make.log
+		--with-lipo=$PREFIX/bin/$TARGET-lipo \
+		--with-tune=generic
+	# Falls over at libiberty
+	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
+	make &>make.log
+	# ...which means this also falls over at libiberty!
 	make install -k &>install.log
 	popd
 }

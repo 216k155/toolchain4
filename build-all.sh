@@ -7,7 +7,7 @@ if [[ -z $1 ]] ; then
     exit 1
 fi
 
-rm -rf bld$1 src$1 pre$1
+rm -rf bld-$1 src-$1
 PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core
 PREFIX_SUFFIX=$1 ./toolchain.sh cctools
 PREFIX_SUFFIX=$1 ./toolchain.sh gcc
