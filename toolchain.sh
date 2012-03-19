@@ -608,6 +608,42 @@ toolchain_cctools() {
                         rm -fr odcctools-${CCTOOLS_VER_FH}
 #		  fi
 #		fi
+
+		if [[ "$(uname-bt)" == "Windows" ]] ; then
+			if [[ ! -f $PREFIX/include/uuid/uuid.h ]] ; then
+				if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
+					error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
+					exit 1
+				fi
+				pushd e2fsprogs-libs-1.41.14/
+				patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
+				./configure --prefix=$PREFIX --disable-elf-shlibs --disable-uuidd
+				pushd lib/uuid/
+				if ! ( make install && make ) ; then
+					error "Failed to make libuuid"
+					exit 1
+				fi
+				popd
+				popd
+			fi
+			message_status "libuuid is ready!"
+
+			if [[ ! -d openssl-1.0.0f ]] ; then
+				if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
+						error "Failed to get and extract openssl-1.0.0f Check errors."
+						popd
+						exit 1
+				fi
+
+				pushd openssl-1.0.0f
+				./configure --prefix=$PREFIX -no-shared -no-zlib-dynamic -no-test mingw
+				make -j $_JOBS
+				make -j $_JOBS install
+				popd
+			fi
+			message_status "openssl is ready!"
+		fi
+
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
 			./extract.sh --updatepatch --vers ${CCTOOLSVER} --foreignheaders --osxver ${OSXVER}
 		else

@@ -151,7 +151,7 @@ build_tools_dmg() {
 			make -j $_JOBS install
 			popd
 		fi
-		# Needed by both dmg2img and xar.
+		# Needed by both dmg2img and xar (and ld64 later...)
 		if [[ ! -d openssl-1.0.0f ]] ; then
 			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
 					error "Failed to get and extract openssl-1.0.0f Check errors."
@@ -167,10 +167,30 @@ build_tools_dmg() {
 		fi
 	fi
 
+    if [ ! -f $_PREFIX/lib/libcurses.a ] ; then
+        if ! $(downloadUntar http://downloads.sourceforge.net/pdcurses/pdcurses/3.4/PDCurses-3.4.tar.gz); then
+				error "Failed to get and extract PDCurses. Check errors."
+				popd
+				exit 1
+		fi
+        rm -rf PDCurses-3.4
+        tar -xvzf PDCurses-3.4.tar.gz
+        pushd PDCurses-3.4/win32
+        sed '90s/-copy/-cp/' mingwin32.mak > mingwin32-fixed.mak
+        make -f mingwin32-fixed.mak WIDE=Y UTF8=Y DLL=N
+        cp pdcurses.a $_PREFIX/lib/libcurses.a
+        cp pdcurses.a $_PREFIX/lib/libncurses.a
+        cp pdcurses.a $_PREFIX/lib/libpdcurses.a
+        cp ../curses.h $_PREFIX/include
+        cp ../panel.h $_PREFIX/include
+        popd
+    fi
+	message_status "PDCurses is ready!"
+
 	if [ -z $(which nano) ] ; then
 		message_status "Retrieving and building nano 2.3.1 ..."
 		if ! $(downloadUntar http://www.nano-editor.org/dist/v2.3/nano-2.3.1.tar.gz); then
-				error "Failed to get and extract nano-2.3.1 Check errors."
+				error "Failed to get and extract nano-2.3.1. Check errors."
 				popd
 				exit 1
 		fi
@@ -329,27 +349,6 @@ build_tools_dmg() {
 		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf git-1.7.3
 	fi
 	message_status "git is ready!"
-
-	# Needed by cctools, so probably belongs elsewhere.
-	if [[ "$(uname-bt)" == "Windows" ]] ; then
-		if [[ ! -f $_PREFIX/include/uuid/uuid.h ]] ; then
-			if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
-				error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
-				exit 1
-			fi
-			pushd e2fsprogs-libs-1.41.14/
-			patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
-			./configure --prefix=$_PREFIX --disable-elf-shlibs --disable-uuidd
-			pushd lib/uuid/
-			if ! ( make install && make ) ; then
-				error "Failed to make libuuid"
-				exit 1
-			fi
-			popd
-			popd
-		fi
-	fi
-	message_status "libuuid is ready!"
 
 	# mmap problems.
 #	if [ -z $(which ldid) ] ; then

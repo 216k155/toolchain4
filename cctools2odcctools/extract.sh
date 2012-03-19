@@ -321,7 +321,17 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
     echo "#ifndef __SYS_CDEFS_H_" > ${DISTDIR}/include/sys/cdefs.h
     echo "#define __SYS_CDEFS_H_" >> ${DISTDIR}/include/sys/cdefs.h
     echo -e "#endif\n" >> ${DISTDIR}/include/sys/cdefs.h
-    # Also need to create a sys/endian.h and/or sys/_endian.h
+    
+    echo "#ifndef __SYS_ENDIAN_H_" > ${DISTDIR}/include/sys/_endian.h
+    echo "#define HTONS(_h) (((((uint16_t)(_h) & 0xff)) << 8)  | (((uint16_t)(_h) & 0xff00) >> 8))" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define NTOHS(_n) (((((uint16_t)(_n) & 0xff)) << 8)  | (((uint16_t)(_n) & 0xff00) >> 8))" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define HTONL(_h) (((((uint32_t)(_h) & 0xff)) << 24) | ((((uint32_t)(_h) & 0xff00)) << 8) | ((((uint32_t)(_h) & 0xff0000)) >> 8) | ((((uint32_t)(_h) & 0xff000000)) >> 24))" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define NTOHL(_h) (((((uint32_t)(_n) & 0xff)) << 24) | ((((uint32_t)(_n) & 0xff00)) << 8) | ((((uint32_t)(_n) & 0xff0000)) >> 8) | ((((uint32_t)(_n) & 0xff000000)) >> 24))" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define htons(_h) HTONS(_h)" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define ntohs(_n) NTOHS(_n)" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define htonl(_h) HTONL(_h)" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#define ntohl(_n) NTOHL(_n)" >> ${DISTDIR}/include/sys/_endian.h
+    echo "#endif" >> ${DISTDIR}/include/sys/_endian.h
 fi
 
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
