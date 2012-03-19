@@ -1,5 +1,5 @@
---- ../../gcc-5666.3/gcc/gcc.c.orig	2010-10-14 21:27:54.000000000 +0100
-+++ ../../gcc-5666.3/gcc/gcc.c	2012-03-18 16:10:40.850511813 +0000
+--- gcc-5666.3/gcc/gcc.c.orig	2010-10-14 21:27:54.000000000 +0100
++++ gcc-5666.3/gcc/gcc.c	2012-03-18 16:10:40.850511813 +0000
 @@ -535,6 +535,7 @@
      :D}   else substitutes D.  There can be as many clauses as you need.
            This may be combined with '.', '!', ',', '|', and '*' as above.
@@ -352,8 +352,8 @@
        printf (_("programs: %s\n"),
  	      build_search_list (&exec_prefixes, "", false, false));
        printf (_("libraries: %s\n"),
---- ../../gcc-5666.3/gcc/config/darwin.h.orig	2010-10-14 21:27:53.000000000 +0100
-+++ ../../gcc-5666.3/gcc/config/darwin.h	2012-03-18 16:11:22.093993389 +0000
+--- gcc-5666.3/gcc/config/darwin.h.orig	2010-10-14 21:27:53.000000000 +0100
++++ gcc-5666.3/gcc/config/darwin.h	2012-03-18 16:11:22.093993389 +0000
 @@ -347,7 +347,7 @@
  
  #ifdef TARGET_SYSTEM_ROOT
@@ -363,8 +363,8 @@
  #else
  #define LINK_SYSROOT_SPEC "%{isysroot*:-syslibroot %*}"
  #endif
---- ../../gcc-5666.3/gcc/Makefile.in-orig	2012-01-02 15:42:52.484382457 +0000
-+++ ../../gcc-5666.3/gcc/Makefile.in	2012-01-02 16:13:35.275336181 +0000
+--- gcc-5666.3/gcc/Makefile.in-orig	2012-01-02 15:42:52.484382457 +0000
++++ gcc-5666.3/gcc/Makefile.in	2012-01-02 16:13:35.275336181 +0000
 @@ -4057,6 +4057,7 @@
  	@echo "set HOSTCFLAGS \"$(CFLAGS)\"" >> ./tmp0
  	@echo "set TESTING_IN_BUILD_TREE 1" >> ./tmp0
@@ -373,8 +373,8 @@
  # If newlib has been configured, we need to pass -B to gcc so it can find
  # newlib's crt0.o if it exists.  This will cause a "path prefix not used"
  # message if it doesn't, but the testsuite is supposed to ignore the message -
---- ../../gcc-5666.3/gcc/collect2.c.orig	2012-03-17 19:15:47.830956507 +0000
-+++ ../../gcc-5666.3/gcc/collect2.c	2012-03-17 19:28:08.425646059 +0000
+--- gcc-5666.3/gcc/collect2.c.orig	2012-03-17 19:15:47.830956507 +0000
++++ gcc-5666.3/gcc/collect2.c	2012-03-17 19:28:08.425646059 +0000
 @@ -802,6 +802,7 @@
    const char **object;
    int first_file;
