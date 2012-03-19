@@ -320,6 +320,14 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
     mkdir -p ${DISTDIR}/include/sys/
     echo "#ifndef __SYS_CDEFS_H_" > ${DISTDIR}/include/sys/cdefs.h
     echo "#define __SYS_CDEFS_H_" >> ${DISTDIR}/include/sys/cdefs.h
+
+    echo "#ifdef __cplusplus" >> ${DISTDIR}/include/sys/cdefs.h
+	echo "#define __BEGIN_DECLS extern "C" {" >> ${DISTDIR}/include/sys/cdefs.h
+	echo "#define __END_DECLS }" >> ${DISTDIR}/include/sys/cdefs.h
+	echo "#else" >> ${DISTDIR}/include/sys/cdefs.h
+	echo "#define __BEGIN_DECLS" >> ${DISTDIR}/include/sys/cdefs.h
+	echo "#define __END_DECLS" >> ${DISTDIR}/include/sys/cdefs.h
+	echo "#endif" >> ${DISTDIR}/include/sys/cdefs.h
     echo -e "#endif\n" >> ${DISTDIR}/include/sys/cdefs.h
     
     echo "#ifndef __SYS_ENDIAN_H_" > ${DISTDIR}/include/sys/_endian.h
@@ -331,7 +339,7 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
     echo "#define ntohs(_n) NTOHS(_n)" >> ${DISTDIR}/include/sys/_endian.h
     echo "#define htonl(_h) HTONL(_h)" >> ${DISTDIR}/include/sys/_endian.h
     echo "#define ntohl(_n) NTOHL(_n)" >> ${DISTDIR}/include/sys/_endian.h
-    echo "#endif" >> ${DISTDIR}/include/sys/_endian.h
+    echo -e "#endif\n" >> ${DISTDIR}/include/sys/_endian.h
 fi
 
 tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}

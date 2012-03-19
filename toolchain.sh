@@ -637,8 +637,8 @@ toolchain_cctools() {
 
 				pushd openssl-1.0.0f
 				./configure --prefix=$PREFIX -no-shared -no-zlib-dynamic -no-test mingw
-				make -j $_JOBS
-				make -j $_JOBS install
+				make -j 1
+				make -j 1 install
 				popd
 			fi
 			message_status "openssl is ready!"
