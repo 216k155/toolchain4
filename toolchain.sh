@@ -66,80 +66,18 @@
 #     fi
 #     # LLVM LOCAL end
 # done
-
+# 
 # LLVM LOCAL begin
-lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-gcc-$MAJ_VERS -create \
-  $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
-rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
-
-if [ $BUILD_CXX -eq 1 ]; then
-    lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS -create \
-        $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
-    ln -f $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS $DEST_DIR/$DEST_ROOT/bin/llvm-c++-$MAJ_VERS || exit 1
-    rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
-fi
-
-TOOLCHAIN_VERSION="4.3"
-OSXVER="10.7"
-DARWINVER=11
-MACOSX="MacOSX${OSXVER}"
-#TARGET=i686-apple-darwin${DARWINVER}
-TARGET=i686-apple-darwin${DARWINVER}
-
-HOST_DEBUG_CFLAGS="-O0 -g"
-
-# Uses -m32 to force 32bit build of everything. 64bit is broken atm
-# and the reference darwin-native-compiler is built as 32bit too.
-FORCE_32BIT=1
-
-# what device are we building for?
-DEVICE="iPhone_3GS"
-FIRMWARE_VERSION="4.3"
-
-# Set the defaults.
-if [[ -z $CCTOOLSVER ]] ; then
-	CCTOOLSVER=809
-	#CCTOOLSVER=782
-fi
-if [[ -z $FOREIGNHEADERS ]] ; then
-	FOREIGNHEADERS=
-elif [[ "$FOREIGNHEADERS" = "0" ]] ; then
-	FOREIGNHEADERS=
-else
-	FOREIGNHEADERS=-foreign-headers
-fi
-
-CCTOOLS_VER_FH="${CCTOOLSVER}${FOREIGNHEADERS}"
-
-ONLY_PATCH=0
-
-if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
-    TARSTRIP=--strip-components
-elif [ "`tar --help | grep bsdtar 2> /dev/null`" ]; then
-    TARSTRIP=--strip-components
-else
-    TARSTRIP=--strip-path
-fi
-
-# Manualy change this if needed
-#DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
-
-# Everything is built relative to IPHONEDEV_DIR
-IPHONEDEV_DIR="`pwd`"
-
-if [ -z $PREFIX_SUFFIX ] ; then
-    error "Set $PREFIX_SUFFIX before calling this!"
-fi
-
-#PREFIX_SUFFIX=-$PREFIX_SUFFIX
-
-TOOLCHAIN="${IPHONEDEV_DIR}"
-[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld-$PREFIX_SUFFIX"
-#[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre$PREFIX_SUFFIX"
-[ -z $PREFIX ] && PREFIX="/tmp2/$PREFIX_SUFFIX"
-[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
-[ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
-[ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
+# lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-gcc-$MAJ_VERS -create \
+#   $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
+# rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
+# 
+# if [ $BUILD_CXX -eq 1 ]; then
+#     lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS -create \
+#         $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
+#     ln -f $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS $DEST_DIR/$DEST_ROOT/bin/llvm-c++-$MAJ_VERS || exit 1
+#     rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
+# fi
 
 # Usage
 # ======================
@@ -227,8 +165,56 @@ TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
-#BUILD_ARCH=i686
-BUILD_ARCH=x86_64
+
+# If you need to debug any of this, set HOST_DEBUG_CFLAGS to "-O0 -g", otherwise don't set it.
+HOST_DEBUG_CFLAGS="-O0 -g"
+
+# what device are we building for?
+DEVICE="iPhone_3GS"
+FIRMWARE_VERSION="4.3"
+
+# Set the defaults.
+if [[ -z $CCTOOLSVER ]] ; then
+	CCTOOLSVER=809
+fi
+CCTOOLS_VER_FH="${CCTOOLSVER}"
+
+ONLY_PATCH=0
+
+if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
+    TARSTRIP=--strip-components
+elif [ "`tar --help | grep bsdtar 2> /dev/null`" ]; then
+    TARSTRIP=--strip-components
+else
+    TARSTRIP=--strip-path
+fi
+
+# Manualy change this if needed
+#DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
+
+# Everything is built relative to IPHONEDEV_DIR
+IPHONEDEV_DIR="`pwd`"
+
+if [ -z $PREFIX_SUFFIX ] ; then
+    error "Set $PREFIX_SUFFIX before calling this!"
+fi
+
+#PREFIX_SUFFIX=-$PREFIX_SUFFIX
+
+TOOLCHAIN="${IPHONEDEV_DIR}"
+[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld-$PREFIX_SUFFIX"
+#[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre$PREFIX_SUFFIX"
+[ -z $PREFIX ] && PREFIX="/tmp2/$PREFIX_SUFFIX"
+[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
+[ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
+[ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
+
+TOOLCHAIN_VERSION="4.3"
+OSXVER="10.7"
+DARWINVER=11
+MACOSX="MacOSX${OSXVER}"
+BUILD_ARCH=i686
+#BUILD_ARCH=x86_64
 TARGET=${BUILD_ARCH}-apple-darwin${DARWINVER}
 
 HOST_DEBUG_CFLAGS="-O0 -g"
@@ -1000,6 +986,10 @@ toolchain_gcc()
 		cp -R -a $PREFIXGCC/* $PREFIX
 		rm -rf $PREFIXGCC
 	fi
+}
+
+toolchain_gccdriver() {
+	message_status "not yet"
 }
 
 build_binmay() {
@@ -1836,6 +1826,13 @@ case $1 in
 		message_action "gcc built."
 		;;
 
+	gccdriver)
+		check_environment
+		message_action "Building gcc driver..."
+		toolchain_gccdriver
+		message_action "gcc driver built."
+		;;
+
 	build32)
 		check_environment
 		message_action "Building the sys32 Headers and Libraries..."
@@ -1982,6 +1979,9 @@ case $1 in
 		echo	"    ${BOLD}gcc${ENDF}"
 		echo -e "    \tAcquire and build gcc 4.2.1"
 		echo
+		echo	"    ${BOLD}gccdriver${ENDF}"
+		echo -e "    \tBuild gcc driver (must be done after gcc and llvmgcc)"
+		echo
 		echo	"    ${BOLD}ldid${ENDF}"
 		echo -e "    \tAcquire and build ldid."
 		echo
@@ -1995,9 +1995,8 @@ case $1 in
 		echo -e "    \tand headers."
 		echo
 		echo	"    ${BOLD}makerelocatable${ENDF}"
-		echo -e "    \tTo be used once a fully working, but unrelocatable"
-		echo -e "    \ttoolchain has been built in pre. Creates pre-reloc,"
-		echo -e "    \tleaving pre untouched in case it's wanted."
+		echo -e "    \tWill never work! I'm keeping this code around only as"
+		echo -e "    \ta reference for how to patch strings in executables."
 		echo
 		;;
 esac

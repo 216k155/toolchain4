@@ -12,6 +12,7 @@ PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core
 PREFIX_SUFFIX=$1 ./toolchain.sh cctools
 PREFIX_SUFFIX=$1 ./toolchain.sh gcc
 PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc
+PREFIX_SUFFIX=$1 ./toolchain.sh gccdriver
 rm -rf /tmp/$1/i686-apple-darwin11/sys-include
 pushd /tmp/$1/bin
 #strip *
