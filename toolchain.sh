@@ -38,10 +38,46 @@
 
 # The toolchain is now fully relocatable, however, "-arch x86_64" doesn't work, cc1plus
 # doesn't understand it. For reference of how Apple builds for 
-# multiple arches, see gcc-5666.3/build_gcc
-# This task keeps getting bigger...
-# ...and this is as much as I've done for x86_64 support ;-)
-# TARGETS="i686,x86_64,arm"
+# multiple arches, see gcc-5666.3/build_gcc and gcc-5666.3/driverdriver.c :
+# 
+# Build driver-driver using fully-named drivers
+# for h in $HOSTS ; do
+#     # LLVM LOCAL begin
+#     $h-apple-darwin$DARWIN_VERS-gcc \
+# 	$ORIG_SRC_DIR/driverdriver.c                               \
+# 	-DPDN="\"-apple-darwin$DARWIN_VERS-llvm-gcc-$MAJ_VERS\""                                    \
+# 	-DIL="\"$DEST_ROOT/bin/\"" -I  $ORIG_SRC_DIR/include                   \
+# 	-I  $ORIG_SRC_DIR/gcc -I  $ORIG_SRC_DIR/gcc/config                     \
+# 	-liberty -L$DIR/dst-$BUILD-$h$DEST_ROOT/lib/                           \
+# 	-L$DIR/dst-$BUILD-$h$DEST_ROOT/$h-apple-darwin$DARWIN_VERS/lib/                    \
+#         -L$DIR/obj-$h-$BUILD/libiberty/                                        \
+# 	-o $DEST_DIR/$DEST_ROOT/bin/tmp-$h-llvm-gcc-$MAJ_VERS || exit 1
+# 
+#     if [ $BUILD_CXX -eq 1 ]; then
+#         $h-apple-darwin$DARWIN_VERS-gcc \
+# 	    $ORIG_SRC_DIR/driverdriver.c                               \
+# 	    -DPDN="\"-apple-darwin$DARWIN_VERS-llvm-g++-$MAJ_VERS\""                                    \
+# 	    -DIL="\"$DEST_ROOT/bin/\"" -I  $ORIG_SRC_DIR/include                   \
+# 	    -I  $ORIG_SRC_DIR/gcc -I  $ORIG_SRC_DIR/gcc/config                     \
+# 	    -liberty -L$DIR/dst-$BUILD-$h$DEST_ROOT/lib/                           \
+# 	    -L$DIR/dst-$BUILD-$h$DEST_ROOT/$h-apple-darwin$DARWIN_VERS/lib/                    \
+#             -L$DIR/obj-$h-$BUILD/libiberty/                                        \
+# 	    -o $DEST_DIR/$DEST_ROOT/bin/tmp-$h-llvm-g++-$MAJ_VERS || exit 1
+#     fi
+#     # LLVM LOCAL end
+# done
+
+# LLVM LOCAL begin
+lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-gcc-$MAJ_VERS -create \
+  $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
+rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
+
+if [ $BUILD_CXX -eq 1 ]; then
+    lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS -create \
+        $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
+    ln -f $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS $DEST_DIR/$DEST_ROOT/bin/llvm-c++-$MAJ_VERS || exit 1
+    rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
+fi
 
 TOOLCHAIN_VERSION="4.3"
 OSXVER="10.7"
