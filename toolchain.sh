@@ -48,7 +48,7 @@ OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 #TARGET=i686-apple-darwin${DARWINVER}
-TARGET=x86_64-apple-darwin${DARWINVER}
+TARGET=i686-apple-darwin${DARWINVER}
 
 HOST_DEBUG_CFLAGS="-O0 -g"
 
@@ -186,6 +186,73 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 
 # function for building tools (xar, dmg2img, cpio, nano and all the libs they depend on)
 . dmg-pkg-tools.sh
+
+TOOLCHAIN_VERSION="4.3"
+OSXVER="10.7"
+DARWINVER=11
+MACOSX="MacOSX${OSXVER}"
+#BUILD_ARCH=i686
+BUILD_ARCH=x86_64
+TARGET=${BUILD_ARCH}-apple-darwin${DARWINVER}
+
+HOST_DEBUG_CFLAGS="-O0 -g"
+
+BUILD_ARCH_CFLAGS="-m32"
+if [[ "$(uname-bt)" = "Darwin" ]] ; then
+	if [[ "$BUILD_ARCH" = "i686" ]] ; then
+		BUILD_ARCH_CFLAGS="-m32"
+	elif [[ "$BUILD_ARCH" = "x86_64" ]] ; then
+		BUILD_ARCH_CFLAGS="-m64"
+	fi
+fi
+
+# what device are we building for?
+DEVICE="iPhone_3GS"
+FIRMWARE_VERSION="4.3"
+
+# Set the defaults.
+if [[ -z $CCTOOLSVER ]] ; then
+	CCTOOLSVER=809
+	#CCTOOLSVER=782
+fi
+if [[ -z $FOREIGNHEADERS ]] ; then
+	FOREIGNHEADERS=
+elif [[ "$FOREIGNHEADERS" = "0" ]] ; then
+	FOREIGNHEADERS=
+else
+	FOREIGNHEADERS=-foreign-headers
+fi
+
+CCTOOLS_VER_FH="${CCTOOLSVER}${FOREIGNHEADERS}"
+
+ONLY_PATCH=0
+
+if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
+    TARSTRIP=--strip-components
+elif [ "`tar --help | grep bsdtar 2> /dev/null`" ]; then
+    TARSTRIP=--strip-components
+else
+    TARSTRIP=--strip-path
+fi
+
+# Manualy change this if needed
+#DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
+
+# Everything is built relative to IPHONEDEV_DIR
+IPHONEDEV_DIR="`pwd`"
+
+if [ -z $PREFIX_SUFFIX ] ; then
+    error "Set $PREFIX_SUFFIX before calling this!"
+fi
+
+#PREFIX_SUFFIX=-$PREFIX_SUFFIX
+
+TOOLCHAIN="${IPHONEDEV_DIR}"
+[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld-$PREFIX_SUFFIX"
+[ -z $PREFIX ] && PREFIX="/tmp2/$PREFIX_SUFFIX"
+[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
+[ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
+[ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
 
 UNAME=$(uname-bt)
 if [[ "$UNAME" == "Windows" ]] ; then
@@ -669,14 +736,14 @@ toolchain_cctools() {
 		if [[ "$ONLY_PATCH" = "1" ]] ; then
 			exit 1
 		fi
-		CC="gcc -m32" CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="-m32 -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03" LDFLAGS="-m32 -L$PREFIX/lib" \
+		CC="gcc $BUILD_ARCH_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
-		# make CFLAGS="-m32 -save-temps -D__DARWIN_UNIX03 -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h"
+		# make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h"
 		if ! ( make &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
@@ -712,7 +779,7 @@ toolchain_llvmgcc_core() {
 	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
-	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
@@ -869,7 +936,7 @@ toolchain_gcc()
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="-m32 $HOST_DEBUG_CFLAGS -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -1040,7 +1107,7 @@ toolchain_llvmgcc() {
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	export PATH=$PREFIX/bin:$PATH
-	CFLAGS="-m32 -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="-m32" \
+	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \

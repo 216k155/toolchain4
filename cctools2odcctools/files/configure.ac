@@ -327,7 +327,7 @@ esac
 
 AC_CHECK_SIZEOF([long])
 if test $ac_cv_sizeof_long >=8; then
-	LD_CLASSIC=ld
+	LD_CLASSIC=
 else
 	LD_CLASSIC=ld
 fi
