@@ -123,10 +123,6 @@ OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 
-# If you need to debug any of this, set HOST_DEBUG_CFLAGS to "-O0 -g", otherwise don't set it.
-#HOST_DEBUG_CFLAGS="-O0 -g"
-HOST_DEBUG_CFLAGS="-O2"
-
 # what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
@@ -175,7 +171,8 @@ BUILD_ARCH=i686
 #BUILD_ARCH=x86_64
 TARGET=${BUILD_ARCH}-apple-darwin${DARWINVER}
 
-HOST_DEBUG_CFLAGS="-O0 -g"
+#HOST_DEBUG_CFLAGS="-O0 -g"
+HOST_DEBUG_CFLAGS="-O2"
 
 BUILD_ARCH_CFLAGS="-m32"
 if [[ "$(uname-bt)" = "Darwin" ]] ; then
