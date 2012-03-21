@@ -124,7 +124,8 @@ DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 
 # If you need to debug any of this, set HOST_DEBUG_CFLAGS to "-O0 -g", otherwise don't set it.
-HOST_DEBUG_CFLAGS="-O0 -g"
+#HOST_DEBUG_CFLAGS="-O0 -g"
+HOST_DEBUG_CFLAGS="-O2"
 
 # what device are we building for?
 DEVICE="iPhone_3GS"

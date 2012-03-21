@@ -394,3 +394,197 @@
    /* Try to discover a valid linker/nm/strip to use.  */
  
    /* Maybe we know the right file to use (if not cross).  */
+--- driverdriver.c.orig	2012-03-21 21:50:22.075313848 +0000
++++ driverdriver.c	2012-03-21 22:08:03.105974821 +0000
+@@ -175,10 +175,10 @@
+ static void initialize (void);
+ static void final_cleanup (void);
+ static int do_wait (int, const char *);
+-static void do_lipo (int, const char *);
++static void do_lipo (int, const char *, const char *);
+ static void do_compile (const char **, int);
+ static void do_compile_separately (void);
+-static void do_lipo_separately (void);
++static void do_lipo_separately (const char *);
+ static int filter_args_for_arch (const char **, int, const char **,
+ 				 const char *);
+ static int add_arch_options (int, const char **, int);
+@@ -510,16 +510,31 @@
+   return ret;
+ }
+ 
++#if !defined(DIR_SEP)
++ #if defined(__MINGW32__)
++  #define DIR_SEP '\\'
++ #else
++  #define DIR_SEP '/'
++ #endif
++#endif
++
+ /* Invoke 'lipo' and combine and all output files.  */
+ 
+ static void
+-do_lipo (int start_outfile_index, const char *out_file)
++do_lipo (int start_outfile_index, const char *out_file, const char *argv_0)
+ {
+   int i, j, pid;
+   char *errmsg_fmt, *errmsg_arg;
++  char buf[1024];
+ 
+   /* Populate lipo arguments.  */
+-  lipo_argv[0] = "lipo";
++  strcpy(buf,argv_0);
++  if (strrchr(buf,DIR_SEP))
++  {
++     *(strrchr(buf,DIR_SEP)+1) = '\0';
++     strcat(buf,"lipo");
++  }  
++  lipo_argv[0] = buf;
+   lipo_argv[1] = "-create";
+   lipo_argv[2] = "-o";
+   lipo_argv[3] = out_file;
+@@ -625,7 +640,7 @@
+    Construct command line for each invocation with one input file.  */
+ 
+ static void
+-do_compile_separately (void)
++do_compile_separately ()
+ {
+   const char **new_new_argv;
+   int i, new_new_argc;
+@@ -690,7 +705,7 @@
+ /* Invoke 'lipo' on set of output files and create multile FAT binaries.  */
+ 
+ static void
+-do_lipo_separately (void)
++do_lipo_separately (const char* argv_0)
+ {
+   int ifn_index;
+   struct input_filename *ifn;
+@@ -698,7 +713,7 @@
+        ifn_index < num_infiles && ifn && ifn->name;
+        ifn_index++, ifn = ifn->next)
+     do_lipo (ifn_index * num_arches,
+-	     strip_path_and_suffix (ifn->name, ".o"));
++	     strip_path_and_suffix (ifn->name, ".o"), argv_0);
+ }
+ 
+ /* Remove all options which are architecture-specific and are not for the
+@@ -1281,65 +1296,78 @@
+   char *override_option_str = NULL;
+   char path_buffer[2*PATH_MAX+1];
+   int linklen;
++  char *argv_0 = argv[0];
++  char buf[1024];
++
++#if defined(__linux__) || defined(__CYGWIN__)
++  {
++      int len;
++      if ((len = readlink("/proc/self/exe", buf, sizeof(buf)-1)) != -1)
++        {
++          buf[len] = '\0';
++          argv_0 = &buf[0];
++        }
++  }
++#endif
+ 
+   total_argc = argc;
+   prog_len = 0;
+ 
+-  argv_0_len = strlen (argv[0]);
++  argv_0_len = strlen (argv_0);
+ 
+   /* Get the progname, required by pexecute () and program location.  */
+-  prog_len = get_prog_name_len (argv[0]);
++  prog_len = get_prog_name_len (argv_0);
+ 
+-  /* If argv[0] is all program name (no slashes), search the PATH environment
++  /* If argv_0 is all program name (no slashes), search the PATH environment
+      variable to get the fully resolved path to the executable. */
+   if (prog_len == argv_0_len)
+     {
+ #ifdef DEBUG
+-      progname = argv[0] + argv_0_len - prog_len;
++      progname = argv_0 + argv_0_len - prog_len;
+       fprintf (stderr,"%s: before PATH resolution, full progname = %s\n",
+-               argv[0]+argv_0_len-prog_len, argv[0]);
++               argv_0+argv_0_len-prog_len, argv_0);
+ #endif
+-      argv[0] = resolve_path_to_executable (argv[0]);
+-      prog_len = get_prog_name_len (argv[0]);
+-      argv_0_len = strlen(argv[0]);
++      argv_0 = resolve_path_to_executable (argv_0);
++      prog_len = get_prog_name_len (argv_0);
++      argv_0_len = strlen(argv_0);
+     }
+ 
+-  /* If argv[0] is a symbolic link, use the directory of the pointed-to file
++  /* If argv_0 is a symbolic link, use the directory of the pointed-to file
+      to find compiler components. */
+   /* LLVM LOCAL: loop to follow multiple levels of links */
+-  while ((linklen = readlink (argv[0], path_buffer, PATH_MAX)) != -1)
++  while ((linklen = readlink (argv_0, path_buffer, PATH_MAX)) != -1)
+     {
+-      /* readlink succeeds if argv[0] is a symlink.  path_buffer now contains
++      /* readlink succeeds if argv_0 is a symlink.  path_buffer now contains
+ 	 the file referenced. */
+       path_buffer[linklen] = '\0';
+ #ifdef DEBUG
+-      progname = argv[0] + argv_0_len - prog_len;
++      progname = argv_0 + argv_0_len - prog_len;
+       fprintf (stderr, "%s: before symlink, full prog = %s target = %s\n",
+-	       progname, argv[0], path_buffer);
++	       progname, argv_0, path_buffer);
+ #endif
+-      argv[0] = resolve_symlink(argv[0], path_buffer, argv_0_len, prog_len);
+-      argv_0_len = strlen(argv[0]);
++      argv_0 = resolve_symlink(argv_0, path_buffer, argv_0_len, prog_len);
++      argv_0_len = strlen(argv_0);
+ 
+       /* Get the progname, required by pexecute () and program location.  */
+-      prog_len = get_prog_name_len (argv[0]);
++      prog_len = get_prog_name_len (argv_0);
+ 
+ #ifdef DEBUG
+-      progname = argv[0] + argv_0_len - prog_len;
+-      printf("%s: ARGV[0] after symlink = %s\n", progname, argv[0]);
++      progname = argv_0 + argv_0_len - prog_len;
++      printf("%s: ARGV[0] after symlink = %s\n", progname, argv_0);
+ #endif
+     }
+ 
+-  progname = argv[0] + argv_0_len - prog_len;
++  progname = argv_0 + argv_0_len - prog_len;
+ 
+   /* Setup driver prefix.  */
+   prefix_len = argv_0_len - prog_len;
+   curr_dir = (char *) malloc (sizeof (char) * (prefix_len + 1));
+-  strncpy (curr_dir, argv[0], prefix_len);
++  strncpy (curr_dir, argv_0, prefix_len);
+   curr_dir[prefix_len] = '\0';
+-  driver_exec_prefix = (argv[0], "/usr/bin", curr_dir);
++  driver_exec_prefix = (argv_0, "/usr/bin", curr_dir);
+ 
+ #ifdef DEBUG
+-  fprintf (stderr,"%s: full progname = %s\n", progname, argv[0]);
++  fprintf (stderr,"%s: full progname = %s\n", progname, argv_0);
+   fprintf (stderr,"%s: progname = %s\n", progname, progname);
+   fprintf (stderr,"%s: driver_exec_prefix = %s\n", progname, driver_exec_prefix);
+ #endif
+@@ -1632,14 +1660,14 @@
+ 
+ 	  /* Make FAT binary by combining individual output files for each
+ 	     architecture, using 'lipo'.  */
+-	  do_lipo (0, out_file);
++	  do_lipo (0, out_file, argv_0);
+ 	}
+       else
+ 	{
+ 	  /* Multiple input files are present and IMA is not used.
+ 	     Which means need to generate multiple FAT files.  */
+ 	  do_compile_separately ();
+-	  do_lipo_separately ();
++	  do_lipo_separately (argv_0);
+ 	}
+     }
+ 
