@@ -41,7 +41,7 @@ ASPROG          = $(shell echo as | sed '$(transform)')
 
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(srcdir) -I$(srcdir)/Readers \
 			-I$(srcdir)/Writers -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) $(FORHDRS)
+			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
 MYWARNINGS      = 
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DASPROG="\"$(ASPROG)\"" $(LTO_DEFS)

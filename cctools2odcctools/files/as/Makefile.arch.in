@@ -32,7 +32,7 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 ASLIBEXECDIR    = @ASLIBEXECDIR@
 
 MYINCLUDES      = -I$(builddir) -I$(srcdir)/.. -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) $(FORHDRS)
+			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
 MYWARNINGS      =
 MYDEFS          = -DNeXT_MOD -DASLIBEXECDIR="\"$(ASLIBEXECDIR)/\"" $(MYDEFS_$(ARCH))
 MYLDFLAGS	= -L$(top_builddir)/libstuff

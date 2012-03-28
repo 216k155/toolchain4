@@ -1,4 +1,4 @@
-AC_INIT([odcctools], [782.1od1], [peter@pogma.com])
+AC_INIT([odcctools], [809.1od1], [peter@pogma.com])
 AC_PREREQ([2.57])
 AC_REVISION([$Revision: 1.37 $])
 
@@ -407,7 +407,10 @@ uid_t getuid(void);
 gid_t getgid(void);
 #endif
 #if defined(__MINGW32__)
-#define realpath(_i,_o) _fullpath((_o),(_i),255)
+#ifdef __cplusplus
+extern "C"
+#endif
+char *realpath(const char *path, char *resolved);
 #define sleep(_x) _sleep(_x)
 #define bcmp(_a,_b,_n) memcmp(_a,_b,_n)
 #define bcopy(_s,_d,_n) memmove(_d,_s,_n)

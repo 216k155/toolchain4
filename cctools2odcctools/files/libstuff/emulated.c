@@ -644,8 +644,15 @@ size_t strlcat(char *dst, const char *src, size_t siz)
  */
 int _NSGetExecutablePath(char *buf, size_t *bufsize)
 {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
+        /* Early conversion to unix slashes instead of more changes
+         * everywhere else... */
+        char *winslash = strchr(buf,'\\');
+        while (winslash) {
+            *winslash = '/';
+            winslash = strchr(winslash,'\\');
+        }
 		return strlen;
 	}
 	return -1;
@@ -658,5 +665,19 @@ int _NSGetExecutablePath(char *buf, size_t *bufsize)
 #endif/* HAVE__NSGETEXECUTABLEPATH */
 
 #ifdef __cplusplus
+}
+#endif
+
+#if defined(__MINGW32__)
+char *realpath(const char *path, char *resolved)
+{
+    char* winslash;
+    _fullpath(resolved,path,255);
+    winslash = strchr(resolved,'\\');
+    while (winslash) {
+        *winslash = '/';
+        winslash = strchr(winslash,'\\');
+    }
+    return resolved;
 }
 #endif

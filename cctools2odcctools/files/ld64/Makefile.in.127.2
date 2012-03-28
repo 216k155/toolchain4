@@ -44,7 +44,7 @@ MYINCLUDES      = -I$(srcdir)/include -I$(srcdir)/Readers \
 		-I$(srcdir)/Writers -I$(top_builddir)/include \
 		-I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/ld \
 		-I$(top_srcdir)/ld64/src/abstraction -I$(top_srcdir)/ld64/src/ld/parsers \
-		$(INCPRIVEXT) $(FORHDRS)
+		$(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
 
 MYWARNINGS      = 
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \

@@ -34,7 +34,7 @@ ASLIBEXECDIR    = @ASLIBEXECDIR@
 transform	= @program_transform_name@
 
 MYINCLUDES      = -I$(srcdir) -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) \
+			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h \
 			$(FORHDRS)
 MYWARNINGS      = 
 MYDEFS          = -DNeXT_MOD -DASLIBEXECDIR="\"$(ASLIBEXECDIR)/\""

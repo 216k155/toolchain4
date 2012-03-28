@@ -36,7 +36,7 @@ LDPROG		= $(shell echo ld | sed '$(transform)')
 LIPOPROG	= $(shell echo lipo | sed '$(transform)')
 
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(top_builddir)/include \
-			-I$(top_srcdir)/include -I$(top_srcdir)/libprunetrie $(INCPRIVEXT) $(FORHDRS)
+			-I$(top_srcdir)/include -I$(top_srcdir)/libprunetrie $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
 MYWARNINGS      = 
 MYDEFS          = -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DLIPOPROG="\"$(LIPOPROG)\"" $(LTO_DEFS)

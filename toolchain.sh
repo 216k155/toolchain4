@@ -171,7 +171,7 @@ BUILD_ARCH=i686
 #BUILD_ARCH=x86_64
 TARGET=${BUILD_ARCH}-apple-darwin${DARWINVER}
 
-# HOST_DEBUG_CFLAGS="-O0 -g"
+HOST_DEBUG_CFLAGS="-O0 -g"
 #HOST_DEBUG_CFLAGS="-O2"
 
 BUILD_ARCH_CFLAGS="-m32"
@@ -730,13 +730,13 @@ toolchain_cctools() {
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
-		# make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h"
+		# make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}"
 		if [[ "$(uname-bt)" = "Windows" ]] ; then
-			make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h" -k &>make.log
+			make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" -k &>make.log
 			DESTDIR=C: make install &>install.log
 			cp ${PREFIX}/lib/libLTO.dll ${PREFIX}/bin/
 		else
-			if ! ( make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h" -k &>make.log && make install &>install.log ); then
+			if ! ( make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" -k &>make.log && make install &>install.log ); then
 				error "Build & install failed. Check make.log and install.log"
 				exit 1
 			fi
@@ -866,6 +866,7 @@ toolchain_gcc()
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable-darwin-h-LINK_SYSROOT_SPEC.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1172,7 +1173,7 @@ toolchain_llvmgcc() {
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	export PATH=$PREFIX/bin:$PATH
-	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps $HOST_DEBUG_CFLAGS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \

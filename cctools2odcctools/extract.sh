@@ -502,21 +502,21 @@ do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#includ
 do-sed $"s^__unused^__attribute__((__unused__))^" ${DISTDIR}/include/mach/mig_errors.h
 do-sed $"s^__unused^__attribute__((__unused__))^" ${DISTDIR}/include/objc/objc-auto.h
 do-sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#ifndef __APPLE__\n#include <sys/file.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ar/archive.c
-do-sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
 if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^#include <paths.h>^#ifndef __MINGW32__\n#include <paths.h>\n#endif^" ${DISTDIR}/ar/ar.c
 fi
 
 # as
+do-sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-file.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-scrub.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/write_object.c
-# This seems to be a bug is as/driver.c, but it's not been a problem except on Windows (due to #define'ing realpath to _fullpath, but this fix should probably be enabled globally.
 if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^if(realpath == NULL)^if(prefix == NULL)^" ${DISTDIR}/as/driver.c
 	# Windows doesn't have SIGHUP or SIGPIPE...
 	do-sed $"s^static int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};^#ifdef __MINGW32__\nstatic int sig\[\] = { SIGINT, SIGTERM, 0};\n#else\nstatic int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};\n#endif^" ${DISTDIR}/as/as.c
 	do-sed $"s^static int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};^#ifdef __MINGW32__\nstatic int sig\[\] = { SIGINT, SIGTERM, 0};\n#else\nstatic int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};\n#endif^" ${DISTDIR}/as/as.c
+	do-sed $"s^    const char \*AS = \"/as\";^#ifdef __MINGW32__\n    const char \*AS = \"/as.exe\";\n#else\n    const char \*AS = \"/as\";\n#endif^" ${DISTDIR}/as/driver.c
 	do-sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/atof-generic.c
 	do-sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/arm.c
 	do-sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/i386.c

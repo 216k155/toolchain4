@@ -33,7 +33,7 @@ ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS         = -I$(top_srcdir)/include/foreign
 endif
 
-MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include $(INCPRIVEXT) $(FORHDRS)
+MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
 
 MYWARNINGS      =
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
