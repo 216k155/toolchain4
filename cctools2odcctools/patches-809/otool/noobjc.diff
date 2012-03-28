@@ -1,16 +1,5 @@
 --- ./main.c.orig	2012-01-09 00:31:59.298448146 +0000
 +++ ./main.c	2012-01-09 00:34:40.012429442 +0000
-@@ -53,6 +53,10 @@
- #include "arm_disasm.h"
- #include "llvm-c/Disassembler.h"
- 
-+#ifdef HAVE_CONFIG_H
-+#include <config.h>
-+#endif
-+
- /* Name of this program for error messages (argv[0]) */
- char *progname = NULL;
- 
 @@ -1178,14 +1182,19 @@
  		S_ATTR_SOME_INSTRUCTIONS){
  	    if(strcmp(segname, SEG_OBJC) == 0 &&

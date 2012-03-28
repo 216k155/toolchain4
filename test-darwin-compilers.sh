@@ -36,8 +36,8 @@ OUTDIR=$PWD
 #FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/i686-apple-darwin11
 #MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/i686-apple-darwin11
 
-FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/darwin
-MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/darwin
+FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/$LEFT
+MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/$RIGHT
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 

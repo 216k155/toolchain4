@@ -41,14 +41,14 @@ MYWARNINGS      =
 MYDEFS          = -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DLIPOPROG="\"$(LIPOPROG)\"" $(LTO_DEFS)
 MYLDFLAGS	= -L$(top_builddir)/libstuff
-MYLIBS		= -lstuff -ldl
+MYLIBS		= -lstuff @DL_LIBS@
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 
-PROGRAMS = checksyms lipo size strings nm libtool redo_prebinding seg_addr_table \
+PROGRAMS = lipo size strings nm libtool @NOT_FOR_WINDOWS_PROG@ \
 		seg_hack install_name_tool indr strip nmedit segedit pagestuff \
 		ranlib codesign_allocate
 

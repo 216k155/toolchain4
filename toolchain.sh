@@ -171,8 +171,8 @@ BUILD_ARCH=i686
 #BUILD_ARCH=x86_64
 TARGET=${BUILD_ARCH}-apple-darwin${DARWINVER}
 
-#HOST_DEBUG_CFLAGS="-O0 -g"
-HOST_DEBUG_CFLAGS="-O2"
+# HOST_DEBUG_CFLAGS="-O0 -g"
+#HOST_DEBUG_CFLAGS="-O2"
 
 BUILD_ARCH_CFLAGS="-m32"
 if [[ "$(uname-bt)" = "Darwin" ]] ; then
@@ -230,10 +230,11 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 [ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
 [ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
 [ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
-
+JOBS=8
 UNAME=$(uname-bt)
-if [[ "$UNAME" == "Windows" ]] ; then
+if [[ "$UNAME" = "Windows" ]] ; then
 	EXEEXT=".exe"
+	JOBS=1
 	LN=lns.exe # Nokia's tool, patched and built by dmg-pkg-tools.sh.
 fi
 
@@ -655,15 +656,20 @@ toolchain_cctools() {
 #		  fi
 #		fi
 
+		mkdir -p "${PREFIX}"
+		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
+		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
+
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
-			if [[ ! -f $PREFIX/include/uuid/uuid.h ]] ; then
+			HOSTPREFIX=/mingw
+			if [[ ! -f $HOSTPREFIX/include/uuid/uuid.h ]] ; then
 				if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
 					error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
 					exit 1
 				fi
 				pushd e2fsprogs-libs-1.41.14/
 				patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
-				./configure --prefix=$PREFIX --disable-elf-shlibs --disable-uuidd
+				./configure --prefix=$HOSTPREFIX --disable-elf-shlibs --disable-uuidd
 				pushd lib/uuid/
 				if ! ( make install && make ) ; then
 					error "Failed to make libuuid"
@@ -674,7 +680,7 @@ toolchain_cctools() {
 			fi
 			message_status "libuuid is ready!"
 
-			if [[ ! -d openssl-1.0.0f ]] ; then
+			if [[ ! -f $HOSTPREFIX/include/openssl/md5.h ]] ; then
 				if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
 						error "Failed to get and extract openssl-1.0.0f Check errors."
 						popd
@@ -682,7 +688,7 @@ toolchain_cctools() {
 				fi
 
 				pushd openssl-1.0.0f
-				./configure --prefix=$PREFIX -no-shared -no-zlib-dynamic -no-test mingw
+				./configure --prefix=$HOSTPREFIX -no-shared -no-zlib-dynamic -no-test mingw
 				make -j 1
 				make -j 1 install
 				popd
@@ -705,26 +711,35 @@ toolchain_cctools() {
 		popd
 	   fi
 
-		mkdir -p "${PREFIX}"
-		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
-		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 		cd "${CCTOOLS_DIR}"
 		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
 		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
 		if [[ "$ONLY_PATCH" = "1" ]] ; then
 			exit 1
 		fi
-		CC="gcc $BUILD_ARCH_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 -include" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
+		# cctools is not very clean, clear out the noise.
+		# This should be done in src-$PREFIX/cctools-809/configure.ac
+		# -include here is surely wrong? maybe -include config.h would make sense?
+		if [[ "$(uname-bt)" == "Windows" ]] ; then
+			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
+		fi
+		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
-		# make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h"
-		if ! ( make &>make.log && make install &>install.log ); then
-			error "Build & install failed. Check make.log and install.log"
-			exit 1
+		# make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h"
+		if [[ "$(uname-bt)" = "Windows" ]] ; then
+			make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h" -k &>make.log
+			DESTDIR=C: make install &>install.log
+			cp ${PREFIX}/lib/libLTO.dll ${PREFIX}/bin/
+		else
+			if ! ( make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -include ${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone/include/config.h" -k &>make.log && make install &>install.log ); then
+				error "Build & install failed. Check make.log and install.log"
+				exit 1
+			fi
 		fi
 	fi
 }
@@ -751,6 +766,8 @@ toolchain_llvmgcc_core() {
 		# The patch to collect2.c could've been avoided by putting a link to ld
 		# into the libexec tree.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -763,7 +780,7 @@ toolchain_llvmgcc_core() {
 		--enable-optimized \
 		--disable-assertions \
 		--target=${TARGET}
-	make -j8 &>make.log
+	make -j$JOBS &>make.log
 	make install &>install.log # optional
 	popd
 }
@@ -815,7 +832,7 @@ toolchain_llvmgcc_saurik() {
 		make clean > /dev/null
 		message_status "Building gcc-4.2-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/gcc-4.2-iphone/make.log"
-		if ! ( make -j8 &>make.log && make install &>install.log ); then
+		if ! ( make -j$JOBS &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
 		fi
@@ -878,12 +895,27 @@ toolchain_gcc()
 		cp $TARGET-lipo lipo
 		popd
 	fi
-	[[ ! -d $PREFIXSYSROOT/usr ]] && mkdir -p $PREFIXSYSROOT/usr
-	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIXSYSROOT/usr
+
+# Used to copy every header over, but only want the ones needed to build gcc.
+#	[[ ! -d $PREFIXSYSROOT/usr ]] && mkdir -p $PREFIXSYSROOT/usr
+#	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIXSYSROOT/usr
 	# Could either copy to $TARGET/include or $TARGET/sys-include here.
-	[[ ! -d $PREFIX/$TARGET ]] && mkdir -p $PREFIX/$TARGET
-	[[ -d $PREFIX/$TARGET/sys-include ]] && rm -rf $PREFIX/$TARGET/sys-include
-	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIX/$TARGET/sys-include
+#	[[ ! -d $PREFIX/$TARGET ]] && mkdir -p $PREFIX/$TARGET
+#	[[ -d $PREFIX/$TARGET/sys-include ]] && rm -rf $PREFIX/$TARGET/sys-include
+#	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIX/$TARGET/sys-include
+	declare -a SYSHEADERS
+	SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
+	rm -rf $PREFIXSYSROOT/usr/include
+	rm -rf $PREFIX/$TARGET/sys-include
+	[[ ! -d $PREFIXSYSROOT/usr/include ]] && mkdir -p $PREFIXSYSROOT/usr/include
+	[[ ! -d $PREFIX/$TARGET/sys-include ]] && mkdir -p $PREFIX/$TARGET/sys-include
+	for SYSHDR in ${SYSHEADERS[@]}; do
+		[[ ! -d $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)  ]] && mkdir -p $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
+		[[ ! -d $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR) ]] && mkdir -p $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
+		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
+		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
+	done
+	
 	# libs needed:
 	# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
 	# must be available (the unneeded one is libkxld.dylib)
@@ -932,7 +964,9 @@ toolchain_gcc()
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
 		--with-ranlib=$PREFIX/bin/$TARGET-ranlib
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
-	make -k &>make.log
+	if ( ! make -k &>make.log ); then
+		message_status "Make failed (probably host libiberty, ignoring...)"
+	fi
 	# this might get us the 'tooldir' setup that GCC is expecting; though it doesn't fit in with Apple's way
 	# of combining all the arches into one assembler (it looks in
 	# -k as "No rule to make target `install'" in libiberty.
@@ -1128,6 +1162,8 @@ toolchain_llvmgcc() {
 		# into the libexec tree.
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1

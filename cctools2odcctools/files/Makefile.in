@@ -1,4 +1,4 @@
-CFLAGS = @CFLAGS@ -Wno-deprecated-declarations
+CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 DEFS = @DEFS@
 LDFLAGS = @LDFLAGS@
