@@ -1,5 +1,5 @@
---- gcc-5666.3/gcc/fixincludes/fixincl.c.orig	2010-10-14 21:28:01 +0100
-+++ gcc-5666.3/gcc/fixincludes/fixincl.c	2012-03-28 23:27:27 +0100
+--- gcc-5666.3/fixincludes/fixincl.c.orig	2010-10-14 21:28:01 +0100
++++ gcc-5666.3/fixincludes/fixincl.c	2012-03-28 23:27:27 +0100
 @@ -288,6 +288,16 @@
    /* NULL as the first argument to `tempnam' causes it to DTRT
       wrt the temporary directory where the file will be created.  */
@@ -95,8 +95,8 @@
        sprintf (pz_scan, z_cmd_fmt, pz_file_source, pz_temp_file );
  #else
        sprintf (pz_scan, z_cmd_fmt, pz_file_source, pz_temp_file,
---- gcc-5666.3/gcc/fixincludes/fixincl.x.orig	2010-10-14 21:28:01 +0100
-+++ gcc-5666.3/gcc/fixincludes/fixincl.x	2012-03-28 23:35:30 +0100
+--- gcc-5666.3/fixincludes/fixincl.x.orig	2010-10-14 21:28:01 +0100
++++ gcc-5666.3/fixincludes/fixincl.x	2012-03-28 23:35:30 +0100
 @@ -1312,12 +1312,12 @@
   *  Fix Command Arguments for Alpha_Pthread_Init
   */
@@ -197,8 +197,8 @@
      (char*)NULL };
  
  /* * * * * * * * * * * * * * * * * * * * * * * * * *
---- gcc-5666.3/gcc/fixincludes/fixlib.c.orig	2010-10-14 21:28:01 +0100
-+++ gcc-5666.3/gcc/fixincludes/fixlib.c	2012-03-28 23:24:50 +0100
+--- gcc-5666.3/fixincludes/fixlib.c.orig	2010-10-14 21:28:01 +0100
++++ gcc-5666.3/fixincludes/fixlib.c	2012-03-28 23:24:50 +0100
 @@ -235,6 +235,11 @@
  char*
  make_raw_shell_str( char* pz_d, tCC* pz_s, size_t smax )
