@@ -867,6 +867,7 @@ toolchain_gcc()
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-host-mingw32.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -944,10 +945,14 @@ toolchain_gcc()
 		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/
 		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
 	fi
+	if [[ "$(uname-bt)" = "Windows" ]] ; then
+		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
+	fi
+
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -1173,7 +1178,10 @@ toolchain_llvmgcc() {
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	export PATH=$PREFIX/bin:$PATH
-	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps $HOST_DEBUG_CFLAGS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	if [[ "$(uname-bt)" = "Windows" ]] ; then
+		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
+	fi
+	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
