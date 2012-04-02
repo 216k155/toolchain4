@@ -15,14 +15,13 @@ patch_mingw_types_h() {
 			printf %s \
 '--- sys/types.h-orig	2012-01-13 00:17:02 +0000
 +++ sys/types.h	2012-01-13 00:34:53 +0000
-@@ -14,6 +14,15 @@
+@@ -14,6 +14,14 @@
  /* All the headers include this file. */
  #include <_mingw.h>
  
 +/* Added by Ray Donnelly (mingw.android@gmail.com). libgcc build fails for Android 
 +   cross gcc and dmg2img without this. I should find another way as this is a horrible
 +   thing to do. */
-+typedef        int     uid_t;
 +typedef        int     gid_t;
 +typedef        int     daddr_t;
 +typedef        char *  caddr_t;
@@ -34,17 +33,12 @@ patch_mingw_types_h() {
 ' > /tmp/sys-types-uid_daddr_caddr.patch
 
 	if [[ "$(uname-bt)" == "Windows" ]] ; then
-		if [[ ! $(egrep uid_t /usr/include/sys/types.h) ]] ; then
-			pushd /usr/include
-			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
-			popd
-		fi
 		if [[ -f /mingw/include/sys/types.h ]] ; then
 			MINGWTYPES_H=/mingw/include/sys/types.h
 		elif [[ -f /usr/include/sys/types.h ]] ; then
 			MINGWTYPES_H=/usr/include/sys/types.h
 		fi
-		if [[ ! $(egrep uid_t $MINGWTYPES_H) ]] ; then
+		if [[ ! $(egrep gid_t $MINGWTYPES_H) ]] ; then
 			pushd $(dirname $(dirname $MINGWTYPES_H))
 			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
 			popd

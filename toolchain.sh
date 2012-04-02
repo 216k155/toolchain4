@@ -183,6 +183,10 @@ if [[ "$(uname-bt)" = "Darwin" ]] ; then
 	fi
 fi
 
+if [[ "$(uname-bt)" = "Windows" ]] ; then
+	EXEEXT=.exe
+fi
+
 # what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
@@ -825,8 +829,8 @@ toolchain_llvmgcc_saurik() {
 			--prefix="$PREFIX" \
 			--with-sysroot="$SYS_DIR" \
 			--enable-languages=c,c++,objc,obj-c++ \
-			--with-as="$PREFIX"/bin/"${TARGET}"-as \
-			--with-ld="$PREFIX"/bin/"${TARGET}"-ld \
+			--with-as="$PREFIX"/bin/${TARGET}-as${EXEEXT} \
+			--with-ld="$PREFIX"/bin/${TARGET}-ld${EXEEXT} \
 			--enable-wchar_t=no \
 			--with-gxx-include-dir=/usr/include/c++/4.2.1
 		make clean > /dev/null
@@ -868,6 +872,11 @@ toolchain_gcc()
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-host-mingw32.patch
+		# The following patch fixes:
+		# 1. getcwd is now in mingw headers (unistd.h)
+		# 2. uid_t  is now in mingw headers (basetypes.h) but gid_t is not so they need testing for separately.
+		# 3. AS_TRADITIONAL_FORMAT was being used if the host as is buggy. Made this not happen when cross compiling.
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-mingw32.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -906,7 +915,7 @@ toolchain_gcc()
 #	[[ -d $PREFIX/$TARGET/sys-include ]] && rm -rf $PREFIX/$TARGET/sys-include
 #	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIX/$TARGET/sys-include
 	declare -a SYSHEADERS
-	SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
+	SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/limits.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
 	rm -rf $PREFIXSYSROOT/usr/include
 	rm -rf $PREFIX/$TARGET/sys-include
 	[[ ! -d $PREFIXSYSROOT/usr/include ]] && mkdir -p $PREFIXSYSROOT/usr/include
@@ -957,8 +966,9 @@ toolchain_gcc()
 		--prefix=$PREFIXGCC \
 		--disable-checking \
 		--enable-languages=c,c++,objc,obj-c++ \
-		--with-as=$PREFIX/bin/$TARGET-as \
-		--with-ld=$PREFIX/bin/$TARGET-ld \
+		--with-as=$PREFIX/bin/${TARGET}-as${EXEEXT} \
+		--with-ld=$PREFIX/bin/${TARGET}-ld${EXEEXT} \
+		--with-ranlib=$PREFIX/bin/${TARGET}-ranlib${EXEEXT} \
 		--target=$TARGET \
 		--with-sysroot=$PREFIXSYSROOT \
 		--enable-static \
@@ -968,7 +978,6 @@ toolchain_gcc()
 		--disable-werror \
 		--enable-libgomp \
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
-		--with-ranlib=$PREFIX/bin/$TARGET-ranlib
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
 	if ( ! make -k &>make.log ); then
 		message_status "Make failed (probably host libiberty, ignoring...)"
@@ -1199,11 +1208,11 @@ toolchain_llvmgcc() {
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
 		--program-prefix=$TARGET-llvm- \
 		--with-slibdir=$PREFIX/lib \
-		--with-ld=$PREFIX/bin/$TARGET-ld \
-		--with-ar=$PREFIX/bin/$TARGET-ar \
-		--with-as=$PREFIX/bin/$TARGET-as \
-		--with-ranlib=$PREFIX/bin/$TARGET-ranlib \
-		--with-lipo=$PREFIX/bin/$TARGET-lipo \
+		--with-ld=$PREFIX/bin/${TARGET}-ld${EXEEXT} \
+		--with-ar=$PREFIX/bin/${TARGET}-ar${EXEEXT} \
+		--with-as=$PREFIX/bin/${TARGET}-as${EXEEXT} \
+		--with-ranlib=$PREFIX/bin/${TARGET}-ranlib${EXEEXT} \
+		--with-lipo=$PREFIX/bin/${TARGET}-lipo${EXEEXT} \
 		--with-tune=generic
 	# Falls over at libiberty
 	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
