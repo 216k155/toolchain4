@@ -19,7 +19,7 @@
 -
 +#if defined __MINGW32__
 +    termsig = _spawnvp(_P_WAIT, name, (const char * const*)argv);
-+    return(termsig);
++    return(termsig==0);
 +#else
  	forkpid = fork();
  	if(forkpid == -1)
