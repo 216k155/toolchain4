@@ -512,6 +512,9 @@ void* dlsym(void* handle, const char* name);
 extern "C"
 #endif
 int dlclose(void* handle);
+#endif
+#if !HAVE_DECL_DLADDR
+#include <dlfcn.h>
 #ifdef __cplusplus
 extern "C"
 #endif

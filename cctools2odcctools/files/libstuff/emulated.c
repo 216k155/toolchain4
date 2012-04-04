@@ -35,38 +35,55 @@ void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset
 	void *temp;
 	off_t len;
 	struct stat st;
-	uint64_t o = offset;
-	uint32_t l = o & 0xFFFFFFFF;
-	uint32_t h = (o >> 32) & 0xFFFFFFFF;
+
+    /* Fix up offset wrt dwAllocationGranularity
+     * after http://msdn.microsoft.com/en-us/library/windows/desktop/aa366548(v=vs.85).aspx
+     */
+    SYSTEM_INFO SysInfo;
+    GetSystemInfo(&SysInfo);
+
+    /* How far into the page is the offset? */
+    off_t PageDelta = offset%(off_t)SysInfo.dwAllocationGranularity;
+	uint64_t o = offset-(uint64_t)PageDelta;
+
+	DWORD Protect = PAGE_READONLY; 
+	DWORD DesiredAccess = FILE_MAP_COPY;
+	if (prot != PROT_READ)
+	{
+        Protect = PAGE_READWRITE;
+	    DesiredAccess = FILE_MAP_WRITE;
+	}
 
 	if (!fstat(fd, &st))
 		len = st.st_size;
 	else
 	{
-        fprintf(stderr,"mmap: could not determine filesize");
+        fprintf(stderr,"mmap: fstat failed\n");
         exit(1);
 	}
 
 	if ((length + offset) > len)
 		length = (size_t)len - (size_t)offset;
 
-	hmap = CreateFileMapping((HANDLE)_get_osfhandle(fd), 0, PAGE_WRITECOPY,
-		0, 0, 0);
+	hmap = CreateFileMapping((HANDLE)_get_osfhandle(fd), 0, Protect, 0, 0, 0);
 
 	if (!hmap)
 		return (void*)-1;
 
-	temp = MapViewOfFileEx(hmap, FILE_MAP_COPY, h, l, length, start);
+	temp = MapViewOfFile(hmap, DesiredAccess, (uint32_t)((o>>32)&&0xffffffff), (uint32_t)(o&0xffffffff), length+PageDelta);
 
 	if (!CloseHandle(hmap))
-		fprintf(stderr,"unable to close file mapping handle\n");
+		fprintf(stderr,"mmap: CloseHandle failed\n");
 
-	return temp ? temp : (void*)-1;
+	return temp ? temp+PageDelta : (void*)-1;
 }
 
 int munmap(void *start, size_t length)
 {
-	return !UnmapViewOfFile(start);
+    SYSTEM_INFO SysInfo;
+    GetSystemInfo(&SysInfo);
+    off_t PageDelta = (off_t)start%(off_t)SysInfo.dwAllocationGranularity;
+	return !UnmapViewOfFile((void*)(start-PageDelta));
 }
 #endif /* HAVE_DECL_MMAP */
 
@@ -266,17 +283,17 @@ int fchmod(int fildes, mode_t mode)
 WINBASEAPI BOOL WINAPI SetFileInformationByHandle(HANDLE,FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD);
 int fchdir(int fildes)
 {
-    char storage[sizeof(FILE_NAME_INFO)+1024];
+    char storage[sizeof(FILE_NAME_INFO)+1024*sizeof(WCHAR)];
 	FILE_NAME_INFO* pNameInfo = (FILE_NAME_INFO*)&storage[0];
 	pNameInfo->FileNameLength=1023;
 	HANDLE h = (HANDLE)_get_osfhandle(fildes);
 	if(!GetFileInformationByHandleEx(h, FileNameInfo, pNameInfo, sizeof(FILE_BASIC_INFO)))
 		return -1;
-	if(strrchr(pNameInfo->FileName,'\\'))
+	if(wcsrchr(pNameInfo->FileName,'\\'))
 	{
-        *strrchr(pNameInfo->FileName,'\\') = '\0';
+        *wcsrchr(pNameInfo->FileName,'\\') = '\0';
 	}
-	SetCurrentDirectory(pNameInfo->FileName);
+	SetCurrentDirectoryW(pNameInfo->FileName);
 	return 0;
 }
 #endif/*HAVE_DECL_FCHDIR*/

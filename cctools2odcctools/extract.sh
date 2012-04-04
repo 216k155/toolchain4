@@ -154,7 +154,7 @@ fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
 
-if [[ ! "$(uname-bt)" == "Windows" ]] ; then
+if [[ ! "$(uname-bt)" = "Windows" ]] ; then
 	PATCH_POSIX=--posix
 fi
 
@@ -318,7 +318,7 @@ done
 
 set -e
 
-message_status "Adding new files"
+message_status "Adding new files to $DISTDIR"
 
 if [[ "$(uname-bt)" = "Windows" ]] ; then
     # Make sys/cdefs.h
@@ -420,7 +420,7 @@ cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h ${DISTDIR}/include/Availabil
 cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h ${DISTDIR}/include/CommonCrypto/CommonDigest.h
 cp -f ${SDKROOT}/usr/include/libunwind.h ${DISTDIR}/include/libunwind.h
 cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h ${DISTDIR}/include/AvailabilityMacros.h
-if [[ "$(uname-bt)" == "Windows" ]] ; then
+if [[ "$(uname-bt)" = "Windows" ]] ; then
 	echo "#ifndef _DLFCN_H_" > ${DISTDIR}/include/dlfcn.h
 	echo "#define _DLFCN_H_" >> ${DISTDIR}/include/dlfcn.h
 	echo "#ifdef __cplusplus" >> ${DISTDIR}/include/dlfcn.h
@@ -540,6 +540,8 @@ if [[ "$(uname-bt)" = "Linux" ]] || [[ "$(uname-bt)" = "Darwin" ]] ; then
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/misc/lipo.c
 elif [[ "$(uname-bt)" = "Windows" ]] ; then
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/ld.c
+    do-sed $"s^if(signal(SIGBUS, SIG_IGN) != SIG_IGN)^#ifndef __MINGW32__\nif(signal(SIGBUS, SIG_IGN) != SIG_IGN)^" ${DISTDIR}/ld/ld.c
+	do-sed $"s^signal(SIGBUS, handler);^signal(SIGBUS, handler);\n#endif^" ${DISTDIR}/ld/ld.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass1.c
     do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass2.c
     do-sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
