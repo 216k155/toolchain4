@@ -727,20 +727,20 @@ toolchain_cctools() {
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 		fi
-		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
+		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" CXXFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
-		# make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}"
 		if [[ "$(uname-bt)" = "Windows" ]] ; then
-			make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" -k &>make.log
+			make -k &>make.log
+			# CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}"
 			DESTDIR=C: make install &>install.log
 			cp ${PREFIX}/lib/libLTO.dll ${PREFIX}/bin/
 		else
-			if ! ( make CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" -k &>make.log && make install &>install.log ); then
+			if ! ( make -k &>make.log && make install &>install.log ); then
 				error "Build & install failed. Check make.log and install.log"
 				exit 1
 			fi
