@@ -7,11 +7,11 @@ if [[ -z $1 ]] ; then
     exit 1
 fi
 
-# rm -rf bld-$1 src-$1 /tmp2/$1
-# PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core
-#rm -rf bld-$1/cctools-809-iphone src-$1/cctools-809
-#PREFIX_SUFFIX=$1 ./toolchain.sh cctools
-#exit 1
+#rm -rf bld-$1 src-$1 /tmp2/$1
+#PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core
+rm -rf bld-$1/cctools-809-iphone src-$1/cctools-809
+PREFIX_SUFFIX=$1 ./toolchain.sh cctools
+exit 1
 rm -rf bld-$1/gcc-5666.3-11 src-$1/gcc-5666.3
 PREFIX_SUFFIX=$1 ./toolchain.sh gcc
 PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc

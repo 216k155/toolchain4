@@ -335,7 +335,7 @@ AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h],[],[SSL_LIBS=-lssl])
 AC_SUBST(SSL_LIBS)
 
 AC_CHECK_DECLS([backtrace], [], [], [[#include <execinfo.h>]])
-AC_CHECK_DECLS([dlopen, dlsym, dlclose, dlerror], [], [], [[#include <dlfcn.h>]])
+AC_CHECK_DECLS([dlopen, dlsym, dlclose, dlerror, dladdr], [], [], [[#include <dlfcn.h>]])
 AC_CHECK_DECLS([mmap], [], [], [[#include <sys/mman.h>]])
 AC_CHECK_DECLS([flock], [], [], [[#include <sys/file.h>]])
 AC_CHECK_DECLS([sigfillset, sigprocmask], [], [], [[#include <signal.h>]])
