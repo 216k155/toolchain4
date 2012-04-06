@@ -33,19 +33,19 @@ OUTDIR=$PWD
 #FIXED_TOOLCHAIN=$PWD/pre-$LEFT/bin/i686-apple-darwin11
 #MOVED_TOOLCHAIN=$PWD/pre-$RIGHT/bin/i686-apple-darwin11
 
-#FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/i686-apple-darwin11
-#MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/i686-apple-darwin11
+FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/i686-apple-darwin11
+MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/i686-apple-darwin11
+ARCHS="-m64"
 
-FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/$LEFT
-MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/$RIGHT
+#FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/$LEFT
+#MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/$RIGHT
+#ARCHS="-arch x86_64 -arch i386"
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
 pushd android-ndk-r6b/sources/host-tools/ndk-stack
 
-#ARCHS="-m64"
 #cc1plus: error: unrecognised command line option "-arch"
-ARCHS="-arch x86_64 -arch i386"
 ${STRACE} ${FIXED_TOOLCHAIN}-g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$LEFT --sysroot $SDK > $OUTDIR/strace-pre-$LEFT.txt 2>&1
 ${STRACE} ${MOVED_TOOLCHAIN}-g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$RIGHT --sysroot $SDK > $OUTDIR/strace-pre-$RIGHT.txt 2>&1
 

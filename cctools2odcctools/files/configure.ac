@@ -549,6 +549,18 @@ extern "C"
 #endif
 void qsort_r(void *base, size_t nmemb, size_t size, void *thunk, int (*compar)(void *, const void *, const void *));
 #endif
+
+#ifdef __MINGW32__
+ #define FIO_READ_WRITE      _S_IREAD|_S_IWRITE
+ #define FIO_READ_WRITE_ME   _S_IREAD|_S_IWRITE
+ #define FIO_READ_WRITE_EXEC _S_IREAD|_S_IWRITE|_S_IEXEC
+ #define FIO_MASK_ALL_4      _S_IREAD|_S_IWRITE|_S_IEXEC
+#else
+ #define FIO_READ_WRITE      0666
+ #define FIO_READ_WRITE_ME   0600
+ #define FIO_READ_WRITE_EXEC 0777
+ #define FIO_MASK_ALL_4      07777
+#endif
 ])
 
 case $host_os in
