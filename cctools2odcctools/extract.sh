@@ -656,6 +656,7 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^O_WRONLY|O_CREAT|O_TRUNC|fsync^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY|fsync^" ${DISTDIR}/libstuff/writeout.c
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/OutputFile.cpp
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/lto_file.hpp
+	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/parsers/lto_file.cpp
 	do-sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/ld64/src/other/rebase.cpp
 	do-sed $"s^O_RDWR : O_RDONLY^O_RDWR|O_BINARY : O_RDONLY|O_BINARY^"                  ${DISTDIR}/ld64/src/other/rebase.cpp
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC ^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"  ${DISTDIR}/misc/segedit.c
@@ -663,6 +664,32 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^O_WRONLY|O_CREAT^O_WRONLY|O_CREAT|O_BINARY^"                             ${DISTDIR}/misc/strip.c
 	do-sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/strip.c
 fi
+
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/rld.c
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/ld.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld/pass2.c
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/as/write_object.c
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/dyld/src/dyld.cpp
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/dyld/src/dyld.cpp
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/libtool.c
+do-sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/lipo.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/codesign_allocate.cpp
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/ctf_insert.cpp
+do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/dsc_extractor.cpp
+do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
+do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/makerelocs.c
+do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/mtoc.c
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/segedit.c
+do-sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/redo_prebinding.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/inout.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/install_name_tool.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/lto_file.hpp
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/parsers/lto_file.cpp
+do-sed $"s^0600^FIO_READ_WRITE_ME^"   ${DISTDIR}/misc/strip.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
 
 # Fix temporary file location in tmp() in ar/misc.c
 if [[ "$(uname-bt)" = "Windows" ]] ; then
