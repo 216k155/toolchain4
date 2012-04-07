@@ -1000,6 +1000,9 @@ toolchain_gccdriver() {
 
 	ORIG_SRC_DIR=$SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	ORIG_BLD_DIR=$BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	if [[ "$(uname-bt)" = "Windows" ]] ; then
+		REGEX="-L$HOST_DIR/lib -lregex"
+	fi
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
 	gcc -g -O0 $ORIG_SRC_DIR/driverdriver.c \
@@ -1007,8 +1010,8 @@ toolchain_gccdriver() {
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
 		-I $ORIG_SRC_DIR/gcc -I $ORIG_SRC_DIR/gcc/config \
-		-I $HOST_DIR/include -L$HOST_DIR/lib \
-		-liberty -L$ORIG_BLD_DIR/libiberty/ -lregex \
+		-I $HOST_DIR/include $REGEX \
+		-liberty -L$ORIG_BLD_DIR/libiberty/ \
 		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-iphone/libmacho \
 		-D__LITTLE_ENDIAN__=1 \
 		-Wno-deprecated-declarations \
@@ -1025,8 +1028,8 @@ toolchain_gccdriver() {
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
 		-I $ORIG_SRC_DIR/gcc -I $ORIG_SRC_DIR/gcc/config \
-		-I $HOST_DIR/include -L$HOST_DIR/lib -lregex \
-		-liberty -L$ORIG_BLD_DIR/libiberty/  \
+		-I $HOST_DIR/include $REGEX \
+		-liberty -L$ORIG_BLD_DIR/libiberty/ \
 		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-iphone/libmacho \
 		-D__LITTLE_ENDIAN__=1 \
 		-Wno-deprecated-declarations \
