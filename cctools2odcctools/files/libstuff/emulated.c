@@ -70,7 +70,7 @@ void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset
 	if (!hmap)
 		return (void*)-1;
 
-	temp = MapViewOfFile(hmap, DesiredAccess, (uint32_t)((o>>32)&&0xffffffff), (uint32_t)(o&0xffffffff), length+PageDelta);
+	temp = MapViewOfFile(hmap, DesiredAccess, (uint32_t)((o>>32)&0xffffffff), (uint32_t)(o&0xffffffff), length+PageDelta);
 
 	if (!CloseHandle(hmap))
 		fprintf(stderr,"mmap: CloseHandle failed\n");
@@ -670,7 +670,7 @@ int _NSGetExecutablePath(char *buf, size_t *bufsize)
             *winslash = '/';
             winslash = strchr(winslash,'\\');
         }
-		return strlen;
+		return strlen(buf);
 	}
 	return -1;
 #elif (HAVE_DECL_READLINK) /* Linux */

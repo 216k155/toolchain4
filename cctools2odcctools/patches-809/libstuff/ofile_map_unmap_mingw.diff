@@ -1,0 +1,62 @@
+--- ofile.c.orig	2012-04-06 23:21:16 +0100
++++ ofile.c	2012-04-06 23:26:03 +0100
+@@ -36,7 +36,9 @@
+ #ifdef SHLIB
+ #include "shlib.h"
+ #endif
++#ifdef __APPLE__
+ #include <libc.h>
++#endif
+ #include <mach/mach.h>
+ #include "stuff/openstep_mach.h"
+ #include <stddef.h>
+@@ -47,7 +49,11 @@
+ #include <ar.h>
+ #include <sys/file.h>
+ #include <sys/types.h>
++#ifndef __MINGW32__
+ #include <sys/mman.h>
++#else
++#include <stdlib.h>
++#endif
+ #include <mach-o/fat.h>
+ #include <mach-o/loader.h>
+ #include <mach/m68k/thread_status.h>
+@@ -874,6 +880,20 @@
+ 	    printf("Modification time = %ld\n", (long int)stat_buf.st_mtime);
+ #endif /* OTOOL */
+ 
++#ifdef __MINGW32__
++	/* On Windows, mmap (CreateFileMapping, MapViewOfFile) is dodgy, esp. wrt
++	 * coherence with ReadFile/WriteFile, see:
++	 * http://msdn.microsoft.com/en-us/library/windows/desktop/aa366761(v=vs.85).aspx
++	 * ..so for this reason I allocate a new buffer, copy everything across and
++	 * unmap immediately. This is done because libtool likes to overwrite files when
++	 * they are still mmapped (create_library), and in fact doesn't ever unmap files.
++	 */
++	void* addr2 = malloc(size);
++	memcpy(addr2,addr,size);
++	munmap(addr,size);
++	addr = addr2;
++#endif
++
+ 	return(ofile_map_from_memory(addr, size, file_name, stat_buf.st_mtime,
+ 		  arch_flag, object_name, ofile, archives_with_fat_objects));
+ }
+@@ -1396,12 +1416,16 @@
+     kern_return_t r;
+ 
+ 	if(ofile->file_addr != NULL){
++#ifdef __MINGW32__
++	    free(ofile->file_addr);
++#else
+ 	    if((r = vm_deallocate(mach_task_self(),
+ 				 (vm_address_t)ofile->file_addr,
+ 				 (vm_size_t)ofile->file_size)) != KERN_SUCCESS){
+ 		my_mach_error(r, "Can't vm_deallocate mapped memory for file: "
+ 			      "%s", ofile->file_name);
+ 	    }
++#endif
+ 	}
+ 	if(ofile->file_name != NULL)
+ 	    free(ofile->file_name);

@@ -14,6 +14,8 @@
 # One of the originals:
 # http://code.google.com/p/iphonedevonlinux/
 
+# TODORMD :: with_prefix.diff needs fixing to be relocatable (/usr/bin/objcunique is completely wrong too)
+
 set -e
 
 . ../bash-tools.sh
@@ -123,10 +125,11 @@ ${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/cmd_with_prefix.diff libstuff/mingw_execute.diff \
-misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
-misc/redo_prebinding.nogetattrlist.diff \
-misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
+libstuff/cmd_with_prefix.diff \
+libstuff/mingw_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
+misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
+misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 include/mach/machine_armv7.diff \
 ld/ld-nomach.diff \
@@ -142,12 +145,13 @@ ${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/cmd_with_prefix.diff libstuff/mingw_execute.diff \
-misc/libtool-ldpath.diff misc/libtool-pb.diff misc/ranlibname.diff \
-misc/redo_prebinding.nogetattrlist.diff \
-misc/redo_prebinding.nomalloc.diff misc/libtool_lipo_transform.diff \
+libstuff/cmd_with_prefix.diff \
+libstuff/mingw_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
+misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
+misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
- include/mach/machine_armv7.diff \
+include/mach/machine_armv7.diff \
 ld/ld-nomach.diff \
 misc/with_prefix.diff misc/bootstrap_h.diff"
 fi
@@ -656,7 +660,7 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^O_WRONLY|O_CREAT|O_TRUNC|fsync^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY|fsync^" ${DISTDIR}/libstuff/writeout.c
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/OutputFile.cpp
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/lto_file.hpp
-	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/parsers/lto_file.cpp
+	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
 	do-sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/ld64/src/other/rebase.cpp
 	do-sed $"s^O_RDWR : O_RDONLY^O_RDWR|O_BINARY : O_RDONLY|O_BINARY^"                  ${DISTDIR}/ld64/src/other/rebase.cpp
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC ^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"  ${DISTDIR}/misc/segedit.c
@@ -673,8 +677,8 @@ do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/dyld/src/dyld.cpp
 do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/dyld/src/dyld.cpp
 do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/libtool.c
 do-sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/lipo.c
-do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/codesign_allocate.cpp
-do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/ctf_insert.cpp
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/codesign_allocate.c
+do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/ctf_insert.c
 do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/dsc_extractor.cpp
 do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
 do-sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/makerelocs.c
@@ -687,7 +691,7 @@ do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/install_name_tool.c
 do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
 do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/OutputFile.cpp
 do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/lto_file.hpp
-do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/parsers/lto_file.cpp
+do-sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
 do-sed $"s^0600^FIO_READ_WRITE_ME^"   ${DISTDIR}/misc/strip.c
 do-sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
 

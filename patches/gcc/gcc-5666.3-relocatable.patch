@@ -443,9 +443,47 @@
    /* Try to discover a valid linker/nm/strip to use.  */
  
    /* Maybe we know the right file to use (if not cross).  */
---- gcc-5666.3/driverdriver.c.orig	2012-03-21 22:17:24.278919989 +0000
-+++ gcc-5666.3/driverdriver.c	2012-03-21 22:20:04.000000000 +0000
-@@ -177,10 +177,10 @@
+--- gcc-5666.3/driverdriver.c.orig	2010-10-14 21:28:01 +0100
++++ gcc-5666.3/driverdriver.c	2012-04-07 01:40:56 +0100
+@@ -31,7 +31,36 @@
+ #include <limits.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+-#include <sys/wait.h>
++#if !defined(__MINGW32__)
++ #include <sys/wait.h>
++#else
++ #define WINVER 0x0600
++ #define _WIN32_WINNT 0x0600
++ #define WIN32_LEAN_AND_MEAN
++ #include <windows.h>
++
++ #ifndef WIFSIGNALED
++ #define WIFSIGNALED(S) (((S) & 0xff) != 0 && ((S) & 0xff) != 0x7f)
++ #endif
++ #ifndef WTERMSIG
++ #define WTERMSIG(S) ((S) & 0x7f)
++ #endif
++ #ifndef WIFEXITED
++ #define WIFEXITED(S) (((S) & 0xff) == 0)
++ #endif
++ #ifndef WEXITSTATUS
++ #define WEXITSTATUS(S) (((S) & 0xff00) >> 8)
++ #endif
++ #ifndef WSTOPSIG
++ #define WSTOPSIG WEXITSTATUS
++ #endif
++ #ifndef WCOREDUMP
++ #define WCOREDUMP(S) ((S) & WCOREFLG)
++ #endif
++ #ifndef WCOREFLG
++ #define WCOREFLG 0200
++ #endif
++#endif
+ #include <regex.h>
+ #include "libiberty.h"
+ #include "filenames.h"
+@@ -177,10 +206,10 @@
  static void initialize (void);
  static void final_cleanup (void);
  static int do_wait (int, const char *);
@@ -458,7 +496,7 @@
  static int filter_args_for_arch (const char **, int, const char **,
  				 const char *);
  static int add_arch_options (int, const char **, int);
-@@ -516,16 +516,31 @@
+@@ -516,16 +545,31 @@
    return ret;
  }
  
@@ -492,7 +530,7 @@
    lipo_argv[1] = "-create";
    lipo_argv[2] = "-o";
    lipo_argv[3] = out_file;
-@@ -696,7 +711,7 @@
+@@ -696,7 +740,7 @@
  /* Invoke 'lipo' on set of output files and create multile FAT binaries.  */
  
  static void
@@ -501,7 +539,7 @@
  {
    int ifn_index;
    struct input_filename *ifn;
-@@ -704,7 +719,7 @@
+@@ -704,7 +748,7 @@
         ifn_index < num_infiles && ifn && ifn->name;
         ifn_index++, ifn = ifn->next)
      do_lipo (ifn_index * num_arches,
@@ -510,23 +548,64 @@
  }
  
  /* Remove all options which are architecture-specific and are not for the
-@@ -1287,65 +1302,78 @@
+@@ -1275,6 +1319,44 @@
+   return strdup(symlink_buffer);
+ }
+ 
++int GetExecutablePath(char *buf, size_t *bufsize)
++{
++#if defined(__MINGW32__)
++	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
++        /* Early conversion to unix slashes instead of more changes
++         * everywhere else... */
++        char *winslash = strchr(buf,'\\');
++        while (winslash) {
++            *winslash = '/';
++            winslash = strchr(winslash,'\\');
++        }
++		return strlen(buf);
++	}
++	return -1;
++#elif (HAVE_DECL_READLINK) /* Linux */
++	return readlink("/proc/self/exe", buf, *bufsize);
++#else
++	return -1; /* Fail on all other systems for now */
++#endif /* __MINGW32__ */
++}
++
++#if defined(__MINGW32__)
++/* We could do better than this:
++ * http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
++ * ..in particular though, see the comment "An easier way" by leandrobecker:
++ * Using the FindFirstFile Api together with WIN32_FIND_DATA.dwFileAttributes == FILE_ATTRIBUTE_REPARSE_POINT, 
++ *  WIN32_FIND_DATA.dwReserved0 can be used to detect symbolic links (IO_REPARSE_TAG_SYMLINK)or junctions (IO_REPARSE_TAG_MOUNT_POINT). 
++ * When dwReserved0 is IO_REPARSE_TAG_MOUNT_POINT, the folder can be a junction or a volume mount point (as described by article author).
++ *  To check if is a junction or volume mount point, pass the folder path to GetVolumeNameForVolumeMountPoint. If GetVolumeNameForVolumeMountPoint returns
++ *  TRUE the folder is a volume mount point, if returns FALSE the folder is a junction point if GetLastError is ERROR_INVALID_PARAMETER (0x57).
++ * I think this is easier than dealing with privileges and DeviceIoControl
++ */
++int readlink (char const* src, char* dest, int max)
++{
++    return -1;
++}
++#endif
++
+ /* Main entry point. This is gcc driver driver!
+    Interpret -arch flag from the list of input arguments. Invoke appropriate
+    compiler driver. 'lipo' the results if more than one -arch is supplied.  */
+@@ -1287,65 +1369,74 @@
    char *override_option_str = NULL;
    char path_buffer[2*PATH_MAX+1];
    int linklen;
-+  char *argv_0 = argv[0];
++  char const* argv_0 = argv[0];
 +  char buf[1024];
 +
-+#if defined(__linux__) || defined(__CYGWIN__)
++  i = sizeof(buf);
++  if ((linklen = GetExecutablePath (buf, &i)) != -1)
 +  {
-+      int len;
-+      if ((len = readlink("/proc/self/exe", buf, sizeof(buf)-1)) != -1)
-+        {
-+          buf[len] = '\0';
-+          argv_0 = &buf[0];
-+        }
++      buf[linklen] = '\0';
++      argv_0 = &buf[0];
 +  }
-+#endif
  
    total_argc = argc;
    prog_len = 0;
@@ -562,7 +641,8 @@
 +  /* If argv_0 is a symbolic link, use the directory of the pointed-to file
       to find compiler components. */
  
-   if ((linklen = readlink (argv[0], path_buffer, PATH_MAX)) != -1)
+-  if ((linklen = readlink (argv[0], path_buffer, PATH_MAX)) != -1)
++  while ((linklen = readlink (argv_0, path_buffer, PATH_MAX)) != -1)
      {
 -      /* readlink succeeds if argv[0] is a symlink.  path_buffer now contains
 +      /* readlink succeeds if argv_0 is a symlink.  path_buffer now contains
@@ -610,7 +690,7 @@
    fprintf (stderr,"%s: progname = %s\n", progname, progname);
    fprintf (stderr,"%s: driver_exec_prefix = %s\n", progname, driver_exec_prefix);
  #endif
-@@ -1637,14 +1665,14 @@
+@@ -1637,14 +1728,14 @@
  
  	  /* Make FAT binary by combining individual output files for each
  	     architecture, using 'lipo'.  */

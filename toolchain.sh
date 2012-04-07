@@ -994,7 +994,7 @@ toolchain_gcc()
 }
 
 toolchain_gccdriver() {
-	message_status "not yet"
+	message_status "Building toolchain gcc drivers"
 
 	# Build driver-drivers.
 
@@ -1002,16 +1002,17 @@ toolchain_gccdriver() {
 	ORIG_BLD_DIR=$BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
-	gcc $ORIG_SRC_DIR/driverdriver.c \
-		-DPDN="\"-apple-darwin$DARWINVER-llvm-$LANG\"" \
+	gcc -g -O0 $ORIG_SRC_DIR/driverdriver.c \
+		-DPDN="\"-apple-darwin$DARWINVER-llvm-$LANG$EXEEXT\"" \
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
-		-I  $ORIG_SRC_DIR/gcc -I  $ORIG_SRC_DIR/gcc/config \
-		-liberty -L$ORIG_BLD_DIR/libiberty/  \
+		-I $ORIG_SRC_DIR/gcc -I $ORIG_SRC_DIR/gcc/config \
+		-I $HOST_DIR/include -L$HOST_DIR/lib \
+		-liberty -L$ORIG_BLD_DIR/libiberty/ -lregex \
 		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-iphone/libmacho \
 		-D__LITTLE_ENDIAN__=1 \
 		-Wno-deprecated-declarations \
-		-o $PREFIX/bin/$PREFIX_SUFFIX-llvm-$LANG || exit 1
+		-o $PREFIX/bin/$PREFIX_SUFFIX-llvm-$LANG
 	done
 	popd
 
@@ -1019,11 +1020,12 @@ toolchain_gccdriver() {
 	ORIG_BLD_DIR=$BUILD_DIR/gcc-5666.3-${DARWINVER}
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
-        gcc $ORIG_SRC_DIR/driverdriver.c \
-		-DPDN="\"-apple-darwin$DARWINVER-$LANG\"" \
+        gcc -g -O0 $ORIG_SRC_DIR/driverdriver.c \
+		-DPDN="\"-apple-darwin$DARWINVER-$LANG$EXEEXT\"" \
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
-		-I  $ORIG_SRC_DIR/gcc -I  $ORIG_SRC_DIR/gcc/config \
+		-I $ORIG_SRC_DIR/gcc -I $ORIG_SRC_DIR/gcc/config \
+		-I $HOST_DIR/include -L$HOST_DIR/lib -lregex \
 		-liberty -L$ORIG_BLD_DIR/libiberty/  \
 		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-iphone/libmacho \
 		-D__LITTLE_ENDIAN__=1 \
