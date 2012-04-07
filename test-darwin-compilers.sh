@@ -33,13 +33,13 @@ OUTDIR=$PWD
 #FIXED_TOOLCHAIN=$PWD/pre-$LEFT/bin/i686-apple-darwin11
 #MOVED_TOOLCHAIN=$PWD/pre-$RIGHT/bin/i686-apple-darwin11
 
-FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/i686-apple-darwin11
-MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/i686-apple-darwin11
-ARCHS="-m64"
+# FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/i686-apple-darwin11
+# MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/i686-apple-darwin11
+# ARCHS="-m64"
 
-#FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/$LEFT
-#MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/$RIGHT
-#ARCHS="-arch x86_64 -arch i386"
+FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/$LEFT
+MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/$RIGHT
+ARCHS="-arch x86_64 -arch i386"
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
