@@ -1005,7 +1005,7 @@ toolchain_gccdriver() {
 	fi
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
-	gcc -g -O0 $ORIG_SRC_DIR/driverdriver.c \
+	gcc -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
 		-DPDN="\"-apple-darwin$DARWINVER-llvm-$LANG$EXEEXT\"" \
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
@@ -1023,7 +1023,7 @@ toolchain_gccdriver() {
 	ORIG_BLD_DIR=$BUILD_DIR/gcc-5666.3-${DARWINVER}
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
-        gcc -g -O0 $ORIG_SRC_DIR/driverdriver.c \
+		gcc -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
 		-DPDN="\"-apple-darwin$DARWINVER-$LANG$EXEEXT\"" \
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \

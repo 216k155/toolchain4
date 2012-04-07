@@ -16,19 +16,25 @@ if [[ ! -d android-ndk-r6b ]] ; then
 	popd
 fi
 
+OUTDIR=$PWD
+
 if [[ ! -z $1 ]] ; then
-	LEFT=$1
+	LEFT=${1}
 else
 	LEFT=fixed
 fi
+OUTLEFT=$OUTDIR/$LEFT
+mkdir -p $OUTLEFT
 
 if [[ ! -z $2 ]] ; then
-	RIGHT=$2
+	RIGHT=${2}
+	OUTRIGHT=$OUTDIR/$RIGHT
+	mkdir -p $OUTRIGHT
 else
-	RIGHT=moved
+	RIGHT=/
+	OUTRIGHT=$OUTDIR/apple
+	mkdir -p $OUTRIGHT
 fi
-
-OUTDIR=$PWD
 
 #FIXED_TOOLCHAIN=$PWD/pre-$LEFT/bin/i686-apple-darwin11
 #MOVED_TOOLCHAIN=$PWD/pre-$RIGHT/bin/i686-apple-darwin11
@@ -37,32 +43,37 @@ OUTDIR=$PWD
 # MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/i686-apple-darwin11
 # ARCHS="-m64"
 
-FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/$LEFT
-MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/$RIGHT
+FIXED_TOOLCHAIN=/tmp2/$LEFT/bin/${LEFT}-
+if [[ "$RIGHT" = "/" ]] ; then
+    MOVED_TOOLCHAIN=/usr/bin/
+else
+    MOVED_TOOLCHAIN=/tmp2/$RIGHT/bin/${RIGHT}-
+fi
 ARCHS="-arch x86_64 -arch i386"
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
 pushd android-ndk-r6b/sources/host-tools/ndk-stack
 
-#cc1plus: error: unrecognised command line option "-arch"
-${STRACE} ${FIXED_TOOLCHAIN}-g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$LEFT --sysroot $SDK > $OUTDIR/strace-pre-$LEFT.txt 2>&1
-${STRACE} ${MOVED_TOOLCHAIN}-g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o ndk-stack-pre-$RIGHT --sysroot $SDK > $OUTDIR/strace-pre-$RIGHT.txt 2>&1
+${STRACE} ${FIXED_TOOLCHAIN}g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUTLEFT/ndk-stack --sysroot $SDK > $OUTLEFT/strace.txt 2>&1
+${STRACE} ${MOVED_TOOLCHAIN}g++ $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUTRIGHT/ndk-stack --sysroot $SDK > $OUTRIGHT/strace.txt 2>&1
 
-${FIXED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-$LEFT.txt 2>&1
-${MOVED_TOOLCHAIN}-g++ --print-search-dirs > $OUTDIR/search-dirs-pre-$RIGHT.txt 2>&1
-${FIXED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-$LEFT.txt 2>&1
-${MOVED_TOOLCHAIN}-g++ -dumpspecs > $OUTDIR/specs-pre-$RIGHT.txt 2>&1
+${FIXED_TOOLCHAIN}g++ --print-search-dirs > $OUTLEFT/search-dirs.txt 2>&1
+${MOVED_TOOLCHAIN}g++ --print-search-dirs > $OUTRIGHT/search-dirs.txt 2>&1
+${FIXED_TOOLCHAIN}g++ -dumpspecs > $OUTLEFT/specs.txt 2>&1
+${MOVED_TOOLCHAIN}g++ -dumpspecs > $OUTRIGHT/specs.txt 2>&1
 
-${STRACE} ${FIXED_TOOLCHAIN}-g++ -print-prog-name=as > $OUTDIR/print-prog-name-as-pre-$LEFT.txt 2>&1
-${STRACE} ${MOVED_TOOLCHAIN}-g++ -print-prog-name=as > $OUTDIR/print-prog-name-as-pre-$RIGHT.txt 2>&1
+${STRACE} ${FIXED_TOOLCHAIN}g++ -print-prog-name=as > $OUTLEFT/print-prog-name-as.txt 2>&1
+${STRACE} ${MOVED_TOOLCHAIN}g++ -print-prog-name=as > $OUTRIGHT/print-prog-name-as.txt 2>&1
 
 popd
 
-bcompare strace-pre-$LEFT.txt strace-pre-$RIGHT.txt &
-bcompare search-dirs-pre-$LEFT.txt search-dirs-pre-$RIGHT.txt &
-bcompare specs-pre-$LEFT.txt specs-pre-$RIGHT.txt &
-bcompare print-prog-name-as-pre-$LEFT.txt print-prog-name-as-pre-$RIGHT.txt &
+if [[ $(which bcmp) ]] ; then
+    bcmp $OUTLEFT/strace.txt $OUTRIGHT/strace.txt &
+    bcmp $OUTLEFT/search-dirs.txt $OUTRIGHT/search-dirs.txt &
+    bcmp $OUTLEFT/specs.txt $OUTRIGHT/specs.txt &
+    bcmp $OUTLEFT/print-prog-name-as.txt $OUTRIGHT/print-prog-name-as.txt &
+fi
 
 # Ok, finally...
 # "-syslibroot", "/home/nonesuch/src/toolchain4/pre-fixed"

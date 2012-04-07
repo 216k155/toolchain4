@@ -19,9 +19,10 @@ patch_mingw_types_h() {
  /* All the headers include this file. */
  #include <_mingw.h>
  
-+/* Added by Ray Donnelly (mingw.android@gmail.com). libgcc build fails for Android 
++/* Added by Ray Donnelly (mingw.android@gmail.com). libgcc build fails for Android
 +   cross gcc and dmg2img without this. I should find another way as this is a horrible
 +   thing to do. */
++typedef        int     uid_t;
 +typedef        int     gid_t;
 +typedef        int     daddr_t;
 +typedef        char *  caddr_t;
@@ -222,7 +223,7 @@ build_tools_dmg() {
 
 		message_status "Retrieving and building dmg2img 1.6.2 ..."
 
-		if ! $(downloadUntar http://vu1tur.eu.org/tools/dmg2img-1.6.2.tar.gz); then
+		if ! $(downloadUntar http://mingw-and-ndk.googlecode.com/files/dmg2img-1.6.2.tar.gz); then
 			error "Failed to get and extract dmg2img-1.6.2 Check errors."
 			exit 1
 		fi

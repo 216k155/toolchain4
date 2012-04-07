@@ -452,6 +452,7 @@ int utimes(const char *filename, const struct timeval times[2]);
 #endif
 /* I took these defines from Linux, Darwin may have
  * different values! */
+#if !defined(__APPLE__)
 #ifndef S_IFSOCK
  #define S_IFSOCK 0140000
 #endif
@@ -487,6 +488,7 @@ int utimes(const char *filename, const struct timeval times[2]);
 #endif
 #ifndef S_ISVTX
  #define S_ISVTX  0001000
+#endif
 #endif
 #if !HAVE_DECL_DLOPEN
 #ifdef __cplusplus
