@@ -444,7 +444,7 @@
  
    /* Maybe we know the right file to use (if not cross).  */
 --- gcc-5666.3/driverdriver.c.orig	2010-10-14 21:28:01 +0100
-+++ gcc-5666.3/driverdriver.c	2012-04-07 01:40:56 +0100
++++ gcc-5666.3/driverdriver.c	2012-04-07 03:12:15 +0100
 @@ -31,7 +31,36 @@
  #include <limits.h>
  #include <sys/types.h>
@@ -496,6 +496,15 @@
  static int filter_args_for_arch (const char **, int, const char **,
  				 const char *);
  static int add_arch_options (int, const char **, int);
+@@ -448,7 +477,7 @@
+   /* Need separate out_files for each arch, max is MAX_ARCHES.
+      Need separate out_files for each input file.  */
+ 
+-  out_files = (const char **) malloc ((total_argc * MAX_ARCHES) * sizeof (const char *));
++  out_files = (const char **) calloc ((total_argc * MAX_ARCHES), sizeof (const char *));
+   if (!out_files)
+     abort ();
+ 
 @@ -516,16 +545,31 @@
    return ret;
  }
