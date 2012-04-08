@@ -876,7 +876,7 @@ toolchain_gcc()
 		# 1. getcwd is now in mingw headers (unistd.h)
 		# 2. uid_t  is now in mingw headers (basetypes.h) but gid_t is not so they need testing for separately.
 		# 3. AS_TRADITIONAL_FORMAT was being used if the host as is buggy. Made this not happen when cross compiling.
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-mingw32.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1

@@ -1,5 +1,5 @@
 --- gcc-5666.3/gcc/configure.ac.orig	2010-10-14 21:27:54 +0100
-+++ gcc-5666.3/gcc/configure.ac	2012-04-02 01:03:47 +0100
++++ gcc-5666.3/gcc/configure.ac	2012-04-08 20:30:02 +0100
 @@ -1130,6 +1130,7 @@
  
  gcc_AC_CHECK_DECLS(getrlimit setrlimit getrusage, , ,[
@@ -17,8 +17,21 @@
    AC_DEFINE(USE_AS_TRADITIONAL_FORMAT, 1,
    [Define if your assembler mis-optimizes .eh_frame data.])
  fi
+@@ -3252,8 +3253,12 @@
+         fi
+         ;;
+        *-*-darwin*)
++      if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x; then
++          gcc_cv_libc_provides_ssp=yes
++      else
+          AC_CHECK_FUNC(__stack_chk_fail,[gcc_cv_libc_provides_ssp=yes],
+            [echo "no __stack_chk_fail on this target"])
++      fi
+         ;;
+   *) gcc_cv_libc_provides_ssp=no ;;
+     esac])
 --- gcc-5666.3/gcc/configure.orig	2010-10-14 21:27:54 +0100
-+++ gcc-5666.3/gcc/configure	2012-04-02 01:04:11 +0100
++++ gcc-5666.3/gcc/configure	2012-04-08 20:34:59 +0100
 @@ -9702,6 +9702,37 @@
  _ACEOF
  
@@ -74,3 +87,21 @@
  
  cat >>confdefs.h <<\_ACEOF
  #define USE_AS_TRADITIONAL_FORMAT 1
+@@ -16238,6 +16270,9 @@
+         fi
+         ;;
+        *-*-darwin*)
++      if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x; then
++          gcc_cv_libc_provides_ssp=yes
++      else
+          echo "$as_me:$LINENO: checking for __stack_chk_fail" >&5
+ echo $ECHO_N "checking for __stack_chk_fail... $ECHO_C" >&6
+ if test "${ac_cv_func___stack_chk_fail+set}" = set; then
+@@ -16333,6 +16368,7 @@
+ else
+   echo "no __stack_chk_fail on this target"
+ fi
++fi
+ 
+         ;;
+   *) gcc_cv_libc_provides_ssp=no ;;
