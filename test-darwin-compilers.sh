@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Attempts to compile and link ndk-stack under various conditions with various compilers.
+# I generally hack this according to the latest issues so don't expect it to perform in
+# any particular way.
 
 . bash-tools.sh
 
@@ -33,20 +35,17 @@ PREFIXLEFT=$LEFT
 
 if [[ ! -z $2 ]] ; then
 	RIGHT=${2}
-	OUTRIGHT=$OUTDIR/$RIGHT
-	mkdir -p $OUTRIGHT
 else
 	RIGHT=/
-	OUTRIGHT=$OUTDIR/apple
-	mkdir -p $OUTRIGHT
 fi
 
 TOOLCHAINLEFT=/tmp2/$LEFT/bin/${LEFT}-g++
 if [[ "$RIGHT" = "/" ]] ; then
+	# Used for testing native Darwin gcc.
 	TOOLCHAINRIGHT=/usr/bin/llvm-g++-4.2
 	PREFIXRIGHT=apple
 else
-	TOOLCHAINRIGHT=/tmp2/$RIGHT/bin/${RIGHT}-g++
+	TOOLCHAINRIGHT=/tmp2/$RIGHT/bin/${RIGHT}-llvm-g++
 	PREFIXRIGHT=$RIGHT
 fi
 
@@ -78,31 +77,31 @@ SRCS="$SRCDIR/ndk-stack.c $SRCDIR/ndk-stack-parser.c $SRCDIR/elff/dwarf_cu.cc $S
 # ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c 
 
 pushd $OUT1
-echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK"    > strace.txt 2>&1
-echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK -v" > output.txt 2>&1
-${STRACE} ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK    >> strace.txt 2>&1
-          ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK"    > strace.txt 2>&1
+echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
+          ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
 popd
 
 pushd $OUT2
-echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /   "    > strace.txt 2>&1
-echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /   -v"  > output.txt 2>&1
-${STRACE} ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /       >> strace.txt 2>&1
-          ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /   -v --save-temps  >> output.txt 2>&1
+echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /   "    > strace.txt 2>&1
+echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /   -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /       >> strace.txt 2>&1
+          ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /   -v --save-temps  >> output.txt 2>&1
 popd
 
 pushd $OUT3
-echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack               "    > strace.txt 2>&1
-echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack               -v"  > output.txt 2>&1
-${STRACE} ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack                   >> strace.txt 2>&1
-          ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack               -v --save-temps  >> output.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK"    > strace.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
+          ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
 popd
 
 pushd $OUT4
-echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK"    > strace.txt 2>&1
-echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK -v" > output.txt 2>&1
-${STRACE} ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK    >> strace.txt 2>&1
-          ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack               "    > strace.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack               -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack                   >> strace.txt 2>&1
+          ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack               -v --save-temps  >> output.txt 2>&1
 popd
 
 ${TOOLCHAIN1} -dumpspecs > $OUT1/specs.txt 2>&1
