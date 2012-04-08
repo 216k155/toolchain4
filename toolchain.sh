@@ -769,7 +769,8 @@ toolchain_llvmgcc_core() {
 		# (and executable filename prefix) is searched when looking for tools.
 		# The patch to collect2.c could've been avoided by putting a link to ld
 		# into the libexec tree.
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+#		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 	popd
@@ -926,7 +927,7 @@ toolchain_gcc()
 		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
 		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
 	done
-	
+
 	# libs needed:
 	# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
 	# must be available (the unneeded one is libkxld.dylib)
@@ -1180,7 +1181,8 @@ toolchain_llvmgcc() {
 		# (and executable filename prefix) is searched when looking for tools.
 		# The patch to collect2.c could've been avoided by putting a link to ld
 		# into the libexec tree.
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+#		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
@@ -1195,6 +1197,22 @@ toolchain_llvmgcc() {
 	if [[ "$(uname-bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
+
+	# This should be moved into a common function as it's used for building both gcc and llvmgcc.
+	PREFIXSYSROOT=$PREFIX
+	declare -a SYSHEADERS
+	SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/limits.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
+	rm -rf $PREFIXSYSROOT/usr/include
+	rm -rf $PREFIX/$TARGET/sys-include
+	[[ ! -d $PREFIXSYSROOT/usr/include ]] && mkdir -p $PREFIXSYSROOT/usr/include
+	[[ ! -d $PREFIX/$TARGET/sys-include ]] && mkdir -p $PREFIX/$TARGET/sys-include
+	for SYSHDR in ${SYSHEADERS[@]}; do
+		[[ ! -d $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)  ]] && mkdir -p $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
+		[[ ! -d $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR) ]] && mkdir -p $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
+		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
+		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
+	done
+	
 	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
