@@ -71,32 +71,44 @@ ARCHS="-arch x86_64"
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
 pushd android-ndk-r6b/sources/host-tools/ndk-stack
+SRCDIR=$PWD
+popd
 
-# --sysroot / for the default case on OS X.
+SRCS="$SRCDIR/ndk-stack.c $SRCDIR/ndk-stack-parser.c $SRCDIR/elff/dwarf_cu.cc $SRCDIR/elff/dwarf_die.cc $SRCDIR/elff/dwarf_utils.cc $SRCDIR/elff/elf_alloc.cc $SRCDIR/elff/elf_file.cc $SRCDIR/elff/elf_mapped_section.cc $SRCDIR/elff/elff_api.cc $SRCDIR/elff/mapfile.c $SRCDIR/regex/regcomp.c $SRCDIR/regex/regerror.c $SRCDIR/regex/regexec.c $SRCDIR/regex/regfree.c"
+# ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c 
 
-echo     "${TOOLCHAIN1} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT1/ndk-stack --sysroot $SDK"    > $OUT1/strace.txt 2>&1
-echo     "${TOOLCHAIN1} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT1/ndk-stack --sysroot $SDK -v" > $OUT1/output.txt 2>&1
-${STRACE} ${TOOLCHAIN1} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT1/ndk-stack --sysroot $SDK    >> $OUT1/strace.txt 2>&1
-          ${TOOLCHAIN1} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT1/ndk-stack --sysroot $SDK -v >> $OUT1/output.txt 2>&1
-echo     "${TOOLCHAIN2} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT2/ndk-stack --sysroot /   "    > $OUT2/strace.txt 2>&1
-echo     "${TOOLCHAIN2} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT2/ndk-stack --sysroot /   -v"  > $OUT2/output.txt 2>&1
-${STRACE} ${TOOLCHAIN2} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT2/ndk-stack --sysroot /       >> $OUT2/strace.txt 2>&1
-          ${TOOLCHAIN2} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT2/ndk-stack --sysroot /   -v  >> $OUT2/output.txt 2>&1
-echo     "${TOOLCHAIN3} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT3/ndk-stack               "    > $OUT3/strace.txt 2>&1
-echo     "${TOOLCHAIN3} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT3/ndk-stack               -v"  > $OUT3/output.txt 2>&1
-${STRACE} ${TOOLCHAIN3} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT3/ndk-stack                   >> $OUT3/strace.txt 2>&1
-          ${TOOLCHAIN3} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT3/ndk-stack               -v  >> $OUT3/output.txt 2>&1
-echo     "${TOOLCHAIN4} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT4/ndk-stack --sysroot $SDK"    > $OUT4/strace.txt 2>&1
-echo     "${TOOLCHAIN4} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT4/ndk-stack --sysroot $SDK -v" > $OUT4/output.txt 2>&1
-${STRACE} ${TOOLCHAIN4} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT4/ndk-stack --sysroot $SDK    >> $OUT4/strace.txt 2>&1
-          ${TOOLCHAIN4} $ARCHS -lstdc++ ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c -o $OUT4/ndk-stack --sysroot $SDK -v >> $OUT4/output.txt 2>&1
+pushd $OUT1
+echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK"    > strace.txt 2>&1
+echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK    >> strace.txt 2>&1
+          ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o $OUT1/ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+popd
+
+pushd $OUT2
+echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /   "    > strace.txt 2>&1
+echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /   -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /       >> strace.txt 2>&1
+          ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o $OUT2/ndk-stack --sysroot /   -v --save-temps  >> output.txt 2>&1
+popd
+
+pushd $OUT3
+echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack               "    > strace.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack               -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack                   >> strace.txt 2>&1
+          ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o $OUT3/ndk-stack               -v --save-temps  >> output.txt 2>&1
+popd
+
+pushd $OUT4
+echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK"    > strace.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK    >> strace.txt 2>&1
+          ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o $OUT4/ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+popd
 
 ${TOOLCHAIN1} -dumpspecs > $OUT1/specs.txt 2>&1
 ${TOOLCHAIN2} -dumpspecs > $OUT2/specs.txt 2>&1
 ${TOOLCHAIN3} -dumpspecs > $OUT3/specs.txt 2>&1
 ${TOOLCHAIN4} -dumpspecs > $OUT4/specs.txt 2>&1
-
-popd
 
 rm -f $(uname-bt)-test.7z
 rm -f ~/Dropbox/darwin-compilers-work/$(uname-bt)-test.7z
