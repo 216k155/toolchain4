@@ -165,13 +165,16 @@ MACOSX="MacOSX${OSXVER}"
 IOS="iPhoneOS${IOSVER}"
 
 # If you need to debug the toolchain(s)...
-#HOST_DEBUG_CFLAGS="-O0 -g"
+# HOST_DEBUG_CFLAGS="-O0 -g"
 # ...otherwise:
 HOST_DEBUG_CFLAGS="-O2 -pipe"
+# Enabling this will create temp files for all stages of the toolchain build process, including target gcc libs.
+# SAVE_TEMPS="-save-temps"
 
-# This can't be passed into llvmgcc configure as CFLAGS as otherwise target lib build ends up trying to
-# use it with xgcc (and -m32 fails for arm of course).
 BUILD_ARCH=i686
+# -m32 can't be passed into llvmgcc's configure as CFLAGS as erroneously, it gets used for target lib build 
+# (i.e. passed as an option to xgcc, and -m32 fails for arm of course). Instead it's specified as part of CC
+# and CXX, i.e. CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS"
 BUILD_ARCH_CFLAGS="-m32"
 if [[ "$(uname-bt)" = "Darwin" ]] ; then
 	if [[ "$BUILD_ARCH" = "i686" ]] ; then
@@ -725,7 +728,7 @@ toolchain_cctools() {
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 		fi
-		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" CXXFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
+		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
@@ -734,7 +737,6 @@ toolchain_cctools() {
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}/make.log"
 		if [[ "$(uname-bt)" = "Windows" ]] ; then
 			make -k &>make.log
-			# CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}"
 			DESTDIR=C: make install &>install.log
 			cp ${PREFIX}/lib/libLTO.dll ${PREFIX}/bin/
 		else
@@ -778,8 +780,7 @@ toolchain_llvmgcc_core() {
 	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
-#	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
-	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS" CFLAGS="-save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
@@ -978,7 +979,7 @@ toolchain_gcc()
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -msse2 -D_CTYPE_H -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -msse2 -D_CTYPE_H $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -1229,10 +1230,8 @@ toolchain_llvmgcc() {
 		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
 	fi
 
-#	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
-
 	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
-	CFLAGS="-save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
