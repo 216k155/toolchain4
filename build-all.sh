@@ -31,14 +31,14 @@ full_build_for_arch() {
 rm -rf bld-$PREFIX src-$PREFIX /tmp2/$PREFIX
 full_build_for_arch $PREFIX arm
 # Don't want arm binaries or headers in this folder, also these files are copyright to Apple.
-find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/needed-arm-libs.txt
+find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/arm-needed-libs.txt
 rm -rf /tmp2/$PREFIX/usr/lib/*
-find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/needed-arm-headers.txt
+find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/arm-needed-headers.txt
 rm -rf /tmp2/$PREFIX/usr/include/*
 full_build_for_arch $PREFIX intel
-find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/needed-intel-libs.txt
+find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/intel-needed-libs.txt
 rm -rf /tmp2/$PREFIX/usr/lib/*
-find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/needed-intel-headers.txt
+find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/intel-needed-headers.txt
 rm -rf /tmp2/$PREFIX/usr/include/*
 
 pushd /tmp2/$PREFIX/bin

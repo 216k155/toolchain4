@@ -851,7 +851,6 @@ copy_sysroot() {
 	local _DST=$2
 	local _TARGET=$3
 
-	# This should be moved into a common function as it's used for building both gcc and llvmgcc.
 	PREFIXSYSROOT=$PREFIX
 	declare -a SYSHEADERS
 	if [[ "$TARGET_ARCH" = "intel" ]] ; then
@@ -959,7 +958,7 @@ toolchain_gcc()
 		popd
 	fi
 
-	if [[ "$TARGET_ARCH" = "intel" ]] ; then
+	if [[ "$TARGET_ARCH" = "i686" ]] ; then
 		copy_sysroot ../../sdks/${MACOSX}.sdk $PREFIX $TARGET
 	else
 		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
@@ -1220,9 +1219,8 @@ toolchain_llvmgcc() {
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
 
-	# This should be moved into a common function as it's used for building both gcc and llvmgcc.
 	WITH_TUNE=
-	if [[ "$TARGET_ARCH" = "intel" ]] ; then
+	if [[ "$TARGET_ARCH" = "i686" ]] ; then
 		WITH_TUNE="--with-tune=generic"
 		copy_sysroot ../../sdks/${MACOSX}.sdk $PREFIX $TARGET
 	else
@@ -1230,6 +1228,7 @@ toolchain_llvmgcc() {
 	fi
 
 #	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+
 	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
 	CFLAGS="-save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
