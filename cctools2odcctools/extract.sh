@@ -644,7 +644,7 @@ fi
 if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld/rld.c
 	do-sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/as/write_object.c
-	do-sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/misc/libtool.c
+	do-sed $"s^O_WRONLY^O_WRONLY | O_BINARY^"                                           ${DISTDIR}/misc/libtool.c
 	do-sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/misc/lipo.c
 	do-sed $"s^O_CREAT|O_RDWR^O_CREAT|O_RDWR|O_BINARY^"                                 ${DISTDIR}/ar/append.c
 	do-sed $"s^O_CREAT|O_RDWR^O_CREAT|O_RDWR|O_BINARY^"                                 ${DISTDIR}/ar/replace.c
@@ -658,6 +658,7 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
 	do-sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/ar/extract.c
 	do-sed $"s^O_TRUNC, 0666^O_TRUNC | O_BINARY, 0666^"                                 ${DISTDIR}/misc/segedit.c
 	do-sed $"s^O_WRONLY|O_CREAT|O_TRUNC|fsync^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY|fsync^" ${DISTDIR}/libstuff/writeout.c
+	do-sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/libstuff/ofile.c
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/OutputFile.cpp
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/lto_file.hpp
 	do-sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
