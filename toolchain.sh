@@ -164,9 +164,13 @@ DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 IOS="iPhoneOS${IOSVER}"
 
-HOST_DEBUG_CFLAGS="-O0 -g"
-#HOST_DEBUG_CFLAGS="-O2"
+# If you need to debug the toolchain(s)...
+#HOST_DEBUG_CFLAGS="-O0 -g"
+# ...otherwise:
+HOST_DEBUG_CFLAGS="-O2 -pipe"
 
+# This can't be passed into llvmgcc configure as CFLAGS as otherwise target lib build ends up trying to
+# use it with xgcc (and -m32 fails for arm of course).
 BUILD_ARCH=i686
 BUILD_ARCH_CFLAGS="-m32"
 if [[ "$(uname-bt)" = "Darwin" ]] ; then
@@ -655,8 +659,8 @@ toolchain_cctools() {
 #		fi
 
 		mkdir -p "${PREFIX}"
-		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
-		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
+		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
+		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
 
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 			HOSTPREFIX=/mingw
@@ -710,8 +714,8 @@ toolchain_cctools() {
 	   fi
 
 		cd "${CCTOOLS_DIR}"
-		message_status "Configuring cctools-${CCTOOLS_VER_FH}-iphone..."
-		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-iphone"
+		message_status "Configuring cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}..."
+		cd "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
 		if [[ "$ONLY_PATCH" = "1" ]] ; then
 			exit 1
 		fi
@@ -726,8 +730,8 @@ toolchain_cctools() {
 			--prefix="${PREFIX}"
 		make clean > /dev/null
 
-		message_status "Building cctools-${CCTOOLS_VER_FH}-iphone..."
-		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-iphone/make.log"
+		message_status "Building cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}..."
+		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}/make.log"
 		if [[ "$(uname-bt)" = "Windows" ]] ; then
 			make -k &>make.log
 			# CFLAGS="$BUILD_ARCH_CFLAGS -save-temps -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}"
@@ -772,9 +776,10 @@ toolchain_llvmgcc_core() {
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
 	fi
-	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
-	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core
-	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
+	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
+#	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS" CFLAGS="-save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
@@ -817,9 +822,9 @@ toolchain_llvmgcc_saurik() {
 		    fi
 		fi
 
-		message_status "Configuring gcc-4.2-iphone..."
-		mkdir -p "${BUILD_DIR}/gcc-4.2-iphone"
-		cd "${BUILD_DIR}/gcc-4.2-iphone"
+		message_status "Configuring gcc-4.2-${TARGET_ARCH}..."
+		mkdir -p "${BUILD_DIR}/gcc-4.2-${TARGET_ARCH}"
+		cd "${BUILD_DIR}/gcc-4.2-${TARGET_ARCH}"
 		"${GCC_DIR}"/configure \
 			--target="${TARGET}" \
 			--prefix="$PREFIX" \
@@ -830,8 +835,8 @@ toolchain_llvmgcc_saurik() {
 			--enable-wchar_t=no \
 			--with-gxx-include-dir=/usr/include/c++/4.2.1
 		make clean > /dev/null
-		message_status "Building gcc-4.2-iphone..."
-		cecho bold "Build progress logged to: $BUILD_DIR/gcc-4.2-iphone/make.log"
+		message_status "Building gcc-4.2-${TARGET_ARCH}..."
+		cecho bold "Build progress logged to: $BUILD_DIR/gcc-4.2-${TARGET_ARCH}/make.log"
 		if ! ( make -j$JOBS &>make.log && make install &>install.log ); then
 			error "Build & install failed. Check make.log and install.log"
 			exit 1
@@ -839,6 +844,55 @@ toolchain_llvmgcc_saurik() {
 
 	fi
 }
+
+
+copy_sysroot() {
+	local _SRC=$1
+	local _DST=$2
+	local _TARGET=$3
+
+	# This should be moved into a common function as it's used for building both gcc and llvmgcc.
+	PREFIXSYSROOT=$PREFIX
+	declare -a SYSHEADERS
+	if [[ "$TARGET_ARCH" = "intel" ]] ; then
+		SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/limits.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
+	else
+		SYSHEADERS=(secure/_common.h secure/_stdio.h secure/_string.h stdint.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h                   machine/_types.h  arm/types.h  arm/_types.h  arm/endian.h  arm/limits.h  arm/_limits.h  arm/_structs.h  arm/signal.h libkern/_OSByteOrder.h libkern/arm/OSByteOrder.h   mach/arm/_structs.h arm/arch.h)
+	fi
+	rm -rf $_DST/usr/include
+	rm -rf $_DST/$_TARGET/sys-include
+	[[ ! -d $_DST/usr/include ]] && mkdir -p $_DST/usr/include
+	[[ ! -d $_DST/$_TARGET/sys-include ]] && mkdir -p $_DST/$_TARGET/sys-include
+	for SYSHDR in ${SYSHEADERS[@]}; do
+		[[ ! -d $_DST/usr/include/$(dirname $SYSHDR)  ]] && mkdir -p $_DST/usr/include/$(dirname $SYSHDR)
+		[[ ! -d $_DST/$_TARGET/sys-include/$(dirname $SYSHDR) ]] && mkdir -p $_DST/$_TARGET/sys-include/$(dirname $SYSHDR)
+		cp -R -p $_SRC/usr/include/$SYSHDR $_DST/usr/include/$(dirname $SYSHDR)
+		cp -R -p $_SRC/usr/include/$SYSHDR $_DST/$_TARGET/sys-include/$(dirname $SYSHDR)
+	done
+
+	# libs needed:
+	# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
+	# must be available (the unneeded one is libkxld.dylib)
+	# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
+	# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
+	# LD_FLAGS_FOR_TARGET hack to work.
+	
+	# Some redundancy here. Probably only the 2nd block is needed but it won't really hurt to do
+	# both.
+	if [[ ! -d $_DST/usr/lib ]] ; then
+		mkdir -p $_DST/usr/lib
+		cp -f $_SRC/usr/lib/libc.dylib $_DST/usr/lib/
+		cp -f $_SRC/usr/lib/dylib1.o   $_DST/usr/lib/
+		cp -fR $_SRC/usr/lib/system    $_DST/usr/lib
+	fi
+	if [[ ! -d $PREFIXSYSROOT/$TARGET/lib/system ]] ; then
+		mkdir -p $PREFIXSYSROOT/$TARGET/lib/system
+		cp -f $_SRC/usr/lib/libc.dylib $_DST/$_TARGET/lib/system
+		cp -f $_SRC/usr/lib/dylib1.o   $_DST/$_TARGET/lib/system
+		cp -fR $_SRC/usr/lib/system    $_DST/$_TARGET/lib
+	fi
+}
+
 
 toolchain_gcc()
 {
@@ -872,14 +926,16 @@ toolchain_gcc()
 		# 1. getcwd is now in mingw headers (unistd.h)
 		# 2. uid_t  is now in mingw headers (basetypes.h) but gid_t is not so they need testing for separately.
 		# 3. AS_TRADITIONAL_FORMAT was being used if the host as is buggy. Made this not happen when cross compiling.
+		# 4. Stack smash protection was being checked for in the host C libraries, this isn't wanted when
+		#    cross compiling so instead we assume libc has ssp (darwin's libc has this feature)
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
 	fi
 	fi
-	mkdir $BUILD_DIR/gcc-5666.3-${DARWINVER}
-	pushd $BUILD_DIR/gcc-5666.3-${DARWINVER}
+	mkdir $BUILD_DIR/gcc-5666.3-${TARGET_ARCH}
+	pushd $BUILD_DIR/gcc-5666.3-${TARGET_ARCH}
 #	PREFIXGCC=$PREFIX/usr
 	# This probably should be $PREFIX/usr, but only because of what appears to be a bug in
 	# make_relative_prefix:
@@ -903,46 +959,10 @@ toolchain_gcc()
 		popd
 	fi
 
-# Used to copy every header over, but only want the ones needed to build gcc.
-#	[[ ! -d $PREFIXSYSROOT/usr ]] && mkdir -p $PREFIXSYSROOT/usr
-#	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIXSYSROOT/usr
-	# Could either copy to $TARGET/include or $TARGET/sys-include here.
-#	[[ ! -d $PREFIX/$TARGET ]] && mkdir -p $PREFIX/$TARGET
-#	[[ -d $PREFIX/$TARGET/sys-include ]] && rm -rf $PREFIX/$TARGET/sys-include
-#	cp -R -p ../../sdks/${MACOSX}.sdk/usr/include $PREFIX/$TARGET/sys-include
-	declare -a SYSHEADERS
-	SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/limits.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
-	rm -rf $PREFIXSYSROOT/usr/include
-	rm -rf $PREFIX/$TARGET/sys-include
-	[[ ! -d $PREFIXSYSROOT/usr/include ]] && mkdir -p $PREFIXSYSROOT/usr/include
-	[[ ! -d $PREFIX/$TARGET/sys-include ]] && mkdir -p $PREFIX/$TARGET/sys-include
-	for SYSHDR in ${SYSHEADERS[@]}; do
-		[[ ! -d $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)  ]] && mkdir -p $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
-		[[ ! -d $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR) ]] && mkdir -p $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
-		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
-		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
-	done
-
-	# libs needed:
-	# In order to build libgcc_s.1.dylib, the 25 of the 26 dylibs in ${MACOSX}.sdk/usr/lib/system
-	# must be available (the unneeded one is libkxld.dylib)
-	# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
-	# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
-	# LD_FLAGS_FOR_TARGET hack to work.
-	
-	# Some redundancy here. Probably only the 2nd block is needed but it won't really hurt to do
-	# both.
-	if [[ ! -d $PREFIXSYSROOT/usr/lib ]] ; then
-		mkdir -p $PREFIXSYSROOT/usr/lib
-		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXSYSROOT/usr/lib/
-		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXSYSROOT/usr/lib/
-		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXSYSROOT/usr/lib
-	fi
-	if [[ ! -d $PREFIXSYSROOT/$TARGET/lib/system ]] ; then
-		mkdir -p $PREFIXSYSROOT/$TARGET/lib/system
-		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/libc.dylib $PREFIXSYSROOT/$TARGET/lib/system
-		cp -f ../../sdks/${MACOSX}.sdk/usr/lib/dylib1.o $PREFIXSYSROOT/$TARGET/lib/system
-		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/system $PREFIXSYSROOT/$TARGET/lib
+	if [[ "$TARGET_ARCH" = "intel" ]] ; then
+		copy_sysroot ../../sdks/${MACOSX}.sdk $PREFIX $TARGET
+	else
+		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
 	fi
 
 	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
@@ -995,7 +1015,7 @@ toolchain_gccdriver() {
 	# Build driver-drivers.
 
 	ORIG_SRC_DIR=$SRC_DIR/llvmgcc42-${GCCLLVMVERS}
-	ORIG_BLD_DIR=$BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	ORIG_BLD_DIR=$BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${TARGET_ARCH}
 	if [[ "$(uname-bt)" = "Windows" ]] ; then
 		REGEX="-L$HOST_DIR/lib -lregex"
 	fi
@@ -1008,7 +1028,7 @@ toolchain_gccdriver() {
 		-I $ORIG_SRC_DIR/gcc -I $ORIG_SRC_DIR/gcc/config \
 		-I $HOST_DIR/include $REGEX \
 		-liberty -L$ORIG_BLD_DIR/libiberty/ \
-		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-iphone/libmacho \
+		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-${TARGET_ARCH}/libmacho \
 		-D__LITTLE_ENDIAN__=1 \
 		-Wno-deprecated-declarations \
 		-o $PREFIX/bin/$PREFIX_SUFFIX-llvm-$LANG
@@ -1016,7 +1036,7 @@ toolchain_gccdriver() {
 	popd
 
 	ORIG_SRC_DIR=$SRC_DIR/gcc-5666.3
-	ORIG_BLD_DIR=$BUILD_DIR/gcc-5666.3-${DARWINVER}
+	ORIG_BLD_DIR=$BUILD_DIR/gcc-5666.3-${TARGET_ARCH}
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
 		gcc -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
@@ -1026,7 +1046,7 @@ toolchain_gccdriver() {
 		-I $ORIG_SRC_DIR/gcc -I $ORIG_SRC_DIR/gcc/config \
 		-I $HOST_DIR/include $REGEX \
 		-liberty -L$ORIG_BLD_DIR/libiberty/ \
-		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-iphone/libmacho \
+		-lmacho -L$BUILD_DIR/cctools-${CCTOOLSVER}-${TARGET_ARCH}/libmacho \
 		-D__LITTLE_ENDIAN__=1 \
 		-Wno-deprecated-declarations \
 		-o $PREFIX/bin/$PREFIX_SUFFIX-$LANG || exit 1
@@ -1186,39 +1206,32 @@ toolchain_llvmgcc() {
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
 	fi
-	rm -rf $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
-	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
-	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
+	rm -rf $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${TARGET_ARCH}
+	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${TARGET_ARCH}
+	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${TARGET_ARCH}
 	export PATH=$PREFIX/bin:$PATH
 
-	PREFIXSYSROOT=$PREFIX
-	PREFIXGCC=$PREFIX
-
 	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
-	if [[ ! -f $PREFIXGCC/lib/libSystem.B.dylib ]] ; then
-		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/
-		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
+	if [[ ! -f $PREFIX/lib/libSystem.B.dylib ]] ; then
+		[[ ! -d $PREFIX/lib/ ]] && mkdir -p $PREFIX/lib/
+		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIX/lib
 	fi
 	if [[ "$(uname-bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
 
 	# This should be moved into a common function as it's used for building both gcc and llvmgcc.
-	PREFIXSYSROOT=$PREFIX
-	declare -a SYSHEADERS
-	SYSHEADERS=(libc.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h machine/_limits.h machine/_types.h i386/types.h i386/_types.h i386/endian.h i386/limits.h i386/_limits.h i386/_structs.h i386/signal.h libkern/_OSByteOrder.h libkern/_OSByteOrder.h libkern/i386/_OSByteOrder.h mach/i386/_structs.h)
-	rm -rf $PREFIXSYSROOT/usr/include
-	rm -rf $PREFIX/$TARGET/sys-include
-	[[ ! -d $PREFIXSYSROOT/usr/include ]] && mkdir -p $PREFIXSYSROOT/usr/include
-	[[ ! -d $PREFIX/$TARGET/sys-include ]] && mkdir -p $PREFIX/$TARGET/sys-include
-	for SYSHDR in ${SYSHEADERS[@]}; do
-		[[ ! -d $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)  ]] && mkdir -p $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
-		[[ ! -d $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR) ]] && mkdir -p $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
-		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
-		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
-	done
+	WITH_TUNE=
+	if [[ "$TARGET_ARCH" = "intel" ]] ; then
+		WITH_TUNE="--with-tune=generic"
+		copy_sysroot ../../sdks/${MACOSX}.sdk $PREFIX $TARGET
+	else
+		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
+	fi
 
-	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+#	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
+	CFLAGS="-save-temps" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
@@ -1226,7 +1239,7 @@ toolchain_llvmgcc() {
 		--enable-languages=c,c++,objc,obj-c++ \
 		--disable-bootstrap \
 		--enable--checking \
-		--enable-llvm=$PWD/../llvmgcc42-${GCCLLVMVERS}-core \
+		--enable-llvm=$PWD/../llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH} \
 		--enable-shared \
 		--enable-static \
 		--enable-libgomp \
@@ -1241,7 +1254,7 @@ toolchain_llvmgcc() {
 		--with-as=$PREFIX/bin/${TARGET}-as${EXEEXT} \
 		--with-ranlib=$PREFIX/bin/${TARGET}-ranlib${EXEEXT} \
 		--with-lipo=$PREFIX/bin/${TARGET}-lipo${EXEEXT} \
-		--with-tune=generic
+		$WITH_TUNE
 	# Falls over at libiberty
 	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
 	make &>make.log
