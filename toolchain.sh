@@ -1854,6 +1854,7 @@ case $2 in
 		error "Please specify either arm or intel as arg 2"
 		exit 1
 	;;
+esac
 
 case $1 in
 	all)

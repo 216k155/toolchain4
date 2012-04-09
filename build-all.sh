@@ -3,21 +3,28 @@
 . ./bash-tools.sh
 
 if [[ -z $1 ]] ; then
-    error "Please pass in a prefix suffix as argument"
+    error "Please pass in a PREFIX as argument 1, e.g. apple"
     exit 1
 fi
 
-rm -rf bld-$1 src-$1 /tmp2/$1
-PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core intel
-rm -rf bld-$1/cctools-809-iphone src-$1/cctools-809
-PREFIX_SUFFIX=$1 ./toolchain.sh cctools intel
-rm -rf bld-$1/gcc-5666.3-11 src-$1/gcc-5666.3
-PREFIX_SUFFIX=$1 ./toolchain.sh gcc intel
-rm -rf bld-$1/llvmgcc42-2336.1-full-11 src-$1/llvmgcc42-2336.1
-PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc intel
-PREFIX_SUFFIX=$1 ./toolchain.sh gccdriver intel
+if [[ -z $2 ]] ; then
+    error "Please pass in a TARGET_ARCH (either intel for MacOSX or arm for iOS) as argument 2"
+    exit 1
+fi
 
-rm -rf /tmp2/$1/i686-apple-darwin11/sys-include
+TARGET_ARCH=$2
+
+rm -rf bld-$1 src-$1 /tmp2/$1
+PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc-core $TARGET_ARCH
+rm -rf bld-$1/cctools-809-iphone src-$1/cctools-809
+PREFIX_SUFFIX=$1 ./toolchain.sh cctools $TARGET_ARCH
+rm -rf bld-$1/gcc-5666.3-11 src-$1/gcc-5666.3
+PREFIX_SUFFIX=$1 ./toolchain.sh gcc $TARGET_ARCH
+rm -rf bld-$1/llvmgcc42-2336.1-full-11 src-$1/llvmgcc42-2336.1
+PREFIX_SUFFIX=$1 ./toolchain.sh llvmgcc $TARGET_ARCH
+PREFIX_SUFFIX=$1 ./toolchain.sh gccdriver $TARGET_ARCH
+
+rm -rf /tmp2/$1/$BUILD_ARCH-apple-darwin11/sys-include
 pushd /tmp2/$1/bin
 #strip *
 popd
