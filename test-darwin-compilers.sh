@@ -86,7 +86,7 @@ echo     "${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" >
 ${STRACE} ${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
           ${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT2
@@ -95,7 +95,7 @@ echo     "${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   -v"
 ${STRACE} ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK       >> strace.txt 2>&1
           ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   -v --save-temps  >> output.txt 2>&1
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT3
@@ -104,7 +104,7 @@ echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack  -v" > output.txt 2>
 ${STRACE} ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack     >> strace.txt 2>&1
           ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack  -v --save-temps >> output.txt 2>&1
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT4
@@ -113,7 +113,7 @@ echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               -v"  >
 ${STRACE} ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack                   >> strace.txt 2>&1
           ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               -v --save-temps  >> output.txt 2>&1
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 ${TOOLCHAIN1} -dumpspecs > $OUT1/specs.txt 2>&1
