@@ -1856,11 +1856,17 @@ case $2 in
 	arm)
 		TARGET_ARCH=arm
 		TARGET=${TARGET_ARCH}-apple-darwin${DARWINVER}
+		message_status "===================================="
+		message_status "| Set up for building for arch arm |"
+		message_status "===================================="
 	;;
 
 	intel)
 		TARGET_ARCH=i686
 		TARGET=${TARGET_ARCH}-apple-darwin${DARWINVER}
+		message_status "======================================"
+		message_status "| Set up for building for arch intel |"
+		message_status "======================================"
 	;;
 
 	*)
