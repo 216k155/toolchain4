@@ -773,6 +773,7 @@ toolchain_llvmgcc_core() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1186,6 +1187,7 @@ toolchain_llvmgcc() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1194,6 +1196,15 @@ toolchain_llvmgcc() {
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${DARWINVER}
 	export PATH=$PREFIX/bin:$PATH
+
+	PREFIXSYSROOT=$PREFIX
+	PREFIXGCC=$PREFIX
+
+	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
+	if [[ ! -f $PREFIXGCC/lib/libSystem.B.dylib ]] ; then
+		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/
+		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
+	fi
 	if [[ "$(uname-bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
