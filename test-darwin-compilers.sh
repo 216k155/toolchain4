@@ -24,6 +24,7 @@ if [[ ! -d android-ndk-r6b ]] ; then
 fi
 
 OUTDIR=$PWD
+SDK=$PWD/sdks/MacOSX10.7.sdk
 
 if [[ ! -z $1 ]] ; then
 	LEFT=${1}
@@ -47,6 +48,7 @@ if [[ "$RIGHT" = "/" ]] ; then
 else
 	TOOLCHAINRIGHT=/tmp2/$RIGHT/bin/${RIGHT}-llvm-g++
 	PREFIXRIGHT=$RIGHT
+	SYSROOT3AND4="--sysroot $SDK"
 fi
 
 TOOLCHAIN1=$TOOLCHAINLEFT
@@ -70,8 +72,6 @@ ARCHS1="-arch x86_64"
 ARCHS2="-arch i386"
 ARCHS3="-arch x86_64"
 ARCHS4="-arch i386"
-
-SDK=$PWD/sdks/MacOSX10.7.sdk
 
 pushd android-ndk-r6b/sources/host-tools/ndk-stack
 SRCDIR=$PWD
@@ -99,19 +99,19 @@ ${STRACE} ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK      
 popd
 
 pushd $OUT3
-echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack "    > strace.txt 2>&1
-echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack  -v" > output.txt 2>&1
-${STRACE} ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack     >> strace.txt 2>&1
-          ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack  -v --save-temps >> output.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4"    > strace.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4    >> strace.txt 2>&1
+          ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v --save-temps >> output.txt 2>&1
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT4
-echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               "    > strace.txt 2>&1
-echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               -v"  > output.txt 2>&1
-${STRACE} ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack                   >> strace.txt 2>&1
-          ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               -v --save-temps  >> output.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 "    > strace.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4     >> strace.txt 2>&1
+          ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v --save-temps  >> output.txt 2>&1
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
 /tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
