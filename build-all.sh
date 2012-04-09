@@ -18,32 +18,47 @@ full_build_for_arch() {
     local _PREFIX_SUFFIX=$1
     local _TARGET_ARCH=$2
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
-    rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$1/cctools-809
+    rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
-    rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$1/gcc-5666.3
+    rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
-    rm -rf bld-$1/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$1/llvmgcc42-2336.1
+    rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gccdriver $_TARGET_ARCH
-    rm -rf /tmp2/$1/$_TARGET_ARCH-apple-darwin11/sys-include
 }
 
+# Clean everything.
 rm -rf bld-$PREFIX src-$PREFIX /tmp2/$PREFIX
-full_build_for_arch $PREFIX arm
-# Don't want arm binaries or headers in this folder, also these files are copyright to Apple.
-find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/arm-needed-libs.txt
-rm -rf /tmp2/$PREFIX/usr/lib/*
-find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/arm-needed-headers.txt
-rm -rf /tmp2/$PREFIX/usr/include/*
-full_build_for_arch $PREFIX intel
-find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/intel-needed-libs.txt
-rm -rf /tmp2/$PREFIX/usr/lib/*
-find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/intel-needed-headers.txt
-rm -rf /tmp2/$PREFIX/usr/include/*
 
-pushd /tmp2/$PREFIX/bin
-    strip *
-popd
+# Make arm build.
+full_build_for_arch $PREFIX arm
+
+# Remove Apple's proprietary stuff, backing up the list of what's needed.
+find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/arm-needed-libs.txt
+find /tmp2/$PREFIX/arm-apple-darwin11/lib >> /tmp2/$PREFIX/arm-needed-libs.txt
+rm -rf /tmp2/$PREFIX/usr/lib
+rm -rf /tmp2/$PREFIX/arm-apple-darwin11/lib
+find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/arm-needed-headers.txt
+find /tmp2/$PREFIX/arm-apple-darwin11/sys-include >> /tmp2/$PREFIX/arm-needed-headers.txt
+rm -rf /tmp2/$PREFIX/usr/include
+rm -rf /tmp2/$PREFIX/arm-apple-darwin11/sys-include
+
+# Make i686 build.
+full_build_for_arch $PREFIX intel
+
+# Remove Apple's proprietary stuff, backing up the list of what's needed.
+find /tmp2/$PREFIX/usr/lib > /tmp2/$PREFIX/i686-needed-libs.txt
+find /tmp2/$PREFIX/i686-apple-darwin11/lib >> /tmp2/$PREFIX/i686-needed-libs.txt
+rm -rf /tmp2/$PREFIX/usr/lib
+rm -rf /tmp2/$PREFIX/i686-apple-darwin11/lib
+find /tmp2/$PREFIX/usr/include > /tmp2/$PREFIX/i686-needed-headers.txt
+find /tmp2/$PREFIX/i686-apple-darwin11/sys-include >> /tmp2/$PREFIX/i686-needed-headers.txt
+rm -rf /tmp2/$PREFIX/usr/include
+rm -rf /tmp2/$PREFIX/i686-apple-darwin11/sys-include
+
+# Strip executables.
+find /tmp2/$PREFIX/bin -type f -and -not \( -path "*-config" \) | xargs strip
+find /tmp2/$PREFIX/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
 
 pushd /tmp2/$PREFIX
     UNAME=$(uname-bt)

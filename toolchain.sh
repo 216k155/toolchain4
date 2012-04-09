@@ -858,10 +858,13 @@ copy_sysroot() {
 	else
 		SYSHEADERS=(secure/_common.h secure/_stdio.h secure/_string.h stdint.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h                   machine/_types.h  arm/types.h  arm/_types.h  arm/endian.h  arm/limits.h  arm/_limits.h  arm/_structs.h  arm/signal.h libkern/_OSByteOrder.h libkern/arm/OSByteOrder.h   mach/arm/_structs.h arm/arch.h)
 	fi
+
+	# Ideally wouldn't be installing to $_DST/usr/include or to $_DST/$_TARGET/sys-include but instead to $_DST/$_TARGET/include.
 	rm -rf $_DST/usr/include
+	mkdir -p $_DST/usr/include
 	rm -rf $_DST/$_TARGET/sys-include
-	[[ ! -d $_DST/usr/include ]] && mkdir -p $_DST/usr/include
-	[[ ! -d $_DST/$_TARGET/sys-include ]] && mkdir -p $_DST/$_TARGET/sys-include
+	mkdir -p $_DST/$_TARGET/sys-include
+
 	for SYSHDR in ${SYSHEADERS[@]}; do
 		[[ ! -d $_DST/usr/include/$(dirname $SYSHDR)  ]] && mkdir -p $_DST/usr/include/$(dirname $SYSHDR)
 		[[ ! -d $_DST/$_TARGET/sys-include/$(dirname $SYSHDR) ]] && mkdir -p $_DST/$_TARGET/sys-include/$(dirname $SYSHDR)
@@ -878,18 +881,17 @@ copy_sysroot() {
 	
 	# Some redundancy here. Probably only the 2nd block is needed but it won't really hurt to do
 	# both.
-	if [[ ! -d $_DST/usr/lib ]] ; then
-		mkdir -p $_DST/usr/lib
-		cp -f $_SRC/usr/lib/libc.dylib $_DST/usr/lib/
-		cp -f $_SRC/usr/lib/dylib1.o   $_DST/usr/lib/
-		cp -fR $_SRC/usr/lib/system    $_DST/usr/lib
-	fi
-	if [[ ! -d $PREFIXSYSROOT/$TARGET/lib/system ]] ; then
-		mkdir -p $PREFIXSYSROOT/$TARGET/lib/system
-		cp -f $_SRC/usr/lib/libc.dylib $_DST/$_TARGET/lib/system
-		cp -f $_SRC/usr/lib/dylib1.o   $_DST/$_TARGET/lib/system
-		cp -fR $_SRC/usr/lib/system    $_DST/$_TARGET/lib
-	fi
+	rm -rf $_DST/usr/lib
+	mkdir -p $_DST/usr/lib
+	cp -f $_SRC/usr/lib/libc.dylib $_DST/usr/lib/
+	cp -f $_SRC/usr/lib/dylib1.o   $_DST/usr/lib/
+	cp -fR $_SRC/usr/lib/system    $_DST/usr/lib
+
+	rm -rf $_DST/$_TARGET/lib/system
+	mkdir -p $_DST/$_TARGET/lib/system
+	cp -f $_SRC/usr/lib/libc.dylib $_DST/$_TARGET/lib/system
+	cp -f $_SRC/usr/lib/dylib1.o   $_DST/$_TARGET/lib/system
+	cp -fR $_SRC/usr/lib/system    $_DST/$_TARGET/lib
 }
 
 
