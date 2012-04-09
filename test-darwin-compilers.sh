@@ -65,7 +65,11 @@ mkdir -p $OUT3
 mkdir -p $OUT4
 
 #ARCHS="-arch x86_64 -arch i386"
-ARCHS="-arch x86_64"
+
+ARCHS1="-arch x86_64"
+ARCHS2="-arch i386"
+ARCHS3="-arch x86_64"
+ARCHS4="-arch i386"
 
 SDK=$PWD/sdks/MacOSX10.7.sdk
 
@@ -77,31 +81,39 @@ SRCS="$SRCDIR/ndk-stack.c $SRCDIR/ndk-stack-parser.c $SRCDIR/elff/dwarf_cu.cc $S
 # ndk-stack.c ndk-stack-parser.c elff/dwarf_cu.cc elff/dwarf_die.cc elff/dwarf_utils.cc elff/elf_alloc.cc elff/elf_file.cc elff/elf_mapped_section.cc elff/elff_api.cc elff/mapfile.c regex/regcomp.c regex/regerror.c regex/regexec.c regex/regfree.c 
 
 pushd $OUT1
-echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK"    > strace.txt 2>&1
-echo     "${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" > output.txt 2>&1
-${STRACE} ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
-          ${TOOLCHAIN1} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+echo     "${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK"    > strace.txt 2>&1
+echo     "${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
+          ${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT2
-echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /   "    > strace.txt 2>&1
-echo     "${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /   -v"  > output.txt 2>&1
-${STRACE} ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /       >> strace.txt 2>&1
-          ${TOOLCHAIN2} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot /   -v --save-temps  >> output.txt 2>&1
+echo     "${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   "    > strace.txt 2>&1
+echo     "${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK       >> strace.txt 2>&1
+          ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   -v --save-temps  >> output.txt 2>&1
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT3
-echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK"    > strace.txt 2>&1
-echo     "${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" > output.txt 2>&1
-${STRACE} ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
-          ${TOOLCHAIN4} $ARCHS -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack "    > strace.txt 2>&1
+echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack  -v" > output.txt 2>&1
+${STRACE} ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack     >> strace.txt 2>&1
+          ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack  -v --save-temps >> output.txt 2>&1
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT4
-echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack               "    > strace.txt 2>&1
-echo     "${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack               -v"  > output.txt 2>&1
-${STRACE} ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack                   >> strace.txt 2>&1
-          ${TOOLCHAIN3} $ARCHS -lstdc++ $SRCS -o ndk-stack               -v --save-temps  >> output.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               "    > strace.txt 2>&1
+echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               -v"  > output.txt 2>&1
+${STRACE} ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack                   >> strace.txt 2>&1
+          ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack               -v --save-temps  >> output.txt 2>&1
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
+/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -tV ndk-stack > ndk-stack-disassem.txt
 popd
 
 ${TOOLCHAIN1} -dumpspecs > $OUT1/specs.txt 2>&1
