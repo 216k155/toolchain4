@@ -118,11 +118,6 @@
 # function for building tools (xar, dmg2img, cpio, nano and all the libs they depend on)
 . dmg-pkg-tools.sh
 
-TOOLCHAIN_VERSION="4.3"
-OSXVER="10.7"
-DARWINVER=11
-MACOSX="MacOSX${OSXVER}"
-
 # what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
@@ -163,17 +158,16 @@ TOOLCHAIN="${IPHONEDEV_DIR}"
 [ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
 [ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
 
-TOOLCHAIN_VERSION="4.3"
+IOSVER="4.3"
 OSXVER="10.7"
 DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
-BUILD_ARCH=i686
-#BUILD_ARCH=x86_64
-TARGET=${BUILD_ARCH}-apple-darwin${DARWINVER}
+IOS="iPhoneOS${IOSVER}"
 
 HOST_DEBUG_CFLAGS="-O0 -g"
 #HOST_DEBUG_CFLAGS="-O2"
 
+BUILD_ARCH=i686
 BUILD_ARCH_CFLAGS="-m32"
 if [[ "$(uname-bt)" = "Darwin" ]] ; then
 	if [[ "$BUILD_ARCH" = "i686" ]] ; then
@@ -348,7 +342,7 @@ toolchain_extract_headers() {
 	mkdir -p ${MNT_DIR} ${SDKS_DIR} ${TMP_DIR} ${TMP_SDKS_DIR}
 
 	# Make sure we don't already have these
-	if [ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
+	if [ -d "${SDKS_DIR}/${IOS}.sdk" ] && [ -d "${SDKS_DIR}/${MACOSX}.sdk" ]; then
 		echo "SDKs seem to already be extracted."
 		return
 	fi
@@ -405,8 +399,8 @@ toolchain_extract_headers() {
 		}')
 	echo "SDK is version ${SDK_VERSION}"
 
-#	if [ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "older" ]; then
-#		error "We are trying to build toolchain ${TOOLCHAIN_VERSION} but this"
+#	if [ "`vercmp $SDK_VERSION $IOSVER`" == "older" ]; then
+#		error "We are trying to build toolchain ${IOSVER} but this"
 #		error "SDK is ${SDK_VERSION}. Please download the latest SDK here:"
 #		error "http://developer.apple.com/iphone/"
 #		exit 1
@@ -417,11 +411,11 @@ toolchain_extract_headers() {
 	# whether it's the newer "xcode and ios" style dmg.
 	if [ "${MPKG_NAME}" = "xCode and iOS SDK" ] ; then
 		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDK4_3.pkg"
-		TOOLCHAIN_VERSION=4.3
-	elif [ "${TOOLCHAIN_VERSION}" = "3.1.2" ] ; then
+		IOSVER=4.3
+	elif [ "${IOSVER}" = "3.1.2" ] ; then
 		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDKHeadersAndLibs.pkg"
-	elif [[ "`vercmp $SDK_VERSION $TOOLCHAIN_VERSION`" == "newer" ]]; then
-		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDK`echo $TOOLCHAIN_VERSION | sed 's/\./_/g' `.pkg"
+	elif [[ "`vercmp $SDK_VERSION $IOSVER`" == "newer" ]]; then
+		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDK`echo $IOSVER | sed 's/\./_/g' `.pkg"
 	else
 		PACKAGES[${#PACKAGES[*]}]="Packages/iPhoneSDKHeadersAndLibs.pkg"
 	fi
@@ -440,7 +434,7 @@ toolchain_extract_headers() {
 	extract_packages_cached ${TMP_SDKS_DIR} "${CACHED_PACKAGES[@]}"
 
 	mv -f ${TMP_SDKS_DIR}/SDKs/*.sdk ${SDKS_DIR}
-	mv -f ${TMP_SDKS_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk ${SDKS_DIR}
+	mv -f ${TMP_SDKS_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/${IOS}.sdk ${SDKS_DIR}
 }
 
 toolchain_extract_firmware_old() {
@@ -455,7 +449,7 @@ toolchain_extract_firmware_old() {
 	fi
 
 	if [ -z "$FW_FILE" ]; then
-		FW_FILE=`ls ${FW_DIR}/*${TOOLCHAIN_VERSION}*.ipsw 2>/dev/null`
+		FW_FILE=`ls ${FW_DIR}/*${IOSVER}*.ipsw 2>/dev/null`
 		if [ ! $? ] && [[ `echo ${FW_FILE} | wc -w` > 1 ]]; then
 			error "I attempted to search for the correct firmware version, but"
 			error "it looks like you have several ipsw files. Please specify"
@@ -469,7 +463,7 @@ toolchain_extract_firmware_old() {
 	# If we can't find the firmware file we try to download it from the
 	# apple download urls above.
 	if [ ! -r "$FW_FILE" ] ; then
-		echo "I can't find the firmware image for iPhone/iPod Touch $TOOLCHAIN_VERSION."
+		echo "I can't find the firmware image for iPhone/iPod Touch $IOSVER."
 		if ! confirm -N "Do you have it?"; then
 			if confirm "Do you want me to download it?"; then
 				APPLE_DL_URL=$(cat ${HERE}/firmware.list | awk '$1 ~ /'"^${FIRMWARE_VERSION}$"'/ && $2 ~ /^iPhone\(3GS\)$/ { print $3; }')
@@ -505,7 +499,7 @@ toolchain_extract_firmware_old() {
 	if [ "x$sha1cmd" != "x" ] ; then
 		ff=`basename ${FW_FILE}`
 		should=$(cat ${HERE}/firmware.list | \
-			awk '$1 ~ /'"^${TOOLCHAIN_VERSION}$"'/ && $3 ~ /'"${ff}"'/ { print $4; }')
+			awk '$1 ~ /'"^${IOSVER}$"'/ && $3 ~ /'"${ff}"'/ { print $4; }')
 		sha1=$(sha1sum ${FW_FILE} | awk ' { print $1; exit; }')
 		if [ "x$should" != "x" -a "x$should" != "x" ] ; then
 			if [ "$sha1" == "$should" ] ; then 
@@ -895,7 +889,7 @@ toolchain_gcc()
         # char *tmp_prefix = make_relative_prefix (argv_zero,
 	# 				       standard_bindir_prefix,
 	# 				       target_system_root);
-	# make_relative_prefix( "/home/nonesuch/src/toolchain4/pre-moved-old/bin/i686-apple-darwin11-g++",
+	# make_relative_prefix( "/home/nonesuch/src/toolchain4/pre-moved-old/bin/$BUILD_ARCH-apple-darwin11-g++",
 	#                       "/home/nonesuch/src/toolchain4/pre-configured/bin/"
 	#			"/home/nonesuch/src/toolchain4/pre-configured")
 	PREFIXSYSROOT=$PREFIX
@@ -1134,7 +1128,7 @@ patch_gcc() {
 	popd
 
 	pushd libexec/gcc/${TARGET}/4.2.1
-	patch_binary collect2 $PREFIX/bin/i686-apple-darwin11-ld i686-apple-darwin11-ld
+	patch_binary collect2 $PREFIX/bin/$BUILD_ARCH-apple-darwin11-ld $BUILD_ARCH-apple-darwin11-ld
 	pushd install-tools
 	do-sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../../..^" mkheaders
 	popd
@@ -1223,7 +1217,7 @@ toolchain_llvmgcc() {
 		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIXSYSROOT/usr/include/$(dirname $SYSHDR)
 		cp -R -p ../../sdks/${MACOSX}.sdk/usr/include/$SYSHDR $PREFIX/$TARGET/sys-include/$(dirname $SYSHDR)
 	done
-	
+
 	CFLAGS="$BUILD_ARCH_CFLAGS -save-temps $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
@@ -1262,14 +1256,14 @@ toolchain_llvmgcc() {
 
 toolchain_build_sys3() {
 	#local TOOLCHAIN="${IPHONEDEV_DIR}/toolchain"
-	#local TOOLCHAIN_VERSION=3.1.3
+	#local IOSVER=3.1.3
         #local SYS_DIR="${TOOLCHAIN}/sys313"
         #local PKGNAME="iPhoneSDKHeadersAndLibs.pkg"
 
 	local LEOPARD_SDK="${SDKS_DIR}/${MACOSX}.sdk"
 	local LEOPARD_SDK_INC="${LEOPARD_SDK}/usr/include"
 	local LEOPARD_SDK_LIBS="${LEOPARD_SDK}/System/Library/Frameworks"
-	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+	local IPHONE_SDK="${SDKS_DIR}/${IOS}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
 	local GCC_DIR="$SRC_DIR/gcc"
@@ -1294,7 +1288,7 @@ toolchain_build_sys3() {
 	  else
 		cd "${SDKS_DIR}"; rm -f Payload; xar -xf ${PKGNAME} Payload; cat Payload | zcat | cpio -id
 		# zcat on OSX needs .Z suffix
-		cd "${SDKS_DIR}"; mv "Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${TOOLCHAIN_VERSION}.sdk" .; rm -fr Payload Platforms Examples Documentation
+		cd "${SDKS_DIR}"; mv "Platforms/iPhoneOS.platform/Developer/SDKs/${IOS}.sdk" .; rm -fr Payload Platforms Examples Documentation
 	  fi
 	fi
 
@@ -1578,11 +1572,11 @@ toolchain_build_sys3() {
 
 toolchain_sys50() {
 	#local TOOLCHAIN="${IPHONEDEV_DIR}/toolchain"
-	local TOOLCHAIN_VERSION="5.0"
+	local IOSVER="5.0"
 	local PKGVERSION="5_0"
 	local SYS_DIR="${TOOLCHAIN}/sys50"
-	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
-	local IPHONE_SIMULATOR_SDK="${SDKS_DIR}/iPhoneSimulator${TOOLCHAIN_VERSION}.sdk"
+	local IPHONE_SDK="${SDKS_DIR}/${IOS}.sdk"
+	local IPHONE_SIMULATOR_SDK="${SDKS_DIR}/iPhoneSimulator${IOSVER}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
 
@@ -1599,14 +1593,14 @@ toolchain_sys50() {
 	if [ "x$copy_headers" == "x1" ]; then
 	        rm -fr "${SYS_DIR}"
 	        mkdir -p "${SYS_DIR}"
-		message_status "Copying System and usr from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+		message_status "Copying System and usr from ${IOS}.sdk"
 
 		pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
 		cp -R -pf usr "${SYS_DIR}"
 		popd
 
-		message_status "Copying Frameworks headers from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+		message_status "Copying Frameworks headers from ${IOS}.sdk"
 		pushd "${IPHONE_SDK_LIBS}"
 		for i in *.framework
 		do
@@ -1620,11 +1614,11 @@ toolchain_sys50() {
 		popd
 
 	  	if [ -f "${SDKS_DIR}/iPhoneSimulatorSDK${PKGVERSION}.pkg" ] ; then
-		  message_status "Preparing IOKit Framework from iPhoneSimulator${TOOLCHAIN_VERSION}.sdk"
+		  message_status "Preparing IOKit Framework from iPhoneSimulator${IOSVER}.sdk"
 		  cd "${SDKS_DIR}"; rm -f Payload; xar -xf "${SDKS_DIR}/iPhoneSimulatorSDK${PKGVERSION}.pkg" Payload; cat Payload | zcat | cpio -id
 		  # zcat on OSX needs .Z suffix
-		  cd "${SDKS_DIR}"; mv Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${TOOLCHAIN_VERSION}.sdk .; rm -fr Platforms
-		  message_status "Copying IOKit Framework headers from iPhoneSimulator${TOOLCHAIN_VERSION}.sdk"
+		  cd "${SDKS_DIR}"; mv Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator${IOSVER}.sdk .; rm -fr Platforms
+		  message_status "Copying IOKit Framework headers from iPhoneSimulator${IOSVER}.sdk"
 		  mkdir -p ${SYS_DIR}/usr/include/IOKit
 	          cp -Rf -p ${IPHONE_SIMULATOR_SDK}/System/Library/Frameworks/IOKit.framework/Headers/* ${SYS_DIR}/usr/include/IOKit/
                 fi
@@ -1637,10 +1631,10 @@ toolchain_sys50() {
 
 toolchain_sys43() {
 	#local TOOLCHAIN="${IPHONEDEV_DIR}/toolchain"
-	local TOOLCHAIN_VERSION="4.3"
+	local IOSVER="4.3"
 	local PKGVERSION="4_3"
         local SYS_DIR="${TOOLCHAIN}/sys43"
-	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+	local IPHONE_SDK="${SDKS_DIR}/${IOS}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
 
@@ -1657,14 +1651,14 @@ toolchain_sys43() {
 	if [ "x$copy_headers" == "x1" ]; then
 	        rm -fr "${SYS_DIR}"
 	        mkdir -p "${SYS_DIR}"
-		message_status "Copying System and usr from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+		message_status "Copying System and usr from ${IOS}.sdk"
 
 		pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
 		cp -R -pf usr "${SYS_DIR}"
 		popd
 
-		message_status "Copying Frameworks headers from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+		message_status "Copying Frameworks headers from ${IOS}.sdk"
 		pushd "${IPHONE_SDK_LIBS}"
 		for i in *.framework
 		do
@@ -1685,7 +1679,7 @@ toolchain_sys43() {
 
 toolchain_sys() {
 	#local TOOLCHAIN="${IPHONEDEV_DIR}/toolchain"
-	local IPHONE_SDK="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+	local IPHONE_SDK="${SDKS_DIR}/${IOS}.sdk"
 	local IPHONE_SDK_INC="${IPHONE_SDK}/usr/include"
 	local IPHONE_SDK_LIBS="${IPHONE_SDK}/System/Library/Frameworks"
 
@@ -1702,14 +1696,14 @@ toolchain_sys() {
 	if [ "x$copy_headers" == "x1" ]; then
 	        rm -fr "${SYS_DIR}"
 	        mkdir -p "${SYS_DIR}"
-		message_status "Copying System and usr from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+		message_status "Copying System and usr from ${IOS}.sdk"
 
 	    pushd "${IPHONE_SDK}"
 		cp -R -pf System "${SYS_DIR}"
 		cp -R -pf usr "${SYS_DIR}"
 		popd
 
-		message_status "Copying Frameworks headers from iPhoneOS${TOOLCHAIN_VERSION}.sdk"
+		message_status "Copying Frameworks headers from ${IOS}.sdk"
 		pushd "${IPHONE_SDK_LIBS}"
 		for i in *.framework
 		do
@@ -1730,7 +1724,7 @@ toolchain_sys() {
 
 class_dump() {
 
-	local IPHONE_SDK_LIBS="${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk/System/Library"
+	local IPHONE_SDK_LIBS="${SDKS_DIR}/${IOS}.sdk/System/Library"
 	mkdir -p "${TMP_DIR}"
 
 	if [ -z $IPHONE_IP ]; then
@@ -1742,7 +1736,7 @@ class_dump() {
 	fi
 
 	message_status "Selecting required SDK components..."
-	[ -d "${SDKS_DIR}/iPhoneOS${TOOLCHAIN_VERSION}.sdk" ] || toolchain_extract_headers
+	[ -d "${SDKS_DIR}/${IOS}.sdk" ] || toolchain_extract_headers
 	for type in PrivateFrameworks; do
 		for folder in `find ${IPHONE_SDK_LIBS}/${type} -name *.framework`; do
 			framework=`basename "${folder}" .framework`
@@ -1812,9 +1806,9 @@ store_dist() {
 check_environment() {
 	[ $TOOLCHAIN_CHECKED ] && return
 	message_action "Preparing the environment"
-	cecho bold "Toolchain version: ${TOOLCHAIN_VERSION}"
+	cecho bold "Toolchain version: ${IOSVER}"
 	cecho bold "Building in: ${IPHONEDEV_DIR}"
-	if [[ "`vercmp $TOOLCHAIN_VERSION 2.0`" == "older" ]]; then
+	if [[ "`vercmp $IOSVER 2.0`" == "older" ]]; then
 		error "The toolchain builder is only capable of building toolchains targeting"
 		error "iPhone SDK >=2.0. Sorry."
 		exit 1
@@ -1845,6 +1839,22 @@ check_environment() {
 }
 
 build_tools
+case $2 in
+	arm)
+		TARGET_ARCH=arm
+		TARGET=${TARGET_ARCH}-apple-darwin${DARWINVER}
+	;;
+
+	intel)
+		TARGET_ARCH=i686
+		TARGET=${TARGET_ARCH}-apple-darwin${DARWINVER}
+	;;
+
+	*)
+		error "Please specify either arm or intel as arg 2"
+		exit 1
+	;;
+
 case $1 in
 	all)
 		check_environment
@@ -1927,9 +1937,9 @@ case $1 in
 	build32)
 		check_environment
 		message_action "Building the sys32 Headers and Libraries..."
-		TOOLCHAIN_VERSION=3.2
-        	SYS_DIR="${TOOLCHAIN}/sys32"
-        	PKGNAME="iPhoneSDKHeadersAndLibs_32.pkg"
+		IOSVER=3.2
+		SYS_DIR="${TOOLCHAIN}/sys32"
+		PKGNAME="iPhoneSDKHeadersAndLibs_32.pkg"
 		toolchain_build_sys3
 		message_action "sys32 folder built."
 		;;
@@ -1937,7 +1947,7 @@ case $1 in
 	build313)
 		check_environment
 		message_action "Building the sys313 Headers and Libraries..."
-		TOOLCHAIN_VERSION=3.1.3
+		IOSVER=3.1.3
 		SYS_DIR="${TOOLCHAIN}/sys313"
 		PKGNAME="iPhoneSDKHeadersAndLibs.pkg"
 		toolchain_build_sys3
@@ -1947,7 +1957,7 @@ case $1 in
 	buildsys)
 		check_environment
 		message_action "Building the sys Headers and Libraries..."
-	        [ -d "${SYS_DIR}" ] && rm -Rf "${SYS_DIR}"
+		[ -d "${SYS_DIR}" ] && rm -Rf "${SYS_DIR}"
 		toolchain_sys
 		message_action "sys folder built."
 		;;
@@ -1955,7 +1965,7 @@ case $1 in
 	buildsys43)
 		check_environment
 		message_action "Building the sys43 Headers and Libraries..."
-	        [ -d "${TOOLCHAIN}/sys43" ] && rm -Rf "${TOOLCHAIN}/sys43"
+		[ -d "${TOOLCHAIN}/sys43" ] && rm -Rf "${TOOLCHAIN}/sys43"
 		toolchain_sys43
 		message_action "sys43 folder built."
 		;;
@@ -1963,7 +1973,7 @@ case $1 in
 	buildsys50)
 		check_environment
 		message_action "Building the sys50 Headers and Libraries..."
-	        [ -d "${TOOLCHAIN}/sys50" ] && rm -Rf "${TOOLCHAIN}/sys50"
+		[ -d "${TOOLCHAIN}/sys50" ] && rm -Rf "${TOOLCHAIN}/sys50"
 		toolchain_sys50
 		message_action "sys50 folder built."
 		;;
