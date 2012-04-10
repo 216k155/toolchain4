@@ -21,7 +21,7 @@ full_build_for_arch() {
     else
         local _PREFIX_SUFFIX=$1-osx
     fi
-    rm -rf bld-$_PREFIX_SUFFIX src-$PREFIX_SUFFIX /tmp2/$PREFIX_SUFFIX
+    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX /tmp2/$_PREFIX_SUFFIX
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
     rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
