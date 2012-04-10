@@ -42,6 +42,7 @@ find /tmp2/${PREFIX}-ios/usr/lib > /tmp2/${PREFIX}-ios/needed-libs.txt
 find /tmp2/${PREFIX}-ios/arm-apple-darwin11/lib >> /tmp2/${PREFIX}-ios/needed-libs.txt
 rm -rf /tmp2/${PREFIX}-ios/usr/lib
 rm -rf /tmp2/${PREFIX}-ios/arm-apple-darwin11/lib
+rm /tmp2/${PREFIX}-ios/lib/libSystem.B.dylib
 find /tmp2/${PREFIX}-ios/usr/include > /tmp2/${PREFIX}-ios/needed-headers.txt
 find /tmp2/${PREFIX}-ios/arm-apple-darwin11/sys-include >> /tmp2/${PREFIX}-ios/needed-headers.txt
 rm -rf /tmp2/${PREFIX}-ios/usr/include
@@ -55,16 +56,28 @@ find /tmp2/${PREFIX}-osx/usr/lib > /tmp2/${PREFIX}-osx/needed-libs.txt
 find /tmp2/${PREFIX}-osx/i686-apple-darwin11/lib >> /tmp2/${PREFIX}-osx/needed-libs.txt
 rm -rf /tmp2/${PREFIX}-osx/usr/lib
 rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/lib
+rm /tmp2/${PREFIX}-osx/lib/libSystem.B.dylib
 find /tmp2/${PREFIX}-osx/usr/include > /tmp2/${PREFIX}-osx/needed-headers.txt
 find /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include >> /tmp2/${PREFIX}-osx/needed-headers.txt
 rm -rf /tmp2/${PREFIX}-osx/usr/include
 rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include
 
 # Strip executables.
-find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" \) | xargs strip
-find /tmp2/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
-find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" \) | xargs strip
-find /tmp2/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+# Maybe "strip -u -r -S" when on OS X?
+if [[ ! "$UNAME" = "Darwin" ]] ; then
+    find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" \) | xargs strip
+    find /tmp2/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+    find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" \) | xargs strip
+    find /tmp2/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+fi
+
+cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-osx
+cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-osx
+cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-osx
+
+cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-ios
+cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-ios
+cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-ios
 
 pushd /tmp2
     UNAME=$(uname-bt)
