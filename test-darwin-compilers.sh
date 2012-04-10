@@ -13,6 +13,8 @@ if [[ "$UNAME" = "Linux" ]] ; then
 elif [[ "$UNAME" = "Darwin" ]] ; then
 	STRACE="dtruss -f -L"
 	COMPARE=compare
+else
+	COMPARE=bcmp
 fi
 
 download http://dl.google.com/android/ndk/android-ndk-r6b-linux-x86.tar.bz2
