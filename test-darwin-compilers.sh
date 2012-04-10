@@ -41,6 +41,7 @@ else
 fi
 
 TOOLCHAINLEFT=/tmp2/$LEFT/bin/${LEFT}-g++
+OTOOL=/tmp2/$LEFT/bin/i686-apple-darwin11-otool
 if [[ "$RIGHT" = "/" ]] ; then
 	# Used for testing native Darwin gcc.
 	TOOLCHAINRIGHT=/usr/bin/llvm-g++-4.2
@@ -85,8 +86,8 @@ echo     "${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK"    >
 echo     "${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v" > output.txt 2>&1
 ${STRACE} ${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK    >> strace.txt 2>&1
           ${TOOLCHAIN1} $ARCHS1 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK -v --save-temps >> output.txt 2>&1
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
+${OTOOL} -L ndk-stack > otool-libs.txt
+${OTOOL} -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT2
@@ -94,8 +95,8 @@ echo     "${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   "  
 echo     "${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   -v"  > output.txt 2>&1
 ${STRACE} ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK       >> strace.txt 2>&1
           ${TOOLCHAIN2} $ARCHS2 -lstdc++ $SRCS -o ndk-stack --sysroot $SDK   -v --save-temps  >> output.txt 2>&1
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
+${OTOOL} -L ndk-stack > otool-libs.txt
+${OTOOL} -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT3
@@ -103,8 +104,8 @@ echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4"    > 
 echo     "${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v" > output.txt 2>&1
 ${STRACE} ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4    >> strace.txt 2>&1
           ${TOOLCHAIN4} $ARCHS3 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v --save-temps >> output.txt 2>&1
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
+${OTOOL} -L ndk-stack > otool-libs.txt
+${OTOOL} -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 pushd $OUT4
@@ -112,8 +113,8 @@ echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 "    >
 echo     "${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v"  > output.txt 2>&1
 ${STRACE} ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4     >> strace.txt 2>&1
           ${TOOLCHAIN3} $ARCHS4 -lstdc++ $SRCS -o ndk-stack $SYSROOT3AND4 -v --save-temps  >> output.txt 2>&1
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -L ndk-stack > otool-libs.txt
-/tmp2/darwin-debug/bin/i686-apple-darwin11-otool -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
+${OTOOL} -L ndk-stack > otool-libs.txt
+${OTOOL} -fhltdvLDV ndk-stack > ndk-stack-disassem.txt
 popd
 
 ${TOOLCHAIN1} -dumpspecs > $OUT1/specs.txt 2>&1
@@ -127,8 +128,8 @@ rm -f ~/Dropbox/darwin-compilers-work/$(uname-bt)-test.7z
 cp ${UNAME}-test.7z ~/Dropbox/darwin-compilers-work/
 
 if [[ $(which $COMPARE) ]] ; then
-	$COMPARE $OUT3/strace.txt $OUT4/strace.txt &
-	$COMPARE $OUT3/output.txt $OUT4/output.txt &
+	$COMPARE $OUT1/strace.txt $OUT2/strace.txt &
+	$COMPARE $OUT1/output.txt $OUT2/output.txt &
 #	$COMPARE $OUTLEFT/search-dirs.txt $OUTMIDDLE/search-dirs.txt &
 #	$COMPARE $OUTLEFT/specs.txt $OUTMIDDLE/specs.txt &
 #	$COMPARE $OUTLEFT/print-prog-name-as.txt $OUTMIDDLE/print-prog-name-as.txt &
