@@ -17,10 +17,11 @@ else
 	COMPARE=bcmp
 fi
 
-download http://dl.google.com/android/ndk/android-ndk-r6b-linux-x86.tar.bz2
-if [[ ! -d android-ndk-r6b ]] ; then
-	tar -xjf android-ndk-r6b-linux-x86.tar.bz2
-	pushd android-ndk-r6b
+download http://dl.google.com/android/ndk/android-ndk-r7c-linux-x86.tar.bz2
+if [[ ! -d android-ndk-r7c ]] ; then
+	tar -xjf android-ndk-r7c-linux-x86.tar.bz2
+	pushd android-ndk-r7c
+exit 1
 	patch -p1 < ../patches/test/android-ndk-r6b-darwincross.patch
 	popd
 fi
@@ -148,4 +149,4 @@ fi
 # Other than this...
 # cd android-ndk-r6b
 # export NDK=$PWD
-# PATH=~/apple-osx/bin:$PATH $NDK/build/tools/rebuild-all-prebuilt.sh --darwin-cross
+# PATH=~/apple-osx/bin:$PATH $NDK/build/tools/rebuild-all-prebuilt.sh --systems=darwin
