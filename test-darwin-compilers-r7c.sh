@@ -148,4 +148,12 @@ fi
 # Other than this...
 # cd android-ndk-r6b
 # export NDK=$PWD
+# git clone http://android.googlesource.com/platform/development.git development
+
+## mkdir -p ndk-toolchain-src
+## pushd ndk-toolchain-src
+## repo init https://android.googlesource.com/toolchain/manifest.git
+## repo sync
+# $NDK/build/tools/build-platforms.sh
+# $NDK/build/tools/download-toolchain-sources.sh --git-base=http://android.googlesource.com/toolchain ndk-toolchain-src
 # PATH=~/apple-osx/bin:$PATH $NDK/build/tools/rebuild-all-prebuilt.sh --systems=darwin
