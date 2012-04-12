@@ -21,8 +21,7 @@ download http://dl.google.com/android/ndk/android-ndk-r7c-linux-x86.tar.bz2
 if [[ ! -d android-ndk-r7c ]] ; then
 	tar -xjf android-ndk-r7c-linux-x86.tar.bz2
 	pushd android-ndk-r7c
-exit 1
-	patch -p1 < ../patches/test/android-ndk-r6b-darwincross.patch
+	patch -p1 < ../patches/test/android-ndk-r7c-darwincross.patch
 	popd
 fi
 
