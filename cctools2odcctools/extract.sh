@@ -115,8 +115,12 @@ fi
 
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
+# Removed { libstuff/cmd_with_prefix.diff misc/with_prefix.diff misc/libtool_lipo_transform.diff 
+#           ar/ar-ranlibpath.diff misc/libtool-ldpath.diff }
+#  as they've always been bogus; deliberately preventing relocation.
+
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
-PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
+PATCHFILES="ar/archive.diff ar/ar-printf.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff as/use_PRI_macros.diff \
@@ -125,18 +129,16 @@ ${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/cmd_with_prefix.diff \
 libstuff/mingw_execute.diff libstuff/ofile_map_unmap_mingw.diff \
-misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 include/mach/machine_armv7.diff \
 ld/ld-nomach.diff \
-misc/with_prefix.diff misc/bootstrap_h.diff"
+misc/bootstrap_h.diff"
 else
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
-PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
+PATCHFILES="ar/archive.diff ar/ar-printf.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff \
@@ -145,15 +147,13 @@ ${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/cmd_with_prefix.diff \
 libstuff/mingw_execute.diff libstuff/ofile_map_unmap_mingw.diff \
-misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 include/mach/machine_armv7.diff \
 ld/ld-nomach.diff \
-misc/with_prefix.diff misc/bootstrap_h.diff"
+misc/bootstrap_h.diff"
 fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
@@ -472,7 +472,9 @@ do-sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 
 #libstuff
 # Darwin has libc.h, Windows/Linux have a combination of stdio.h, stdlib.h, fcntl.h, unistd.h, io.h, sys/param.h (MAXPATHLEN)
-do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/execute.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/execute.c
+do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c
+
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/seg_addr_table.c
 do-sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c

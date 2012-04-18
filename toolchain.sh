@@ -687,9 +687,9 @@ toolchain_cctools() {
 
 			if [[ ! -f $HOSTPREFIX/include/openssl/md5.h ]] ; then
 				if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
-						error "Failed to get and extract openssl-1.0.0f Check errors."
-						popd
-						exit 1
+					error "Failed to get and extract openssl-1.0.0f Check errors."
+					popd
+					exit 1
 				fi
 
 				pushd openssl-1.0.0f
