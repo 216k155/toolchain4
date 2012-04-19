@@ -115,12 +115,10 @@ fi
 
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
-# Removed { libstuff/cmd_with_prefix.diff misc/with_prefix.diff misc/libtool_lipo_transform.diff 
-#           ar/ar-ranlibpath.diff misc/libtool-ldpath.diff }
-#  as they've always been bogus; deliberately preventing relocation.
+# Removed libstuff/cmd_with_prefix.diff as it's wrong.
 
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
-PATCHFILES="ar/archive.diff ar/ar-printf.diff \
+PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff as/use_PRI_macros.diff \
@@ -130,6 +128,7 @@ ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
 libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
@@ -138,7 +137,7 @@ ld/ld-nomach.diff \
 misc/bootstrap_h.diff"
 else
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
-PATCHFILES="ar/archive.diff ar/ar-printf.diff \
+PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
 as/bignum.diff as/input-scrub.diff \
 as/messages.diff as/relax.diff \
@@ -148,6 +147,7 @@ ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
 libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \

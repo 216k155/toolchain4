@@ -14,7 +14,7 @@
  	    /* run ranlib -f or -q on the archive */
  	    reset_execute_list();
 -	    add_execute_list_with_prefix("ranlib");
-+	    add_execute_list(makestr(BINDIR, "/", RANLIBPROG, NULL));
++	    add_execute_list_with_prefix(RANLIBPROG);
  	    if(options & AR_S)
  		add_execute_list("-f");
  	    else
