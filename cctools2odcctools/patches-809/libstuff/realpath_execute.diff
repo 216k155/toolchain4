@@ -1,0 +1,14 @@
+--- execute.c.orig	2012-04-19 02:03:10.549738936 +0100
++++ execute.c	2012-04-19 02:08:21.853825314 +0100
+@@ -173,7 +173,11 @@
+ 	    p = allocate(bufsize);
+ 	    _NSGetExecutablePath(p, &bufsize);
+ 	}
++	strcpy(resolved_name,p);
+ 	prefix = realpath(p, resolved_name);
++	if(prefix == NULL){
++        prefix = resolved_name;
++	}
+ 	p = rindex(prefix, '/');
+ 	if(p != NULL)
+ 	    p[1] = '\0';

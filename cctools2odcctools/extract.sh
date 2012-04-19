@@ -129,7 +129,7 @@ ${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/mingw_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
@@ -147,7 +147,7 @@ ${LD64PATCHES} \
 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
 libstuff/macosx_deployment_target_default_105.diff \
 libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/mingw_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
