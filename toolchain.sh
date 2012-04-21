@@ -774,6 +774,7 @@ toolchain_llvmgcc_core() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -919,6 +920,7 @@ toolchain_gcc()
 		# into the libexec tree. The target_system_root (-syslibroot bit)
 		# is also needed for ld to operate correctly.
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
+		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable-cpp.patch
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable-darwin-h-LINK_SYSROOT_SPEC.patch
 		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
 #		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
@@ -1204,6 +1206,7 @@ toolchain_llvmgcc() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
