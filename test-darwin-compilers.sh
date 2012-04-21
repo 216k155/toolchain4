@@ -42,14 +42,14 @@ else
 	RIGHT=/
 fi
 
-TOOLCHAINLEFT=/tmp2/$LEFT/bin/${LEFT}-g++
-OTOOL=/tmp2/$LEFT/bin/i686-apple-darwin11-otool
+TOOLCHAINLEFT=/darwin-cross/$LEFT/bin/${LEFT}-g++
+OTOOL=/darwin-cross/$LEFT/bin/i686-apple-darwin11-otool
 if [[ "$RIGHT" = "/" ]] ; then
 	# Used for testing native Darwin gcc.
 	TOOLCHAINRIGHT=/usr/bin/llvm-g++-4.2
 	PREFIXRIGHT=apple
 else
-	TOOLCHAINRIGHT=/tmp2/$RIGHT/bin/${RIGHT}-llvm-g++
+	TOOLCHAINRIGHT=/darwin-cross/$RIGHT/bin/${RIGHT}-llvm-g++
 	PREFIXRIGHT=$RIGHT
 	SYSROOT3AND4="--sysroot $SDK"
 fi
@@ -130,8 +130,8 @@ rm -f ~/Dropbox/darwin-compilers-work/$(uname-bt)-test.7z
 cp ${UNAME}-test.7z ~/Dropbox/darwin-compilers-work/
 
 if [[ $(which $COMPARE) ]] ; then
-	$COMPARE $OUT1/strace.txt $OUT2/strace.txt &
-	$COMPARE $OUT1/output.txt $OUT2/output.txt &
+	$COMPARE $OUT1/strace.txt $OUT3/strace.txt &
+	$COMPARE $OUT1/output.txt $OUT3/output.txt &
 #	$COMPARE $OUTLEFT/search-dirs.txt $OUTMIDDLE/search-dirs.txt &
 #	$COMPARE $OUTLEFT/specs.txt $OUTMIDDLE/specs.txt &
 #	$COMPARE $OUTLEFT/print-prog-name-as.txt $OUTMIDDLE/print-prog-name-as.txt &
