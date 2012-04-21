@@ -43,86 +43,17 @@
    if (iprefix && (len = cpp_GCC_INCLUDE_DIR_len) != 0)
      {
        /* Look for directories that start with the standard prefix.
---- gcc-5666.3/gcc/toplev.c.orig	2010-10-14 21:27:54.000000000 +0100
-+++ gcc-5666.3/gcc/toplev.c	2012-04-21 09:39:21.033801978 +0100
-@@ -82,6 +82,7 @@
- #include "value-prof.h"
- #include "alloc-pool.h"
- #include "tree-mudflap.h"
-+#include "cppdefault.h"
- 
- #if defined (DWARF2_UNWIND_INFO) || defined (DWARF2_DEBUGGING_INFO)
- #include "dwarf2out.h"
-@@ -100,6 +101,7 @@
- 				   declarations for e.g. AIX 4.x.  */
- #endif
- 
-+static void determine_relocated_prefix();
- static void general_init (const char *);
- static void do_compile (void);
- static void process_options (void);
-@@ -1594,6 +1596,53 @@
-   return true;
- }
- 
-+char relocated_prefix[MAXPATHLEN];
-+char original_prefix[MAXPATHLEN];
-+
-+static void
-+determine_relocated_prefix()
-+{
-+  {
-+   int slashes = 6;
-+#if defined(__linux__) || defined(__CYGWIN__)
-+  {
-+      int len;
-+      if ((len = readlink("/proc/self/exe", relocated_prefix, sizeof(relocated_prefix)-1)) != -1)
-+        {
-+          relocated_prefix[len] = '\0';
-+        }
-+  }
-+#elif defined(__APPLE__)
-+   size_t bufsize=sizeof(relocated_prefix);
-+   _NSGetExecutablePath(relocated_prefix, &bufsize);
-+#else
-+	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
-+        /* Early conversion to unix slashes instead of more changes
-+         * everywhere else... */
-+        char *winslash = strchr(buf,'\\');
-+        while (winslash) {
-+            *winslash = '/';
-+            winslash = strchr(winslash,'\\');
-+        }
-+  }
-+#endif
-+  /* From: $PREFIX/libexec/gcc/i686-apple-darwin11/4.2.1/collect2
-+   *   to: $PREFIX
-+   *   is: remove 5 /'s then append /bin/
-+   */
-+   while (--slashes && strrchr (relocated_prefix,DIR_SEPARATOR))
-+   {
-+     *strrchr (relocated_prefix,DIR_SEPARATOR) = '\0';
-+   }
-+   strcpy(original_prefix,cpp_GCC_INCLUDE_DIR);
-+   slashes=6;
-+   while (--slashes && strrchr (original_prefix,DIR_SEPARATOR))
-+   {
-+     *strrchr (original_prefix,DIR_SEPARATOR) = '\0';
-+   }
-+  }
-+}
-+
- /* Initialization of the front end environment, before command line
-    options are parsed.  Signal handlers, internationalization etc.
-    ARGV0 is main's argv[0].  */
-@@ -1602,6 +1651,7 @@
- {
-   const char *p;
- 
-+  determine_relocated_prefix ();
-   p = argv0 + strlen (argv0);
-   while (p != argv0 && !IS_DIR_SEPARATOR (p[-1]))
-     --p;
+--- gcc-5666.3/gcc/cppdefault.c.orig	2010-10-14 21:27:54.000000000 +0100
++++ gcc-5666.3/gcc/cppdefault.c	2012-04-21 09:39:21.033801978 +0100
+@@ -46,7 +46,7 @@
+ /* APPLE LOCAL begin SDK 3886137.  */
+ /* Allow -isysroot to override ALL  include patchs. This is done by
+    setting add_sysroot for all default inclue paths.  */
+-const struct default_include cpp_include_defaults[]
++struct default_include cpp_include_defaults[]
+ #ifdef INCLUDE_DEFAULTS
+ = INCLUDE_DEFAULTS;
+ #else
 --- gcc-5666.3/gcc/cppdefault.h.orig	2010-10-14 21:27:55.000000000 +0100
 +++ gcc-5666.3/gcc/cppdefault.h	2012-04-21 09:46:56.456076769 +0100
 @@ -34,21 +34,21 @@
@@ -150,14 +81,90 @@
  extern const char cpp_GCC_INCLUDE_DIR[];
  extern const size_t cpp_GCC_INCLUDE_DIR_len;
  
---- gcc-5666.3/gcc/cppdefault.c.orig	2010-10-14 21:27:54.000000000 +0100
-+++ gcc-5666.3/gcc/cppdefault.c	2012-04-21 09:39:21.033801978 +0100
-@@ -46,7 +46,7 @@
- /* APPLE LOCAL begin SDK 3886137.  */
- /* Allow -isysroot to override ALL  include patchs. This is done by
-    setting add_sysroot for all default inclue paths.  */
--const struct default_include cpp_include_defaults[]
-+struct default_include cpp_include_defaults[]
- #ifdef INCLUDE_DEFAULTS
- = INCLUDE_DEFAULTS;
- #else
+--- gcc-5666.3/gcc/toplev.c.orig	2010-10-14 21:27:54.000000000 +0100
++++ gcc-5666.3/gcc/toplev.c	2012-04-21 09:39:21.033801978 +0100
+@@ -82,6 +82,7 @@
+ #include "value-prof.h"
+ #include "alloc-pool.h"
+ #include "tree-mudflap.h"
++#include "cppdefault.h"
+ 
+ #if defined (DWARF2_UNWIND_INFO) || defined (DWARF2_DEBUGGING_INFO)
+ #include "dwarf2out.h"
+@@ -100,6 +101,11 @@
+ 				   declarations for e.g. AIX 4.x.  */
+ #endif
+ 
++#ifdef __MINGW32__
++__declspec(dllimport) unsigned long __stdcall GetModuleFileNameA(void*,char*,unsigned long);
++#endif
++
++static void determine_relocated_prefix();
+ static void general_init (const char *);
+ static void do_compile (void);
+ static void process_options (void);
+@@ -1594,6 +1600,56 @@
+   return true;
+ }
+ 
++char relocated_prefix[MAXPATHLEN];
++char original_prefix[MAXPATHLEN];
++
++static void
++determine_relocated_prefix()
++{
++  {
++   int slashes = 6;
++#if defined(__linux__) || defined(__CYGWIN__)
++  {
++      int len;
++      if ((len = readlink("/proc/self/exe", relocated_prefix, sizeof(relocated_prefix)-1)) != -1)
++        {
++          relocated_prefix[len] = '\0';
++        }
++  }
++#elif defined(__APPLE__)
++   size_t bufsize=sizeof(relocated_prefix);
++   _NSGetExecutablePath(relocated_prefix, &bufsize);
++#else
++   unsigned long bufsize=sizeof(relocated_prefix);
++   if (GetModuleFileNameA(NULL, relocated_prefix, bufsize) != 0)
++   {
++        /* Early conversion to unix slashes instead of more changes
++         * everywhere else... */
++        char *winslash = strchr(relocated_prefix,'\\');
++        while (winslash)
++        {
++            *winslash = '/';
++            winslash = strchr(winslash,'\\');
++        }
++   }
++#endif
++  /* From: $PREFIX/libexec/gcc/i686-apple-darwin11/4.2.1/collect2
++   *   to: $PREFIX
++   *   is: remove 5 /'s then append /bin/
++   */
++   while (--slashes && strrchr (relocated_prefix,DIR_SEPARATOR))
++   {
++     *strrchr (relocated_prefix,DIR_SEPARATOR) = '\0';
++   }
++   strcpy(original_prefix,cpp_GCC_INCLUDE_DIR);
++   slashes=6;
++   while (--slashes && strrchr (original_prefix,DIR_SEPARATOR))
++   {
++     *strrchr (original_prefix,DIR_SEPARATOR) = '\0';
++   }
++  }
++}
++
+ /* Initialization of the front end environment, before command line
+    options are parsed.  Signal handlers, internationalization etc.
+    ARGV0 is main's argv[0].  */
+@@ -1602,6 +1658,7 @@
+ {
+   const char *p;
+ 
++  determine_relocated_prefix ();
+   p = argv0 + strlen (argv0);
+   while (p != argv0 && !IS_DIR_SEPARATOR (p[-1]))
+     --p;

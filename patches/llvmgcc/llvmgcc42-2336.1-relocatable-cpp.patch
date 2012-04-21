@@ -93,17 +93,21 @@ diff -burN gcc/toplev.c.orig gcc/toplev.c
  #include "tree-mudflap.h"
 +#include "cppdefault.h"
  
- /* LLVM LOCAL begin */
- #ifdef ENABLE_LLVM
-@@ -106,6 +107,7 @@
+ #if defined (DWARF2_UNWIND_INFO) || defined (DWARF2_DEBUGGING_INFO)
+ #include "dwarf2out.h"
+@@ -100,6 +101,11 @@
  				   declarations for e.g. AIX 4.x.  */
  #endif
  
++#ifdef __MINGW32__
++__declspec(dllimport) unsigned long __stdcall GetModuleFileNameA(void*,char*,unsigned long);
++#endif
++
 +static void determine_relocated_prefix();
  static void general_init (const char *);
  static void do_compile (void);
  static void process_options (void);
-@@ -1641,6 +1643,53 @@
+@@ -1594,6 +1600,56 @@
    return true;
  }
  
@@ -127,15 +131,18 @@ diff -burN gcc/toplev.c.orig gcc/toplev.c
 +   size_t bufsize=sizeof(relocated_prefix);
 +   _NSGetExecutablePath(relocated_prefix, &bufsize);
 +#else
-+	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
++   unsigned long bufsize=sizeof(relocated_prefix);
++   if (GetModuleFileNameA(NULL, relocated_prefix, bufsize) != 0)
++   {
 +        /* Early conversion to unix slashes instead of more changes
 +         * everywhere else... */
-+        char *winslash = strchr(buf,'\\');
-+        while (winslash) {
++        char *winslash = strchr(relocated_prefix,'\\');
++        while (winslash)
++        {
 +            *winslash = '/';
 +            winslash = strchr(winslash,'\\');
 +        }
-+  }
++   }
 +#endif
 +  /* From: $PREFIX/libexec/gcc/i686-apple-darwin11/4.2.1/collect2
 +   *   to: $PREFIX
@@ -157,7 +164,7 @@ diff -burN gcc/toplev.c.orig gcc/toplev.c
  /* Initialization of the front end environment, before command line
     options are parsed.  Signal handlers, internationalization etc.
     ARGV0 is main's argv[0].  */
-@@ -1649,6 +1698,7 @@
+@@ -1602,6 +1658,7 @@
  {
    const char *p;
  
