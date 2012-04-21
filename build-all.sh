@@ -47,6 +47,13 @@ if [ "$ARM_BUILD" = "1" ] ; then
     find /tmp2/${PREFIX}-ios/arm-apple-darwin11/sys-include >> /tmp2/${PREFIX}-ios/needed-headers.txt
     rm -rf /tmp2/${PREFIX}-ios/usr/include
     rm -rf /tmp2/${PREFIX}-ios/arm-apple-darwin11/sys-include
+    # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
+    if [ ! -d /tmp2/${PREFIX}-ios/include/c++ ] ; then
+        mkdir -p /tmp2/${PREFIX}-ios/include/c++
+    fi
+    pushd /tmp2/${PREFIX}-ios/include/c++
+    cp -rf ~/iPhoneOS4.3.sdk/usr/include/c++/4.2.1 4.2.1
+    popd
 fi
 
 INTEL_BUILD=1
@@ -63,6 +70,13 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     find /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include >> /tmp2/${PREFIX}-osx/needed-headers.txt
     rm -rf /tmp2/${PREFIX}-osx/usr/include
     rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include
+    # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
+    if [ ! -d /tmp2/${PREFIX}-osx/include/c++ ] ; then
+        mkdir -p /tmp2/${PREFIX}-osx/include/c++
+    fi
+    pushd /tmp2/${PREFIX}-osx/include/c++
+    cp -rf ~/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
+    popd
 fi
 
 # Strip executables.
