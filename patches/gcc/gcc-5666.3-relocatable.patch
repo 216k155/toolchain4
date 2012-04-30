@@ -1,16 +1,20 @@
 --- gcc-5666.3/gcc/gcc.c.orig	2010-10-14 21:27:54 +0100
-+++ gcc-5666.3/gcc/gcc.c	2012-03-29 08:06:24 +0100
-@@ -87,6 +87,9 @@
++++ gcc-5666.3/gcc/gcc.c	2012-04-30 22:51:18 +0100
+@@ -87,6 +87,13 @@
  #include "gcc.h"
  #include "flags.h"
  #include "opts.h"
 +#if defined(__MINGW32__)
-+#include <sys/stat.h>
++ #include <sys/stat.h>
++ #define WINVER 0x0600
++ #define _WIN32_WINNT 0x0600
++ #define WIN32_LEAN_AND_MEAN
++ #include <windows.h>
 +#endif
  
  /* By default there is no special suffix for target executables.  */
  /* FIXME: when autoconf is fixed, remove the host check - dj */
-@@ -535,6 +538,7 @@
+@@ -535,6 +542,7 @@
      :D}   else substitutes D.  There can be as many clauses as you need.
            This may be combined with '.', '!', ',', '|', and '*' as above.
   APPLE LOCAL end mainline 2007-03-13 5040758
@@ -18,7 +22,7 @@
  
   %(Spec) processes a specification defined in a specs file as *Spec:
   %[Spec] as above, but put __ around -D arguments
-@@ -1524,25 +1528,33 @@
+@@ -1524,25 +1532,33 @@
  #define MD_STARTFILE_PREFIX_1 ""
  #endif
  
@@ -59,7 +63,7 @@
  
  /* Subdirectory to use for locating libraries.  Set by
     set_multilib_dir based on the compilation options.  */
-@@ -2805,6 +2817,7 @@
+@@ -2805,6 +2821,7 @@
  }
  
  /* Same as add_prefix, but prepending target_system_root to prefix.  */
@@ -67,7 +71,37 @@
  static void
  add_sysrooted_prefix (struct path_prefix *pprefix, const char *prefix,
  		      const char *component,
-@@ -3383,6 +3396,8 @@
+@@ -3367,6 +3384,29 @@
+   linker_options [n_linker_options - 1] = save_string (option, len);
+ }
+ 
++
++int GetExecutablePath(char *buf, size_t *bufsize)
++{
++#if defined(__MINGW32__)
++	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
++        /* Early conversion to unix slashes instead of more changes
++         * everywhere else... */
++        char *winslash = strchr(buf,'\\');
++        while (winslash) {
++            *winslash = '/';
++            winslash = strchr(winslash,'\\');
++        }
++		return strlen(buf);
++	}
++	return -1;
++#elif (HAVE_DECL_READLINK) /* Linux */
++	return readlink("/proc/self/exe", buf, *bufsize);
++#else
++	return -1; /* Fail on all other systems for now */
++#endif /* __MINGW32__ */
++}
++
++
+ /* Create the vector `switches' and its contents.
+    Store its length in `n_switches'.  */
+ 
+@@ -3383,6 +3423,8 @@
    int is_modify_target_name;
    unsigned int j;
  #endif
@@ -76,22 +110,19 @@
  
    GET_ENVIRONMENT (gcc_exec_prefix, "GCC_EXEC_PREFIX");
  
-@@ -3473,15 +3488,54 @@
+@@ -3473,15 +3515,51 @@
       see if we can create it from the pathname specified in argv[0].  */
  
    gcc_libexec_prefix = standard_libexec_prefix;
 +
-+#if defined(__linux__) || defined(__CYGWIN__)
++  char buf[1024];
++  i = sizeof(buf);
++  int len;
++  if ((len = GetExecutablePath (buf, &i)) != -1)
 +  {
-+      char buf[1024];
-+      int len;
-+      if ((len = readlink("/proc/self/exe", buf, sizeof(buf)-1)) != -1)
-+        {
-+          buf[len] = '\0';
-+          argv_zero = &buf[0];
-+        }
++      buf[len] = '\0';
++      argv_zero = &buf[0];
 +  }
-+#endif
 +
  #ifndef VMS
    /* FIXME: make_relative_prefix doesn't yet work for VMS.  */
@@ -133,7 +164,7 @@
        if (gcc_exec_prefix)
  	putenv (concat ("GCC_EXEC_PREFIX=", gcc_exec_prefix, NULL));
      }
-@@ -3495,10 +3549,18 @@
+@@ -3495,10 +3573,18 @@
        gcc_libexec_prefix = make_relative_prefix (tmp_prefix,
  						 standard_exec_prefix,
  						 standard_libexec_prefix);
@@ -152,7 +183,7 @@
  
    if (gcc_exec_prefix)
      {
-@@ -4103,12 +4165,15 @@
+@@ -4103,12 +4189,15 @@
        use_pipes = 0;
      }
  
@@ -173,7 +204,7 @@
  #ifndef OS2
    add_prefix (&exec_prefixes, standard_libexec_prefix, "GCC",
  	      PREFIX_PRIORITY_LAST, 1, 0);
-@@ -4116,51 +4181,35 @@
+@@ -4116,51 +4205,35 @@
  	      PREFIX_PRIORITY_LAST, 2, 0);
    add_prefix (&exec_prefixes, standard_exec_prefix, "BINUTILS",
  	      PREFIX_PRIORITY_LAST, 2, 0);
@@ -240,7 +271,7 @@
  	      concat (tooldir_prefix, "bin", dir_separator_str, NULL),
  	      "BINUTILS", PREFIX_PRIORITY_LAST, 0, 0);
    add_prefix (&startfile_prefixes,
-@@ -4174,14 +4223,24 @@
+@@ -4174,14 +4247,24 @@
       ``make_relative_prefix'' is not compiled for VMS, so don't call it.  */
    if (target_system_root && gcc_exec_prefix)
      {
@@ -267,7 +298,7 @@
      }
  #endif
  
-@@ -4635,6 +4694,9 @@
+@@ -4635,6 +4718,9 @@
  static const char *
  check_basename_derived_file (const char *string)
  {
@@ -277,7 +308,7 @@
    int suffix_length, string_length;
    const char *suffix;
  
-@@ -4696,6 +4758,7 @@
+@@ -4696,6 +4782,7 @@
    
    delete_this_arg = 1;
    return t->filename;
@@ -285,7 +316,7 @@
  }
  /* APPLE LOCAL end %b/save-temps can clobber input file (radar 2871891) --ilr */
  
-@@ -5334,6 +5397,13 @@
+@@ -5334,6 +5421,13 @@
  	    }
  	    break;
  
@@ -299,7 +330,7 @@
  	  case 'o':
  	    {
  	      int max = n_infiles;
-@@ -6438,6 +6508,7 @@
+@@ -6438,6 +6532,7 @@
    char *specs_file;
    const char *p;
    struct user_specs *uptr;
@@ -307,7 +338,7 @@
  
    /* APPLE LOCAL begin CC_PRINT_OPTIONS (radar 3313335, 3360444) */
    cc_print_options = getenv ("CC_PRINT_OPTIONS");
-@@ -6533,9 +6604,21 @@
+@@ -6533,9 +6628,21 @@
    /* Set up to remember the pathname of gcc and any options
       needed for collect.  We use argv[0] instead of programname because
       we need the complete pathname.  */
@@ -330,7 +361,7 @@
    putenv (XOBFINISH (&collect_obstack, char *));
  
  #ifdef INIT_ENVIRONMENT
-@@ -6681,30 +6764,30 @@
+@@ -6681,30 +6788,30 @@
  			      SYSROOT_PRIORITY, 0, 1);
        else if (*cross_compile == '0')
  	{
@@ -369,7 +400,7 @@
        if (*standard_startfile_prefix_1)
   	add_sysrooted_prefix (&startfile_prefixes,
  			      standard_startfile_prefix_1, "BINUTILS",
-@@ -6750,7 +6833,9 @@
+@@ -6750,7 +6857,9 @@
  
    if (print_search_dirs)
      {
@@ -505,18 +536,7 @@
    if (!out_files)
      abort ();
  
-@@ -516,16 +545,31 @@
-   return ret;
- }
- 
-+#if !defined(DIR_SEP)
-+ #if defined(__MINGW32__)
-+  #define DIR_SEP '\\'
-+ #else
-+  #define DIR_SEP '/'
-+ #endif
-+#endif
-+
+@@ -519,13 +548,22 @@
  /* Invoke 'lipo' and combine and all output files.  */
  
  static void
@@ -530,16 +550,18 @@
    /* Populate lipo arguments.  */
 -  lipo_argv[0] = "lipo";
 +  strcpy(buf,argv_0);
-+  if (strrchr(buf,DIR_SEP))
++  /* Don't deal with Windows backslashes, argv_0 already
++     normalised to Unix */
++  if (strrchr(buf,'/'))
 +  {
-+     *(strrchr(buf,DIR_SEP)+1) = '\0';
++     *(strrchr(buf,'/')+1) = '\0';
 +     strcat(buf,"lipo");
 +  }  
 +  lipo_argv[0] = buf;
    lipo_argv[1] = "-create";
    lipo_argv[2] = "-o";
    lipo_argv[3] = out_file;
-@@ -696,7 +740,7 @@
+@@ -696,7 +734,7 @@
  /* Invoke 'lipo' on set of output files and create multile FAT binaries.  */
  
  static void
@@ -548,7 +570,7 @@
  {
    int ifn_index;
    struct input_filename *ifn;
-@@ -704,7 +748,7 @@
+@@ -704,7 +742,7 @@
         ifn_index < num_infiles && ifn && ifn->name;
         ifn_index++, ifn = ifn->next)
      do_lipo (ifn_index * num_arches,
@@ -557,7 +579,7 @@
  }
  
  /* Remove all options which are architecture-specific and are not for the
-@@ -1275,6 +1319,44 @@
+@@ -1275,6 +1313,44 @@
    return strdup(symlink_buffer);
  }
  
@@ -602,7 +624,7 @@
  /* Main entry point. This is gcc driver driver!
     Interpret -arch flag from the list of input arguments. Invoke appropriate
     compiler driver. 'lipo' the results if more than one -arch is supplied.  */
-@@ -1287,65 +1369,74 @@
+@@ -1287,65 +1363,74 @@
    char *override_option_str = NULL;
    char path_buffer[2*PATH_MAX+1];
    int linklen;
@@ -699,7 +721,7 @@
    fprintf (stderr,"%s: progname = %s\n", progname, progname);
    fprintf (stderr,"%s: driver_exec_prefix = %s\n", progname, driver_exec_prefix);
  #endif
-@@ -1637,14 +1728,14 @@
+@@ -1637,14 +1722,14 @@
  
  	  /* Make FAT binary by combining individual output files for each
  	     architecture, using 'lipo'.  */

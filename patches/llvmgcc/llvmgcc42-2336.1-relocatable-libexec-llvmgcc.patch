@@ -1,6 +1,20 @@
---- gcc/gcc.c.orig	2009-12-18 23:12:36.000000000 +0000
-+++ gcc/gcc.c	2012-04-08 22:00:26.000000000 +0100
-@@ -1569,25 +1569,33 @@
+--- gcc/gcc.c.orig	2009-12-18 23:12:36 +0000
++++ gcc/gcc.c	2012-04-30 22:57:46 +0100
+@@ -87,6 +87,13 @@
+ #include "gcc.h"
+ #include "flags.h"
+ #include "opts.h"
++#if defined(__MINGW32__)
++ #include <sys/stat.h>
++ #define WINVER 0x0600
++ #define _WIN32_WINNT 0x0600
++ #define WIN32_LEAN_AND_MEAN
++ #include <windows.h>
++#endif
+ 
+ /* By default there is no special suffix for target executables.  */
+ /* FIXME: when autoconf is fixed, remove the host check - dj */
+@@ -1569,25 +1576,33 @@
  #define MD_STARTFILE_PREFIX_1 ""
  #endif
  
@@ -43,7 +57,7 @@
  
  /* Subdirectory to use for locating libraries.  Set by
     set_multilib_dir based on the compilation options.  */
-@@ -2857,6 +2865,7 @@
+@@ -2857,6 +2872,7 @@
  }
  
  /* Same as add_prefix, but prepending target_system_root to prefix.  */
@@ -51,7 +65,7 @@
  static void
  add_sysrooted_prefix (struct path_prefix *pprefix, const char *prefix,
  		      const char *component,
-@@ -3065,9 +3074,9 @@
+@@ -3065,9 +3081,9 @@
        /* APPLE LOCAL begin verbose help 2920964 */
        if (verbose_flag
  	  && print_help_list
@@ -64,7 +78,37 @@
  	{
  	   /* Do nothing.
  	      as and ld do not entertain --help.  */
-@@ -3444,6 +3453,8 @@
+@@ -3424,6 +3440,29 @@
+   linker_options [n_linker_options - 1] = save_string (option, len);
+ }
+ 
++
++int GetExecutablePath(char *buf, size_t *bufsize)
++{
++#if defined(__MINGW32__)
++	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
++        /* Early conversion to unix slashes instead of more changes
++         * everywhere else... */
++        char *winslash = strchr(buf,'\\');
++        while (winslash) {
++            *winslash = '/';
++            winslash = strchr(winslash,'\\');
++        }
++		return strlen(buf);
++	}
++	return -1;
++#elif (HAVE_DECL_READLINK) /* Linux */
++	return readlink("/proc/self/exe", buf, *bufsize);
++#else
++	return -1; /* Fail on all other systems for now */
++#endif /* __MINGW32__ */
++}
++
++
+ /* Create the vector `switches' and its contents.
+    Store its length in `n_switches'.  */
+ 
+@@ -3444,6 +3483,8 @@
    char *(*get_relative_prefix) (const char *, const char *,
  				const char *) = NULL;
    /* LLVM LOCAL end no-canonical-prefixes */
@@ -73,22 +117,19 @@
  
    GET_ENVIRONMENT (gcc_exec_prefix, "GCC_EXEC_PREFIX");
  
-@@ -3558,18 +3569,55 @@
+@@ -3558,18 +3599,52 @@
       see if we can create it from the pathname specified in argv[0].  */
  
    gcc_libexec_prefix = standard_libexec_prefix;
 +
-+#if defined(__linux__) || defined(__CYGWIN__)
++  char buf[1024];
++  i = sizeof(buf);
++  int len;
++  if ((len = GetExecutablePath (buf, &i)) != -1)
 +  {
-+      char buf[1024];
-+      int len;
-+      if ((len = readlink("/proc/self/exe", buf, sizeof(buf)-1)) != -1)
-+        {
-+          buf[len] = '\0';
-+          argv_zero = &buf[0];
-+        }
++      buf[len] = '\0';
++      argv_zero = &buf[0];
 +  }
-+#endif
 +
 +  gcc_libexec_prefix = standard_libexec_prefix;
  #ifndef VMS
@@ -134,7 +175,7 @@
        if (gcc_exec_prefix)
  	putenv (concat ("GCC_EXEC_PREFIX=", gcc_exec_prefix, NULL));
      }
-@@ -3580,29 +3628,35 @@
+@@ -3580,29 +3655,35 @@
  	 / (which is ignored by make_relative_prefix), so append a
  	 program name.  */
        char *tmp_prefix = concat (gcc_exec_prefix, "gcc", NULL);
@@ -177,7 +218,7 @@
  	}
  
        set_std_prefix (gcc_exec_prefix, len);
-@@ -4195,12 +4249,15 @@
+@@ -4195,12 +4276,15 @@
        use_pipes = 0;
      }
  
@@ -198,7 +239,7 @@
  #ifndef OS2
    add_prefix (&exec_prefixes, standard_libexec_prefix, "GCC",
  	      PREFIX_PRIORITY_LAST, 1, 0);
-@@ -4208,51 +4265,35 @@
+@@ -4208,51 +4292,35 @@
  	      PREFIX_PRIORITY_LAST, 2, 0);
    add_prefix (&exec_prefixes, standard_exec_prefix, "BINUTILS",
  	      PREFIX_PRIORITY_LAST, 2, 0);
@@ -265,7 +306,7 @@
  	      concat (tooldir_prefix, "bin", dir_separator_str, NULL),
  	      "BINUTILS", PREFIX_PRIORITY_LAST, 0, 0);
    add_prefix (&startfile_prefixes,
-@@ -4266,16 +4307,24 @@
+@@ -4266,16 +4334,24 @@
       ``make_relative_prefix'' is not compiled for VMS, so don't call it.  */
    if (target_system_root && gcc_exec_prefix)
      {
@@ -294,7 +335,7 @@
      }
  #endif
  
-@@ -6545,6 +6594,7 @@
+@@ -6545,6 +6621,7 @@
    char *specs_file;
    const char *p;
    struct user_specs *uptr;
@@ -302,7 +343,7 @@
  
    /* APPLE LOCAL begin CC_PRINT_OPTIONS (radar 3313335, 3360444) */
    cc_print_options = getenv ("CC_PRINT_OPTIONS");
-@@ -6640,9 +6690,21 @@
+@@ -6640,9 +6717,21 @@
    /* Set up to remember the pathname of gcc and any options
       needed for collect.  We use argv[0] instead of programname because
       we need the complete pathname.  */
@@ -325,7 +366,7 @@
    putenv (XOBFINISH (&collect_obstack, char *));
  
  #ifdef INIT_ENVIRONMENT
-@@ -6788,30 +6850,30 @@
+@@ -6788,30 +6877,30 @@
  			      SYSROOT_PRIORITY, 0, 1);
        else if (*cross_compile == '0')
  	{
@@ -364,7 +405,7 @@
        if (*standard_startfile_prefix_1)
   	add_sysrooted_prefix (&startfile_prefixes,
  			      standard_startfile_prefix_1, "BINUTILS",
-@@ -6857,7 +6919,9 @@
+@@ -6857,7 +6946,9 @@
  
    if (print_search_dirs)
      {
@@ -451,7 +492,7 @@
  
    /* Maybe we know the right file to use (if not cross).  */
 --- driverdriver.c.orig	2011-04-26 05:09:34 +0100
-+++ driverdriver.c	2012-04-09 13:35:28 +0100
++++ driverdriver.c	2012-04-30 23:27:31 +0100
 @@ -31,7 +31,36 @@
  #include <limits.h>
  #include <sys/types.h>
@@ -512,18 +553,7 @@
    if (!out_files)
      abort ();
  
-@@ -510,16 +539,31 @@
-   return ret;
- }
- 
-+#if !defined(DIR_SEP)
-+ #if defined(__MINGW32__)
-+  #define DIR_SEP '\\'
-+ #else
-+  #define DIR_SEP '/'
-+ #endif
-+#endif
-+
+@@ -513,13 +542,22 @@
  /* Invoke 'lipo' and combine and all output files.  */
  
  static void
@@ -537,16 +567,18 @@
    /* Populate lipo arguments.  */
 -  lipo_argv[0] = "lipo";
 +  strcpy(buf,argv_0);
-+  if (strrchr(buf,DIR_SEP))
++  /* Don't deal with Windows backslashes, argv_0 already
++     normalised to Unix */
++  if (strrchr(buf,'/'))
 +  {
-+     *(strrchr(buf,DIR_SEP)+1) = '\0';
++     *(strrchr(buf,'/')+1) = '\0';
 +     strcat(buf,"lipo");
 +  }  
 +  lipo_argv[0] = buf;
    lipo_argv[1] = "-create";
    lipo_argv[2] = "-o";
    lipo_argv[3] = out_file;
-@@ -625,7 +669,7 @@
+@@ -625,7 +663,7 @@
     Construct command line for each invocation with one input file.  */
  
  static void
@@ -555,7 +587,7 @@
  {
    const char **new_new_argv;
    int i, new_new_argc;
-@@ -690,7 +734,7 @@
+@@ -690,7 +728,7 @@
  /* Invoke 'lipo' on set of output files and create multile FAT binaries.  */
  
  static void
@@ -564,7 +596,7 @@
  {
    int ifn_index;
    struct input_filename *ifn;
-@@ -698,7 +742,7 @@
+@@ -698,7 +736,7 @@
         ifn_index < num_infiles && ifn && ifn->name;
         ifn_index++, ifn = ifn->next)
      do_lipo (ifn_index * num_arches,
@@ -573,7 +605,7 @@
  }
  
  /* Remove all options which are architecture-specific and are not for the
-@@ -1269,6 +1313,44 @@
+@@ -1269,6 +1307,44 @@
    return strdup(symlink_buffer);
  }
  
@@ -618,7 +650,7 @@
  /* Main entry point. This is gcc driver driver!
     Interpret -arch flag from the list of input arguments. Invoke appropriate
     compiler driver. 'lipo' the results if more than one -arch is supplied.  */
-@@ -1281,65 +1363,74 @@
+@@ -1281,65 +1357,74 @@
    char *override_option_str = NULL;
    char path_buffer[2*PATH_MAX+1];
    int linklen;
@@ -715,7 +747,7 @@
    fprintf (stderr,"%s: progname = %s\n", progname, progname);
    fprintf (stderr,"%s: driver_exec_prefix = %s\n", progname, driver_exec_prefix);
  #endif
-@@ -1632,14 +1723,14 @@
+@@ -1632,14 +1717,14 @@
  
  	  /* Make FAT binary by combining individual output files for each
  	     architecture, using 'lipo'.  */

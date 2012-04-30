@@ -5,14 +5,31 @@
 PREFIX=$1
 if [[ -z $PREFIX ]] ; then
     error "Please pass in a PREFIX as argument 1, e.g. apple"
+    error "If it contains debug or dbg, debugabble toolchains"
+    error "are made."
     exit 1
 fi
 
-#if [[ -z $2 ]] ; then
-#    error "Please pass in a TARGET_ARCH (either intel for MacOSX or arm for iOS) as argument 2"
-#    exit 1
-#fi
-#TARGET_ARCH=$2
+MAKING_DEBUG=no
+case $PREFIX in
+  *debug*)
+    MAKING_DEBUG=yes
+    ;;
+  *dbg*)
+    MAKING_DEBUG=yes
+    ;;
+  *)
+    ;;
+esac
+
+UNAME=$(uname-bt)
+
+if [ $MAKING_DEBUG = yes ] ; then
+   echo "*************************"
+   echo "*** Making Debuggable ***"
+   echo "*************************"
+   export HOST_DEBUG_CFLAGS="-O0 -g"
+fi
 
 full_build_for_arch() {
     local _TARGET_ARCH=$2
@@ -37,14 +54,9 @@ ARM_BUILD=1
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
-    # Remove Apple's proprietary stuff, backing up the list of what's needed.
-    find /tmp2/${PREFIX}-ios/usr/lib > /tmp2/${PREFIX}-ios/needed-libs.txt
-    find /tmp2/${PREFIX}-ios/arm-apple-darwin11/lib >> /tmp2/${PREFIX}-ios/needed-libs.txt
     rm -rf /tmp2/${PREFIX}-ios/usr/lib
     rm -rf /tmp2/${PREFIX}-ios/arm-apple-darwin11/lib
     rm /tmp2/${PREFIX}-ios/lib/libSystem.B.dylib
-    find /tmp2/${PREFIX}-ios/usr/include > /tmp2/${PREFIX}-ios/needed-headers.txt
-    find /tmp2/${PREFIX}-ios/arm-apple-darwin11/sys-include >> /tmp2/${PREFIX}-ios/needed-headers.txt
     rm -rf /tmp2/${PREFIX}-ios/usr/include
     rm -rf /tmp2/${PREFIX}-ios/arm-apple-darwin11/sys-include
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
@@ -53,21 +65,27 @@ if [ "$ARM_BUILD" = "1" ] ; then
     fi
     pushd /tmp2/${PREFIX}-ios/include/c++
     cp -rf ~/iPhoneOS4.3.sdk/usr/include/c++/4.2.1 4.2.1
+    mv 4.2.1/arm-apple-darwin10 4.2.1/arm-apple-darwin11
+    cp -rf 4.2.1/arm-apple-darwin11/v7/bits 4.2.1/arm-apple-darwin11/
+    mv 4.2.1/armv6-apple-darwin10 4.2.1/armv6-apple-darwin11
+    mv 4.2.1/armv7-apple-darwin10 4.2.1/armv7-apple-darwin11
     popd
+    # Copy needed dlls
+    if [[ "$UNAME" = "Windows" ]] ; then
+        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll
+        do
+            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/bin
+        done
+    fi
 fi
 
 INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
-    # Remove Apple's proprietary stuff, backing up the list of what's needed.
-    find /tmp2/${PREFIX}-osx/usr/lib > /tmp2/${PREFIX}-osx/needed-libs.txt
-    find /tmp2/${PREFIX}-osx/i686-apple-darwin11/lib >> /tmp2/${PREFIX}-osx/needed-libs.txt
     rm -rf /tmp2/${PREFIX}-osx/usr/lib
     rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/lib
     rm /tmp2/${PREFIX}-osx/lib/libSystem.B.dylib
-    find /tmp2/${PREFIX}-osx/usr/include > /tmp2/${PREFIX}-osx/needed-headers.txt
-    find /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include >> /tmp2/${PREFIX}-osx/needed-headers.txt
     rm -rf /tmp2/${PREFIX}-osx/usr/include
     rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
@@ -77,15 +95,24 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     pushd /tmp2/${PREFIX}-osx/include/c++
     cp -rf ~/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
     popd
+    # Copy needed dlls
+    if [[ "$UNAME" = "Windows" ]] ; then
+        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll
+        do
+            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/bin
+        done
+    fi
 fi
 
-# Strip executables.
-# Maybe "strip -u -r -S" when on OS X?
-if [[ ! "$UNAME" = "Darwin" ]] ; then
-    find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" \) | xargs strip
-    find /tmp2/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
-    find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" \) | xargs strip
-    find /tmp2/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+if [ $MAKING_DEBUG = no ] ; then
+    # Strip executables.
+    # Maybe "strip -u -r -S" when on OS X?
+    if [[ ! "$UNAME" = "Darwin" ]] ; then
+        find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" \) | xargs strip
+        find /tmp2/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+        find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" \) | xargs strip
+        find /tmp2/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+    fi
 fi
 
 cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-osx
@@ -97,7 +124,6 @@ cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-ios
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-ios
 
 pushd /tmp2
-    UNAME=$(uname-bt)
     7za a -mx=9 multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME.7z ${PREFIX}-ios ${PREFIX}-osx
     cp multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME.7z ~/Dropbox/darwin-compilers-work
 popd

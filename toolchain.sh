@@ -164,12 +164,14 @@ DARWINVER=11
 MACOSX="MacOSX${OSXVER}"
 IOS="iPhoneOS${IOSVER}"
 
-# If you need to debug the toolchain(s)...
-# HOST_DEBUG_CFLAGS="-O0 -g"
+# If you need to debug the toolchain(s) export HOST_DEBUG_CFLAGS
+[ -z $HOST_DEBUG_CFLAGS ] && HOST_DEBUG_CFLAGS="-O2 -pipe"
+
 # ...otherwise:
-HOST_DEBUG_CFLAGS="-O2 -pipe"
+# HOST_DEBUG_CFLAGS="-O2 -pipe"
 # Enabling this will create temp files for all stages of the toolchain build process, including target gcc libs.
 # SAVE_TEMPS="-save-temps"
+
 
 BUILD_ARCH=i686
 # -m32 can't be passed into llvmgcc's configure as CFLAGS as erroneously, it gets used for target lib build 
