@@ -70,15 +70,15 @@ if [ "$ARM_BUILD" = "1" ] ; then
     mv 4.2.1/armv6-apple-darwin10 4.2.1/armv6-apple-darwin11
     mv 4.2.1/armv7-apple-darwin10 4.2.1/armv7-apple-darwin11
     popd
-    # Copy needed dlls
-    if [[ "$UNAME" = "Windows" ]] ; then
-        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
-        do
-            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/bin
-            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
-            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
-        done
-    fi
+fi
+# Copy needed dlls
+if [[ "$UNAME" = "Windows" ]] ; then
+	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
+	do
+		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/bin
+		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
+		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
+	done
 fi
 
 INTEL_BUILD=1
@@ -97,15 +97,15 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     pushd /tmp2/${PREFIX}-osx/include/c++
     cp -rf ~/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
     popd
-    # Copy needed dlls
-    if [[ "$UNAME" = "Windows" ]] ; then
-        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
-        do
-            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/bin
-            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
-            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
-        done
-    fi
+fi
+# Copy needed dlls
+if [[ "$UNAME" = "Windows" ]] ; then
+	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
+	do
+		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/bin
+		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
+		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
+	done
 fi
 
 if [ $MAKING_DEBUG = no ] ; then
@@ -130,10 +130,11 @@ cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-ios
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-ios
 
 pushd /tmp2
+    DATESUFFIX=$(date +%y%m%d)
     if [ $MAKING_DEBUG = yes ] ; then
-        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME.7z
+        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg-$DATESUFFIX.7z
     else
-        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg.7z
+        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX.7z
     fi
     7za a -mx=9 $OUTFILE ${PREFIX}-ios ${PREFIX}-osx
     cp $OUTFILE ~/Dropbox/darwin-compilers-work
@@ -143,6 +144,6 @@ popd
 
 #mv src src-$(uname-bt)
 #mv bld bld-$(uname-bt)
-# 7za a tc4-bld-src-$(uname-bt).7z bld-$(uname-bt) src-$(uname-bt)
+#7za a tc4-bld-src-$(uname-bt).7z bld-$(uname-bt) src-$(uname-bt)
 #mv src-$(uname-bt) src
 #mv bld-$(uname-bt) bld

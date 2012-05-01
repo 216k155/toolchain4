@@ -1,5 +1,5 @@
 --- gcc/gcc.c.orig	2009-12-18 23:12:36 +0000
-+++ gcc/gcc.c	2012-04-30 22:57:46 +0100
++++ gcc/gcc.c	2012-05-01 17:59:14 +0100
 @@ -87,6 +87,13 @@
  #include "gcc.h"
  #include "flags.h"
@@ -14,7 +14,15 @@
  
  /* By default there is no special suffix for target executables.  */
  /* FIXME: when autoconf is fixed, remove the host check - dj */
-@@ -1569,25 +1576,33 @@
+@@ -535,6 +542,7 @@
+     :D}   else substitutes D.  There can be as many clauses as you need.
+           This may be combined with '.', '!', ',', '|', and '*' as above.
+  APPLE LOCAL end mainline 2007-03-13 5040758
++ %J Substitute target_system_root
+ 
+  %(Spec) processes a specification defined in a specs file as *Spec:
+  %[Spec] as above, but put __ around -D arguments
+@@ -1569,25 +1577,33 @@
  #define MD_STARTFILE_PREFIX_1 ""
  #endif
  
@@ -57,7 +65,7 @@
  
  /* Subdirectory to use for locating libraries.  Set by
     set_multilib_dir based on the compilation options.  */
-@@ -2857,6 +2872,7 @@
+@@ -2857,6 +2873,7 @@
  }
  
  /* Same as add_prefix, but prepending target_system_root to prefix.  */
@@ -65,7 +73,7 @@
  static void
  add_sysrooted_prefix (struct path_prefix *pprefix, const char *prefix,
  		      const char *component,
-@@ -3065,9 +3081,9 @@
+@@ -3065,9 +3082,9 @@
        /* APPLE LOCAL begin verbose help 2920964 */
        if (verbose_flag
  	  && print_help_list
@@ -78,7 +86,7 @@
  	{
  	   /* Do nothing.
  	      as and ld do not entertain --help.  */
-@@ -3424,6 +3440,29 @@
+@@ -3424,6 +3441,29 @@
    linker_options [n_linker_options - 1] = save_string (option, len);
  }
  
@@ -108,7 +116,7 @@
  /* Create the vector `switches' and its contents.
     Store its length in `n_switches'.  */
  
-@@ -3444,6 +3483,8 @@
+@@ -3444,6 +3484,8 @@
    char *(*get_relative_prefix) (const char *, const char *,
  				const char *) = NULL;
    /* LLVM LOCAL end no-canonical-prefixes */
@@ -117,7 +125,7 @@
  
    GET_ENVIRONMENT (gcc_exec_prefix, "GCC_EXEC_PREFIX");
  
-@@ -3558,18 +3599,52 @@
+@@ -3558,18 +3600,52 @@
       see if we can create it from the pathname specified in argv[0].  */
  
    gcc_libexec_prefix = standard_libexec_prefix;
@@ -175,7 +183,7 @@
        if (gcc_exec_prefix)
  	putenv (concat ("GCC_EXEC_PREFIX=", gcc_exec_prefix, NULL));
      }
-@@ -3580,29 +3655,35 @@
+@@ -3580,29 +3656,35 @@
  	 / (which is ignored by make_relative_prefix), so append a
  	 program name.  */
        char *tmp_prefix = concat (gcc_exec_prefix, "gcc", NULL);
@@ -218,7 +226,7 @@
  	}
  
        set_std_prefix (gcc_exec_prefix, len);
-@@ -4195,12 +4276,15 @@
+@@ -4195,12 +4277,15 @@
        use_pipes = 0;
      }
  
@@ -239,7 +247,7 @@
  #ifndef OS2
    add_prefix (&exec_prefixes, standard_libexec_prefix, "GCC",
  	      PREFIX_PRIORITY_LAST, 1, 0);
-@@ -4208,51 +4292,35 @@
+@@ -4208,51 +4293,35 @@
  	      PREFIX_PRIORITY_LAST, 2, 0);
    add_prefix (&exec_prefixes, standard_exec_prefix, "BINUTILS",
  	      PREFIX_PRIORITY_LAST, 2, 0);
@@ -306,7 +314,7 @@
  	      concat (tooldir_prefix, "bin", dir_separator_str, NULL),
  	      "BINUTILS", PREFIX_PRIORITY_LAST, 0, 0);
    add_prefix (&startfile_prefixes,
-@@ -4266,16 +4334,24 @@
+@@ -4266,16 +4335,24 @@
       ``make_relative_prefix'' is not compiled for VMS, so don't call it.  */
    if (target_system_root && gcc_exec_prefix)
      {
@@ -335,7 +343,21 @@
      }
  #endif
  
-@@ -6545,6 +6621,7 @@
+@@ -5441,6 +5518,13 @@
+ 	    }
+ 	    break;
+ 
++	  case 'J':
++	    {
++		  do_spec_1 (target_system_root, 1, NULL);
++		  do_spec_1 (" ", 0, NULL);
++	    }
++	    break;
++
+ 	  case 'o':
+ 	    {
+ 	      int max = n_infiles;
+@@ -6545,6 +6629,7 @@
    char *specs_file;
    const char *p;
    struct user_specs *uptr;
@@ -343,7 +365,7 @@
  
    /* APPLE LOCAL begin CC_PRINT_OPTIONS (radar 3313335, 3360444) */
    cc_print_options = getenv ("CC_PRINT_OPTIONS");
-@@ -6640,9 +6717,21 @@
+@@ -6640,9 +6725,21 @@
    /* Set up to remember the pathname of gcc and any options
       needed for collect.  We use argv[0] instead of programname because
       we need the complete pathname.  */
@@ -366,7 +388,7 @@
    putenv (XOBFINISH (&collect_obstack, char *));
  
  #ifdef INIT_ENVIRONMENT
-@@ -6788,30 +6877,30 @@
+@@ -6788,30 +6885,30 @@
  			      SYSROOT_PRIORITY, 0, 1);
        else if (*cross_compile == '0')
  	{
@@ -405,7 +427,7 @@
        if (*standard_startfile_prefix_1)
   	add_sysrooted_prefix (&startfile_prefixes,
  			      standard_startfile_prefix_1, "BINUTILS",
-@@ -6857,7 +6946,9 @@
+@@ -6857,7 +6954,9 @@
  
    if (print_search_dirs)
      {
@@ -416,6 +438,17 @@
        printf (_("programs: %s\n"),
  	      build_search_list (&exec_prefixes, "", false, false));
        printf (_("libraries: %s\n"),
+--- gcc/config/darwin.h	2012-05-01 18:01:44 +0100
++++ gcc/config/darwin.h.orig	2012-05-01 18:01:27 +0100
+@@ -371,7 +371,7 @@
+ 
+ #ifdef TARGET_SYSTEM_ROOT
+ #define LINK_SYSROOT_SPEC \
+-  "%{isysroot*:-syslibroot %*;:-syslibroot " TARGET_SYSTEM_ROOT "}"
++  "%{isysroot*:-syslibroot %*;:-syslibroot %J}"
+ #else
+ #define LINK_SYSROOT_SPEC "%{isysroot*:-syslibroot %*}"
+ #endif
 --- gcc/Makefile.in.orig	2011-03-11 22:51:01.000000000 +0000
 +++ gcc/Makefile.in	2012-04-08 22:57:12.393317414 +0100
 @@ -537,9 +537,9 @@
