@@ -1015,7 +1015,7 @@ toolchain_gcc()
 	fi
 }
 
-toolchain_gccdriver() {
+toolchain_gccdriver_dsymutil() {
 	message_status "Building toolchain gcc drivers"
 
 	# Build driver-drivers.
@@ -1058,6 +1058,9 @@ toolchain_gccdriver() {
 		-o $PREFIX/bin/$PREFIX_SUFFIX-$LANG || exit 1
 	done
 	popd
+
+	gcc -m32 -O2 $SRC_DIR/dsymutil.c \
+		-o $PREFIX/bin/$PREFIX_SUFFIX-dsymutil
 
 	if [[ "$(uname-bt)" = "Darwin" ]] ; then
 		lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-gcc-$MAJ_VERS -create \
@@ -1955,7 +1958,7 @@ case $1 in
 	gccdriver)
 		check_environment
 		message_action "Building gcc driver..."
-		toolchain_gccdriver
+		toolchain_gccdriver_dsymutil
 		message_action "gcc driver built."
 		;;
 

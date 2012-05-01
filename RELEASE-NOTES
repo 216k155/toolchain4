@@ -1,0 +1,38 @@
+Aims to be as similar to native Darwin compilers as possible.
+
+Includes full build of cctools, ld64, gcc and llvmgcc.
+
+Almost fully up to date with Apple's Open Source releases.
+
+Fully relocatable; extract where-ever you want.
+
+Supports -arch flag(s) to allow fat binaries (multiarch) to be built from a single invocation.
+
+Source code (i.e. build scripts and patches) available at:
+
+https://github.com/mingwandroid/toolchain4.git
+
+Builds upon work by Open Darwin, saurik (Jay Freeman), iPhoneDev and Andrew Udvare.
+
+You need to provide your own Darwin SDKs which I can't distribute for copyright reasons.
+- built and tested against MacOSX10.7.sdk for OSX and iPhoneOS4.3.sdk for iOS.
+
+Licensed under the APSL v2 (cctools), the GPL (gcc, llvmgcc) and the UoI/NCSA (ld64, llvmgcc)
+
+Apple have not released source code for dsymutil which is called by when -g (debugging info) is
+passed to gcc. To work around negative effects of this, I've included a tiny program which does
+nothing other than returning 0, however, you won't be able to produce .dSYM folders and I'm not
+sure if debugging the built software can be achieved.
+
+** Updates **
+
+19-04-12 :: Fixed relocation problem in cctools (ar would look for ranlib in the wrong place)
+
+21-04-12 :: Fixed relocation problem in cpp (gcc headers not being found)
+            Added gcc 4.2.1 headers for libstdc++-v3
+
+01-05-12 :: Fixed llvmgcc SDK path bug (sysroot was not being handled correctly)
+            Fixed iOS libstdc++-v3 headers location
+            Added a dummy dsymutil executable
+            Windows :: Fixed search path for cctools executables
+            Windows :: Added needed dlls (can be used without MinGW)
