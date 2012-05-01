@@ -165,7 +165,7 @@ MACOSX="MacOSX${OSXVER}"
 IOS="iPhoneOS${IOSVER}"
 
 # If you need to debug the toolchain(s) export HOST_DEBUG_CFLAGS
-[ -z $HOST_DEBUG_CFLAGS ] && HOST_DEBUG_CFLAGS="-O2 -pipe"
+[ -z "$HOST_DEBUG_CFLAGS" ] && HOST_DEBUG_CFLAGS="-O2 -pipe"
 
 # ...otherwise:
 # HOST_DEBUG_CFLAGS="-O2 -pipe"

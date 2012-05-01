@@ -72,9 +72,11 @@ if [ "$ARM_BUILD" = "1" ] ; then
     popd
     # Copy needed dlls
     if [[ "$UNAME" = "Windows" ]] ; then
-        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll
+        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
         do
             cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/bin
+            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
+            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
         done
     fi
 fi
@@ -97,9 +99,11 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     popd
     # Copy needed dlls
     if [[ "$UNAME" = "Windows" ]] ; then
-        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll
+        for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
         do
             cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/bin
+            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
+            cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
         done
     fi
 fi
@@ -108,24 +112,31 @@ if [ $MAKING_DEBUG = no ] ; then
     # Strip executables.
     # Maybe "strip -u -r -S" when on OS X?
     if [[ ! "$UNAME" = "Darwin" ]] ; then
-        find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" \) | xargs strip
+        find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" -or -path "*-gccbug" \) | xargs strip
         find /tmp2/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
-        find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" \) | xargs strip
+        find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" -or -path "*-gccbug"  \) | xargs strip
         find /tmp2/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
     fi
 fi
 
 cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-osx
+chmod 0777 /tmp2/${PREFIX}-osx/APPLE_LICENSE
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-osx
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-osx
 
 cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-ios
+chmod 0777 /tmp2/${PREFIX}-ios/APPLE_LICENSE
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-ios
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-ios
 
 pushd /tmp2
-    7za a -mx=9 multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME.7z ${PREFIX}-ios ${PREFIX}-osx
-    cp multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME.7z ~/Dropbox/darwin-compilers-work
+    if [ $MAKING_DEBUG = yes ] ; then
+        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME.7z
+    else
+        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg.7z
+    fi
+    7za a -mx=9 $OUTFILE ${PREFIX}-ios ${PREFIX}-osx
+    cp $OUTFILE ~/Dropbox/darwin-compilers-work
 popd
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
