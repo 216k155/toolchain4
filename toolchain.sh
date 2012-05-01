@@ -1059,8 +1059,8 @@ toolchain_gccdriver_dsymutil() {
 	done
 	popd
 
-	gcc -m32 -O2 $SRC_DIR/dsymutil.c \
-		-o $PREFIX/bin/$PREFIX_SUFFIX-dsymutil
+	gcc -m32 -O2 $SRC_DIR/../dsymutil.c \
+		-o $PREFIX/bin/${TARGET}-dsymutil${EXEEXT}
 
 	if [[ "$(uname-bt)" = "Darwin" ]] ; then
 		lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-gcc-$MAJ_VERS -create \
