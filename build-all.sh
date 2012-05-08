@@ -63,8 +63,9 @@ if [ "$ARM_BUILD" = "1" ] ; then
     if [ ! -d /tmp2/${PREFIX}-ios/include/c++ ] ; then
         mkdir -p /tmp2/${PREFIX}-ios/include/c++
     fi
+    TOPDIR=$PWD
     pushd /tmp2/${PREFIX}-ios/include/c++
-    cp -rf ~/iPhoneOS4.3.sdk/usr/include/c++/4.2.1 4.2.1
+    cp -rf $TOPDIR/sdks/iPhoneOS4.3.sdk/usr/include/c++/4.2.1 4.2.1
     mv 4.2.1/arm-apple-darwin10 4.2.1/arm-apple-darwin11
     cp -rf 4.2.1/arm-apple-darwin11/v7/bits 4.2.1/arm-apple-darwin11/
     mv 4.2.1/armv6-apple-darwin10 4.2.1/armv6-apple-darwin11
@@ -94,8 +95,9 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     if [ ! -d /tmp2/${PREFIX}-osx/include/c++ ] ; then
         mkdir -p /tmp2/${PREFIX}-osx/include/c++
     fi
+    TOPDIR=$PWD
     pushd /tmp2/${PREFIX}-osx/include/c++
-    cp -rf ~/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
+    cp -rf $TOPDIR/sdks/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
     popd
 fi
 # Copy needed dlls

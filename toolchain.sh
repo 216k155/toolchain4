@@ -668,38 +668,47 @@ toolchain_cctools() {
 		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
 
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
-			HOSTPREFIX=/mingw
-			if [[ ! -f $HOSTPREFIX/include/uuid/uuid.h ]] ; then
-				if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
-					error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
-					exit 1
-				fi
-				pushd e2fsprogs-libs-1.41.14/
-				patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
-				./configure --prefix=$HOSTPREFIX --disable-elf-shlibs --disable-uuidd
-				pushd lib/uuid/
-				if ! ( make install && make ) ; then
-					error "Failed to make libuuid"
-					exit 1
-				fi
-				popd
-				popd
+			OPENSSLPF=mingw
+		elif [[ "$(uname-bt)" == "Linux" ]] ; then
+			# Only if -m32
+			if [[ "$BUILD_ARCH_CFLAGS" = "-m32" ]] ; then
+				OPENSSLPF=linux-generic32
+			else
+				OPENSSLPF=linux-generic64
 			fi
+		fi
+
+		# Should really be using HOST_DIR as prefix for these.
+		if [[ ! -f $HOST_DIR/include/uuid/uuid.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+			if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
+				error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
+				exit 1
+			fi
+			pushd e2fsprogs-libs-1.41.14/
+			patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
+			CC="gcc $BUILD_ARCH_CFLAGS" ./configure --prefix=$HOST_DIR --disable-elf-shlibs --disable-uuidd
+			pushd lib/uuid/
+			if ! ( make install && make ) ; then
+				error "Failed to make libuuid"
+				exit 1
+			fi
+			popd
+			popd
 			message_status "libuuid is ready!"
+		fi
 
-			if [[ ! -f $HOSTPREFIX/include/openssl/md5.h ]] ; then
-				if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
-					error "Failed to get and extract openssl-1.0.0f Check errors."
-					popd
-					exit 1
-				fi
-
-				pushd openssl-1.0.0f
-				./configure --prefix=$HOSTPREFIX -no-shared -no-zlib-dynamic -no-test mingw
-				make -j 1
-				make -j 1 install
+		if [[ ! -f $HOST_DIR/include/openssl/md5.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
+				error "Failed to get and extract openssl-1.0.0f Check errors."
 				popd
+				exit 1
 			fi
+
+			pushd openssl-1.0.0f
+			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
+			make -j 1 CC="gcc $BUILD_ARCH_CFLAGS"
+			make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS"
+			popd
 			message_status "openssl is ready!"
 		fi
 
@@ -730,7 +739,7 @@ toolchain_cctools() {
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 		fi
-		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO}" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib" \
+		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib -I$HOST_DIR/include" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
@@ -777,6 +786,7 @@ toolchain_llvmgcc_core() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1212,6 +1222,7 @@ toolchain_llvmgcc() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1

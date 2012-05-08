@@ -24,6 +24,7 @@ UUID_LIBS	= @UUID_LIBS@
 SSL_LIBS	= @SSL_LIBS@
 LTO_DEFS	= @LTO_DEFS@
 LTO_LIBS	= @LTO_LIBS@
+DL_LIBS		= @DL_LIBS@
 
 ifeq ($(HAVE_PRIVEXT),NO)
 INCPRIVEXT      = -include $(top_srcdir)/include/extern.h
@@ -51,7 +52,7 @@ MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DASPROG="\"$(ASPROG)\"" $(LTO_DEFS)
 
 MYLDFLAGS	= -L$(top_builddir)/libstuff
-MYLIBS		= -lstuff $(SSL_LIBS) $(UUID_LIBS) $(LTO_LIBS)
+MYLIBS		= -lstuff $(SSL_LIBS) $(UUID_LIBS) $(DL_LIBS) $(LTO_LIBS)
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 		$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
