@@ -639,7 +639,7 @@ toolchain_download_darwin_sources() {
 }
 
 # toolchain_static_host_libs?
-toolchain_gmp() {
+toolchain_static_host_libs() {
 	# Version 4.3.2
 	if [[ ! -f $HOST_DIR/include/gmp.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
 		if ! $(downloadUntar ftp://ftp.gnu.org/gnu/gmp/gmp-4.3.2.tar.gz); then
@@ -654,6 +654,21 @@ toolchain_gmp() {
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
+	fi
+	# Version 2.2.1
+	if [[ ! -f $HOST_DIR/include/mpfr.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+		if ! $(downloadUntar http://www.mpfr.org/mpfr-2.2.1/mpfr-2.2.1.tar.gz); then
+			error "Failed to get and mpfr-2.2.1. Check errors."
+			popd
+			exit 1
+		fi
+
+		pushd mpfr-2.2.1
+		./configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
+		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS"
+		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS"
+		popd
+		message_status "static mpfr is ready!"
 	fi
 }
 
@@ -783,7 +798,7 @@ GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 
 # Makes liblto which is needed when building ld64.
 toolchain_llvmgcc_core() {
-	toolchain_gmp
+	toolchain_static_host_libs
 	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
 	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
@@ -867,7 +882,8 @@ toolchain_llvmgcc_saurik() {
 			--with-ld="$PREFIX"/bin/${TARGET}-ld${EXEEXT} \
 			--enable-wchar_t=no \
 			--with-gxx-include-dir=/usr/include/c++/4.2.1 \
-			--with-gmp=$HOST_DIR
+			--with-gmp=$HOST_DIR \
+			--with-mpfr=$HOST_DIR
 		make clean > /dev/null
 		message_status "Building gcc-4.2-${TARGET_ARCH}..."
 		cecho bold "Build progress logged to: $BUILD_DIR/gcc-4.2-${TARGET_ARCH}/make.log"
@@ -931,7 +947,7 @@ copy_sysroot() {
 
 toolchain_gcc()
 {
-	toolchain_gmp
+	toolchain_static_host_libs
 	if [[ -z $(which ${TARGET}-ar) ]] ; then
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
@@ -1031,7 +1047,8 @@ toolchain_gcc()
 		--disable-werror \
 		--enable-libgomp \
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
-		--with-gmp=$HOST_DIR
+		--with-gmp=$HOST_DIR \
+		--with-mpfr=$HOST_DIR
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
 	if ( ! make -k &>make.log ); then
 		message_status "Make failed (probably host libiberty, ignoring...)"
@@ -1222,7 +1239,7 @@ patch_gcc() {
 }
 
 toolchain_llvmgcc() {
-	toolchain_gmp
+	toolchain_static_host_libs
 	message_status "Using ${GCCLLVMDISTFILE}..."
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
 	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
@@ -1297,6 +1314,7 @@ toolchain_llvmgcc() {
 		--with-ranlib=$PREFIX/bin/${TARGET}-ranlib${EXEEXT} \
 		--with-lipo=$PREFIX/bin/${TARGET}-lipo${EXEEXT} \
 		--with-gmp=$HOST_DIR \
+		--with-mpfr=$HOST_DIR \
 		$WITH_TUNE
 	# Falls over at libiberty
 	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
