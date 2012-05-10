@@ -142,14 +142,5 @@ if [ $MAKING_DEBUG = yes ] ; then
 else
     OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX
 fi
-
 OUTFILE=$(compress-folder /tmp2 $OUTFILEPREFIX)
 cp $OUTFILE ~/Dropbox/darwin-compilers-work
-
-#[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
-
-#mv src src-$(uname-bt)
-#mv bld bld-$(uname-bt)
-#7za a tc4-bld-src-$(uname-bt).7z bld-$(uname-bt) src-$(uname-bt)
-#mv src-$(uname-bt) src
-#mv bld-$(uname-bt) bld

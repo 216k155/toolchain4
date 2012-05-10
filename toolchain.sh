@@ -192,11 +192,6 @@ fi
 
 GCCVER=$(gcc -v 2>&1 | tail -1 | awk '{print $3}')
 
-#if [[ "$(vercmp $GCCVER  4.7)" != "older" ]] ; then
-#    echo "Your host GCC version is >= 4.7, enabling -ffor-scope option for llvm"
-#    LLVM_CXXFLAGS="-ffor-scope"
-#fi
-
 # what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
@@ -836,7 +831,7 @@ toolchain_llvmgcc_core() {
 	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
-	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $LLVM_CXXFLAGS" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
@@ -1299,7 +1294,7 @@ toolchain_llvmgcc() {
 		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
 	fi
 
-	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $LLVM_CXXFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
+	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
 	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
