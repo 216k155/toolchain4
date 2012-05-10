@@ -190,6 +190,13 @@ if [[ "$(uname-bt)" = "Windows" ]] ; then
 	EXEEXT=.exe
 fi
 
+GCCVER=$(gcc -v 2>&1 | tail -1 | awk '{print $3}')
+
+#if [[ "$(vercmp $GCCVER  4.7)" != "older" ]] ; then
+#    echo "Your host GCC version is >= 4.7, enabling -ffor-scope option for llvm"
+#    LLVM_CXXFLAGS="-ffor-scope"
+#fi
+
 # what device are we building for?
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
@@ -638,7 +645,6 @@ toolchain_download_darwin_sources() {
 	message_status "Downloading darwin sources no more necessary"
 }
 
-# toolchain_static_host_libs?
 toolchain_static_host_libs() {
 	# Version 4.3.2
 	if [[ ! -f $HOST_DIR/include/gmp.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
@@ -647,11 +653,12 @@ toolchain_static_host_libs() {
 			popd
 			exit 1
 		fi
-
-		pushd gmp-4.3.2
-		./configure --prefix=$HOST_DIR --disable-shared --enable-static
-		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS"
-		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS"
+		SRCDIR=$PWD
+		mkdir -p $BUILD_DIR/gmp-4.3.2
+		pushd $BUILD_DIR/gmp-4.3.2
+		ABI=32 $SRCDIR/gmp-4.3.2/configure --prefix=$HOST_DIR --disable-shared --enable-static
+		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
 	fi
@@ -663,10 +670,11 @@ toolchain_static_host_libs() {
 			exit 1
 		fi
 
-		pushd mpfr-2.2.1
-		./configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
-		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS"
-		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS"
+		mkdir -p $BUILD_DIR/mpfr-2.2.1
+		pushd $BUILD_DIR/mpfr-2.2.1
+		ABI=32 $SRCDIR/mpfr-2.2.1/configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
+		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static mpfr is ready!"
 	fi
@@ -821,13 +829,14 @@ toolchain_llvmgcc_core() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
 	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
-	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $LLVM_CXXFLAGS" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$PREFIX \
 		--enable-optimized \
@@ -1263,6 +1272,7 @@ toolchain_llvmgcc() {
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
 		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
+		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1289,7 +1299,7 @@ toolchain_llvmgcc() {
 		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
 	fi
 
-	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
+	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $LLVM_CXXFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
 	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \

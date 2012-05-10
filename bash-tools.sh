@@ -267,3 +267,58 @@ comment-out-rev()
     $(comment-out-fwd-cxx "$_REVTMPFILE" "$_END" "$_START" "1")
     cat $_REVTMPFILE | tac > $_OUTFILE
 }
+
+# $1 == folder to compress
+# $2 == dirname with prefix for filename of output (i.e. without extensions)
+# $3 == Either xz, bz2, 7z, Windows, Linux, Darwin or nothing
+# Returns the name of the compressed file.
+compress-folder() {
+
+    if [[ ! -d $1 ]] ; then
+	echo ""
+	return 1
+    fi
+
+    local _OUTFILE=$2
+
+    if [[ "$(basename $_OUTFILE)" = "$_OUTFILE" ]] ; then
+	_OUTFILE=$PWD/$_OUTFILE
+    fi
+
+    local _ARCFMT=$3
+
+    if [[ -z "$_ARCFMT" ]] ; then
+	_ARCFMT=$(uname-bt)
+    fi
+
+    if [[ "$_ARCFMT" = "Windows" ]] ; then
+	_ARCFMT="7z"
+    elif [[ "$_ARCFMT" = "Darwin" ]] ; then
+	_ARCFMT="7z"
+#	_ARCFMT="bz2" # too big!
+    else
+	_ARCFMT="xz"
+    fi
+
+    pushd $1 > /dev/null
+    if [[ "$_ARCFMT" == "xz" ]] || [[ "$_ARCFMT" == "bz2" ]] ; then
+	# Often, sorting by the filename part of the full path yields better compression.
+	find -type f -exec sh -c "echo \$(basename {}; echo {} ) " \; | sort | awk '{print $2;}' > /tmp/$$.txt
+	tar -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
+    else
+	find . -mindepth 1 -maxdepth 1 -type d > /tmp/$$.txt
+    fi
+
+    if [[ "$_ARCFMT" == "xz" ]] ; then
+	xz -z -9 -e -c -q /tmp/$(basename $2).tar > $_OUTFILE.tar.xz
+	echo $_OUTFILE.tar.xz
+    elif [[ "$_ARCFMT" == "bz2" ]] ; then
+	bzip2 -z -9 -c -q /tmp/$(basename $2).tar > $_OUTFILE.tar.bz2
+	echo $_OUTFILE.tar.bz2
+    else
+	7za a -mx=9 $2.7z $(cat /tmp/$$.txt) > /dev/null
+	echo $_OUTFILE.7z
+    fi
+    popd > /dev/null
+    return 0
+}

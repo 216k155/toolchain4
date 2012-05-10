@@ -121,6 +121,11 @@ if [ $MAKING_DEBUG = no ] ; then
     fi
 fi
 
+# llvm's include folder probably shouldn't be getting bundled up to be honest, but for now, just remove the .orig files
+# that are left over from patching.
+find /tmp2/${PREFIX}-ios -name "*.orig" | xargs rm
+find /tmp2/${PREFIX}-osx -name "*.orig" | xargs rm
+
 cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-osx
 chmod 0777 /tmp2/${PREFIX}-osx/APPLE_LICENSE
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-osx
@@ -131,16 +136,15 @@ chmod 0777 /tmp2/${PREFIX}-ios/APPLE_LICENSE
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-ios
 cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-ios
 
-pushd /tmp2
-    DATESUFFIX=$(date +%y%m%d)
-    if [ $MAKING_DEBUG = yes ] ; then
-        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg-$DATESUFFIX.7z
-    else
-        OUTFILE=multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX.7z
-    fi
-    7za a -mx=9 $OUTFILE ${PREFIX}-ios ${PREFIX}-osx
-    cp $OUTFILE ~/Dropbox/darwin-compilers-work
-popd
+DATESUFFIX=$(date +%y%m%d)
+if [ $MAKING_DEBUG = yes ] ; then
+    OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg-$DATESUFFIX
+else
+    OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX
+fi
+
+OUTFILE=$(compress-folder /tmp2 $OUTFILEPREFIX)
+cp $OUTFILE ~/Dropbox/darwin-compilers-work
 
 #[[ -f tc4-bld-src-$(uname-bt).7z ]] && rm rc-bld-src-$(uname-bt).7z
 
