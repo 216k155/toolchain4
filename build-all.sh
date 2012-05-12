@@ -59,7 +59,7 @@ full_build_for_arch() {
 }
 
 # Clean everything.
-ARM_BUILD=0
+ARM_BUILD=1
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
@@ -91,7 +91,7 @@ if [[ "$UNAME" = "Windows" ]] ; then
 	done
 fi
 
-INTEL_BUILD=0
+INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel

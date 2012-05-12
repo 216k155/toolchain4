@@ -45,4 +45,3 @@ Send bug reports and/or patches to Ray Donnelly <mingw.android at gmail dot com>
             Removed redundant llvmCore installation (llvmgcc *is* still provided)
             Removed some empty directories
             Linux :: Compressed to a tar.xz as 7z isn't 'native' enough
-            MacOS X :: Compressed to an xar as 7z isn't 'native' enough

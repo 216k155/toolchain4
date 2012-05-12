@@ -294,15 +294,22 @@ compress-folder() {
     if [[ "$_ARCFMT" = "Windows" ]] ; then
 	_ARCFMT="7z"
     elif [[ "$_ARCFMT" = "Darwin" ]] ; then
+	# I'd prefer to use xar (but see below) or tar.xz, but can't, because:
+	# 1. Neither lzma nor xz are compiled into the Darwin version.
+	# 2. It compresses each file individually.
+	# 3. xz doesn't exist by default on Darwin - neither does 7z, but I've
+	#    put a binary up on http://code.google.com/p/mingw-and-ndk/
+	# ..meaning with xar --compression-args=9 -cjf, my Darwin cross
+	#   compilers end up being ~71MB compared to ~19MB as a 7z
+	#   which is too vast a difference for me to ignore.
 	_ARCFMT="7z"
-#	_ARCFMT="bz2" # too big!
     else
 	_ARCFMT="xz"
     fi
 
     pushd $1 > /dev/null
     if [[ "$_ARCFMT" == "xz" ]] || [[ "$_ARCFMT" == "bz2" ]] ; then
-	# Often, sorting by the filename part of the full path yields better compression.
+	# Usually, sorting by the filename part of the full path yields better compression.
 	find -type f -exec sh -c "echo \$(basename {}; echo {} ) " \; | sort | awk '{print $2;}' > /tmp/$$.txt
 	tar -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
     else
@@ -315,8 +322,12 @@ compress-folder() {
     elif [[ "$_ARCFMT" == "bz2" ]] ; then
 	bzip2 -z -9 -c -q /tmp/$(basename $2).tar > $_OUTFILE.tar.bz2
 	echo $_OUTFILE.tar.bz2
+    elif [[ "$_ARCFMT" == "xar" ]] ; then
+	# I'd like to use xz or lzma, but xar -caf results in "lzma support not compiled in."
+	xar --compression-args=9 -cjf $_OUTFILE.xar $(cat /tmp/$$.txt)
+	echo $_OUTFILE.xar
     else
-	7za a -mx=9 $2.7z $(cat /tmp/$$.txt) > /dev/null
+	7za a -mx=9 $_OUTFILE.7z $(cat /tmp/$$.txt) > /dev/null
 	echo $_OUTFILE.7z
     fi
     popd > /dev/null

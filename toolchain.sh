@@ -1112,16 +1112,16 @@ toolchain_gccdriver_dsymutil() {
 	gcc -m32 -O2 $TOOLCHAIN/dsymutil.c \
 		-o $PREFIX/bin/${TARGET}-dsymutil${EXEEXT}
 
-	if [[ "$(uname-bt)" = "Darwin" ]] ; then
-		lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-gcc-$MAJ_VERS -create \
-		$DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
-		rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
-
-		lipo -output $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS -create \
-		$DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
-		ln -f $DEST_DIR/$DEST_ROOT/bin/llvm-g++-$MAJ_VERS $DEST_DIR/$DEST_ROOT/bin/llvm-c++-$MAJ_VERS || exit 1
-		rm $DEST_DIR/$DEST_ROOT/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
-	fi
+	#if [[ "$(uname-bt)" = "Darwin" ]] ; then
+	#	lipo -output $$PREFIX/bin/llvm-gcc-$MAJ_VERS -create \
+	#	$PREFIX/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
+	#	rm $PREFIX/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
+	#
+	#	lipo -output $PREFIX/bin/llvm-g++-$MAJ_VERS -create \
+	#	$PREFIX/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
+	#	ln -f $PREFIX/bin/llvm-g++-$MAJ_VERS $PREFIX/bin/llvm-c++-$MAJ_VERS || exit 1
+	#	rm $PREFIX/bin/tmp-*-llvm-g++-$MAJ_VERS || exit 1
+	#fi
 }
 
 build_binmay() {
