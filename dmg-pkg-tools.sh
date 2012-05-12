@@ -60,6 +60,7 @@ build_tools_dmg() {
 	local _TMP_DIR=$1; shift
 	local _PREFIX=$1; shift
 	local _TCPREFIX=$1; shift
+	local _TOOLCHAIN=$1; shift
 	local _SAVE_INTERMEDIATES=1
 	local _JOBS=8
 	local _SUDO=sudo
@@ -121,7 +122,7 @@ build_tools_dmg() {
 				error "Failed to get and extract gettext-0.18.1.1 Check errors."
 			fi
 			pushd gettext-0.18.1.1
-			patch --backup -p0 < ../../patches/gettext-0.18.1.1-win-pthreads.patch
+			patch --backup -p0 < ${_TOOLCHAIN}/patches/gettext-0.18.1.1-win-pthreads.patch
 			# Without NM=... gettext-tools\libgettextpo\exported.sh ends up with /bin/nm and that fails to eval:
 			# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
 			# eval $nm_cmd
@@ -136,7 +137,7 @@ build_tools_dmg() {
 				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
 			fi
 			pushd mingw-libgnurx-2.5.1
-			patch --backup -p0 < ../../patches/mingw-libgnurx-2.5.1-static.patch
+			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
 			./configure --prefix=$_PREFIX --enable-static --disable-shared
 			if ! make  -j $_JOBS; then
 				error "Failed to make mingw-libgnurx-2.5.1"
@@ -190,7 +191,7 @@ build_tools_dmg() {
 			fi
 
 			pushd nano-2.3.1
-			patch --backup -p1 < ../../patches/nano-2.3.1-WIN.patch
+			patch --backup -p1 < ${_TOOLCHAIN}/patches/nano-2.3.1-WIN.patch
 			CFLAGS="-I$_PREFIX/include -DENOTSUP=48 -D_POSIX_SOURCE" LDFLAGS="-L$_PREFIX/lib -static-libgcc" LIBS="-lregex -liconv -lintl" ./configure --prefix=$_PREFIX --enable-color
 			if ! make -j $_JOBS install; then
 				error "Failed to make nano-2.3.1"
@@ -213,7 +214,7 @@ build_tools_dmg() {
 
 			pushd bzip2-1.0.6
 			# Fails due to chmod a+x without .exe suffix, ignored.
-			cp ../../files/bzip2-1.0.6-Makefile ./Makefile
+			cp {$_TOOLCHAIN}/files/bzip2-1.0.6-Makefile ./Makefile
 			do-sed $"s#PREFIX=/usr#PREFIX=$_PREFIX#g" ./Makefile
 			make -j $_JOBS install
 			popd
@@ -229,7 +230,7 @@ build_tools_dmg() {
 		fi
 
 		pushd dmg2img-1.6.2
-		patch --backup -p1 <../../patches/dmg2img-1.6.2-WIN.patch
+		patch --backup -p1 < ${_TOOLCHAIN}/patches/dmg2img-1.6.2-WIN.patch
 		if ! CFLAGS="-I$_PREFIX/include" LDFLAGS="-L$_PREFIX/lib $_MACHFLAG" CC="gcc" DESTDIR="$_PREFIX" make -j $_JOBS install; then
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
@@ -271,7 +272,7 @@ build_tools_dmg() {
 			exit 1
 		fi
 		pushd cpio-2.11
-		patch --backup -p1 < ../../patches/cpio-2.11-WIN.patch
+		patch --backup -p1 < ${_TOOLCHAIN}/patches/cpio-2.11-WIN.patch
 		CFLAGS=-O2 && ./configure --prefix=$_PREFIX  CFLAGS=-O2
 		make -j $_JOBS
 		make -j $_JOBS install
@@ -283,7 +284,7 @@ build_tools_dmg() {
 		message_status "Retrieving and building Nokia's lns ..."
 		git clone git://gitorious.org/qt-labs/qtmodularization.git
 		pushd qtmodularization
-		patch -p1 < ../../patches/lns-git.patch
+		patch -p1 < ${_TOOLCHAIN}/patches/lns-git.patch
 		pushd src/lns
 		CXXFLAGS="-DSE_PRIVILEGE_REMOVED=4" make
 		cp ../../lns.exe $_PREFIX/bin/
@@ -299,7 +300,7 @@ build_tools_dmg() {
 			fi
 		fi
 		pushd xar-1.5.2
-		patch --backup -p1 < ../../patches/xar-1.5.2-WIN.patch
+		patch --backup -p1 < ${_TOOLCHAIN}/patches/xar-1.5.2-WIN.patch
 		if [[ "$UNAME" == "Windows" ]] ; then
 			if ! CFLAGS="-I$_PREFIX/include -DENOTSUP=48" LDFLAGS="-L$_PREFIX/lib" LIBS="-lgdi32 -lregex -lmingwex" ./configure --prefix=$_PREFIX --disable-shared --enable-static; then
 				error "Failed to configure xar-1.5.2"
@@ -552,8 +553,6 @@ extract_packages_cached() {
 }
 
 extract_packages() {
-	echo "wtf"
-	echo "wtf"
 	message_status "in extract_packages"
 	local _OUTDIR=$1; shift
 	local _PKGSDIR=$1; shift

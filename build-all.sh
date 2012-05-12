@@ -24,6 +24,15 @@ esac
 
 UNAME=$(uname-bt)
 
+BASE_TMP=/tmp/tc4
+# On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
+# don't get along, so /tmp2 is used instead.
+if [[ "$(uname-bt)" == "Windows" ]] ; then
+	BASE_TMP=/tmp2/tc4
+fi
+
+DST=${BASE_TMP}/final-install
+
 if [ $MAKING_DEBUG = yes ] ; then
    echo "*************************"
    echo "*** Making Debuggable ***"
@@ -38,7 +47,7 @@ full_build_for_arch() {
     else
         local _PREFIX_SUFFIX=$1-osx
     fi
-    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX /tmp2/$_PREFIX_SUFFIX
+    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
     rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
@@ -54,17 +63,17 @@ ARM_BUILD=1
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
-    rm -rf /tmp2/${PREFIX}-ios/usr/lib
-    rm -rf /tmp2/${PREFIX}-ios/arm-apple-darwin11/lib
-    rm /tmp2/${PREFIX}-ios/lib/libSystem.B.dylib
-    rm -rf /tmp2/${PREFIX}-ios/usr/include
-    rm -rf /tmp2/${PREFIX}-ios/arm-apple-darwin11/sys-include
+    rm -rf $DST/${PREFIX}-ios/usr/lib
+    rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/lib
+    rm $DST/${PREFIX}-ios/lib/libSystem.B.dylib
+    rm -rf $DST/${PREFIX}-ios/usr/include
+    rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/sys-include
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
-    if [ ! -d /tmp2/${PREFIX}-ios/include/c++ ] ; then
-        mkdir -p /tmp2/${PREFIX}-ios/include/c++
+    if [ ! -d $DST/${PREFIX}-ios/include/c++ ] ; then
+        mkdir -p $DST/${PREFIX}-ios/include/c++
     fi
     TOPDIR=$PWD
-    pushd /tmp2/${PREFIX}-ios/include/c++
+    pushd $DST/${PREFIX}-ios/include/c++
     cp -rf $TOPDIR/sdks/iPhoneOS4.3.sdk/usr/include/c++/4.2.1 4.2.1
     mv 4.2.1/arm-apple-darwin10 4.2.1/arm-apple-darwin11
     cp -rf 4.2.1/arm-apple-darwin11/v7/bits 4.2.1/arm-apple-darwin11/
@@ -76,9 +85,9 @@ fi
 if [[ "$UNAME" = "Windows" ]] ; then
 	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
 	do
-		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/bin
-		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
-		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
+		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/bin
+		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
+		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
 	done
 fi
 
@@ -86,17 +95,17 @@ INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
-    rm -rf /tmp2/${PREFIX}-osx/usr/lib
-    rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/lib
-    rm /tmp2/${PREFIX}-osx/lib/libSystem.B.dylib
-    rm -rf /tmp2/${PREFIX}-osx/usr/include
-    rm -rf /tmp2/${PREFIX}-osx/i686-apple-darwin11/sys-include
+    rm -rf $DST/${PREFIX}-osx/usr/lib
+    rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/lib
+    rm $DST/${PREFIX}-osx/lib/libSystem.B.dylib
+    rm -rf $DST/${PREFIX}-osx/usr/include
+    rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/sys-include
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
-    if [ ! -d /tmp2/${PREFIX}-osx/include/c++ ] ; then
-        mkdir -p /tmp2/${PREFIX}-osx/include/c++
+    if [ ! -d $DST/${PREFIX}-osx/include/c++ ] ; then
+        mkdir -p $DST/${PREFIX}-osx/include/c++
     fi
     TOPDIR=$PWD
-    pushd /tmp2/${PREFIX}-osx/include/c++
+    pushd $DST/${PREFIX}-osx/include/c++
     cp -rf $TOPDIR/sdks/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
     popd
 fi
@@ -104,9 +113,9 @@ fi
 if [[ "$UNAME" = "Windows" ]] ; then
 	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
 	do
-		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/bin
-		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
-		cp -rf /mingw/bin/$_DLL /tmp2/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
+		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/bin
+		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
+		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
 	done
 fi
 
@@ -114,27 +123,22 @@ if [ $MAKING_DEBUG = no ] ; then
     # Strip executables.
     # Maybe "strip -u -r -S" when on OS X?
     if [[ ! "$UNAME" = "Darwin" ]] ; then
-        find /tmp2/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" -or -path "*-gccbug" \) | xargs strip
-        find /tmp2/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
-        find /tmp2/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" -or -path "*-gccbug"  \) | xargs strip
-        find /tmp2/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+        find $DST/${PREFIX}-ios/bin -type f -and -not \( -path "*-config" -or -path "*-gccbug" \) | xargs strip
+        find $DST/${PREFIX}-ios/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
+        find $DST/${PREFIX}-osx/bin -type f -and -not \( -path "*-config" -or -path "*-gccbug"  \) | xargs strip
+        find $DST/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
     fi
 fi
 
-# llvm's include folder probably shouldn't be getting bundled up to be honest, but for now, just remove the .orig files
-# that are left over from patching.
-find /tmp2/${PREFIX}-ios -name "*.orig" | xargs rm
-find /tmp2/${PREFIX}-osx -name "*.orig" | xargs rm
+cp ${BASE_TMP}/src-${PREFIX}-osx/cctools-809/APPLE_LICENSE $DST/${PREFIX}-osx
+chmod 0777 $DST/${PREFIX}-osx/APPLE_LICENSE
+cp ${BASE_TMP}/src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING $DST/${PREFIX}-osx
+cp ${BASE_TMP}/src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT $DST/${PREFIX}-osx
 
-cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-osx
-chmod 0777 /tmp2/${PREFIX}-osx/APPLE_LICENSE
-cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-osx
-cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-osx
-
-cp src-${PREFIX}-osx/cctools-809/APPLE_LICENSE /tmp2/${PREFIX}-ios
-chmod 0777 /tmp2/${PREFIX}-ios/APPLE_LICENSE
-cp src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING /tmp2/${PREFIX}-ios
-cp src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT /tmp2/${PREFIX}-ios
+cp ${BASE_TMP}/src-${PREFIX}-osx/cctools-809/APPLE_LICENSE $DST/${PREFIX}-ios
+chmod 0777 $DST/${PREFIX}-ios/APPLE_LICENSE
+cp ${BASE_TMP}/src-${PREFIX}-osx/llvmgcc42-2336.1/COPYING $DST/${PREFIX}-ios
+cp ${BASE_TMP}/src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT $DST/${PREFIX}-ios
 
 DATESUFFIX=$(date +%y%m%d)
 if [ $MAKING_DEBUG = yes ] ; then
@@ -142,5 +146,5 @@ if [ $MAKING_DEBUG = yes ] ; then
 else
     OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX
 fi
-OUTFILE=$(compress-folder /tmp2 $OUTFILEPREFIX)
+OUTFILE=$(compress-folder $DST $OUTFILEPREFIX)
 cp $OUTFILE ~/Dropbox/darwin-compilers-work

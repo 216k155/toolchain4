@@ -91,7 +91,16 @@ esac
 AC_MSG_RESULT([$ASTARGETS])
 AC_SUBST([ASTARGETS], [$ASTARGETS]) 
 
-AC_SUBST([ASLIBEXECDIR], ['${libexecdir}/as'])
+# On openSUSE, libexec ends up as lib instead. In:
+# /usr/share/site/x86_64-unknown-linux-gnu
+# there's:
+# "If user did not specify libexecdir, guess the correct target:
+# Nor FHS nor openSUSE allow prefix/libexec. Let's default to prefix/lib."
+# libexecdir='${exec_prefix}/lib'
+# ..however, even when I did specify it to configure, it didn't work.
+# Fact is, we always want ${prefix}/libexec for Darwin cross compilers.
+# AC_SUBST([ASLIBEXECDIR], ['${libexecdir}/as'])
+AC_SUBST([ASLIBEXECDIR], ['${prefix}/libexec/as'])
 
 AC_ARG_WITH([sysroot],
 		AC_HELP_STRING([--with-sysroot],

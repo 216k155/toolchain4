@@ -141,22 +141,38 @@ fi
 # Manualy change this if needed
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
 
-# Everything is built relative to IPHONEDEV_DIR
-IPHONEDEV_DIR="`pwd`"
-
 if [ -z $PREFIX_SUFFIX ] ; then
     error "Set $PREFIX_SUFFIX before calling this!"
 fi
 
-#PREFIX_SUFFIX=-$PREFIX_SUFFIX
+SUDO=sudo
+GAWK=gawk
+URLDL=wget
+BASE_TMP=/tmp/tc4
+
+# On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
+# don't get along, so /tmp2 is used instead.
+if [[ "$(uname-bt)" == "Windows" ]] ; then
+	SUDO=
+	BASE_TMP=/tmp2/tc4
+	EXEEXT=.exe
+elif [[ "$(uname-bt)" == "Darwin" ]] ; then
+	GAWK=awk
+	URLDL=curl
+fi
+
+
+# Everything is built relative to IPHONEDEV_DIR
+IPHONEDEV_DIR="$PWD"
+
 
 TOOLCHAIN="${IPHONEDEV_DIR}"
-[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld-$PREFIX_SUFFIX"
-#[ -z $PREFIX ] && PREFIX="${TOOLCHAIN}/pre$PREFIX_SUFFIX"
-[ -z $PREFIX ] && PREFIX="/tmp2/$PREFIX_SUFFIX"
-[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
-[ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
-[ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
+PATCHES="${TOOLCHAIN}/patches"
+[ -z $BUILD_DIR ] && BUILD_DIR="${BASE_TMP}/bld-${PREFIX_SUFFIX}"
+[ -z $PREFIX ] && PREFIX="${BASE_TMP}/final-install/$PREFIX_SUFFIX"
+[ -z $SRC_DIR ] && SRC_DIR="${BASE_TMP}/src-${PREFIX_SUFFIX}"
+[ -z $SYS_DIR ] && SYS_DIR="${BASE_TMP}/sys"
+[ -z $PKG_DIR ] && PKG_DIR="${BASE_TMP}/pkgs"
 
 IOSVER="4.3"
 OSXVER="10.7"
@@ -186,10 +202,6 @@ if [[ "$(uname-bt)" = "Darwin" ]] ; then
 	fi
 fi
 
-if [[ "$(uname-bt)" = "Windows" ]] ; then
-	EXEEXT=.exe
-fi
-
 GCCVER=$(gcc -v 2>&1 | tail -1 | awk '{print $3}')
 
 # what device are we building for?
@@ -199,7 +211,6 @@ FIRMWARE_VERSION="4.3"
 # Set the defaults.
 if [[ -z $CCTOOLSVER ]] ; then
 	CCTOOLSVER=809
-	#CCTOOLSVER=782
 fi
 if [[ -z $FOREIGNHEADERS ]] ; then
 	FOREIGNHEADERS=
@@ -224,21 +235,6 @@ fi
 # Manualy change this if needed
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
 
-# Everything is built relative to IPHONEDEV_DIR
-IPHONEDEV_DIR="`pwd`"
-
-if [ -z $PREFIX_SUFFIX ] ; then
-    error "Set $PREFIX_SUFFIX before calling this!"
-fi
-
-#PREFIX_SUFFIX=-$PREFIX_SUFFIX
-
-TOOLCHAIN="${IPHONEDEV_DIR}"
-[ -z $BUILD_DIR ] && BUILD_DIR="${TOOLCHAIN}/bld-$PREFIX_SUFFIX"
-[ -z $PREFIX ] && PREFIX="/tmp2/$PREFIX_SUFFIX"
-[ -z $SRC_DIR ] && SRC_DIR="${TOOLCHAIN}/src-$PREFIX_SUFFIX"
-[ -z $SYS_DIR ] && SYS_DIR="${TOOLCHAIN}/sys"
-[ -z $PKG_DIR ] && PKG_DIR="${TOOLCHAIN}/pkgs"
 JOBS=8
 UNAME=$(uname-bt)
 if [[ "$UNAME" = "Windows" ]] ; then
@@ -249,10 +245,10 @@ fi
 
 FILES_DIR="${IPHONEDEV_DIR}/files"
 SDKS_DIR="${IPHONEDEV_DIR}/sdks"
-TMP_DIR="${IPHONEDEV_DIR}/tmp"
+TMP_DIR="${BASE_TMP}/tmp"
 MNT_DIR="${FILES_DIR}/mnt"
 FW_DIR="${FILES_DIR}/firmware"
-HOST_DIR="${IPHONEDEV_DIR}/host-install"
+HOST_DIR="${BASE_TMP}/host-install"
 MAJ_VERS=4.2
 
 IPHONE_SDK_DMG="$PWD/../dmgs/xcode_3.2.6_and_ios_sdk_4.3.dmg"
@@ -264,17 +260,6 @@ IPHONE_SDK_DMG="$PWD/../dmgs/xcode_3.2.6_and_ios_sdk_4.3.dmg"
 # URLS
 IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
 DARWIN_SOURCES_DIR="$FILES_DIR/darwin_sources"
-
-SUDO=sudo
-GAWK=gawk
-URLDL=wget
-if [[ "$(uname-bt)" == "Windows" ]] ; then
-	SUDO=
-fi
-if [[ "$(uname-bt)" == "Darwin" ]] ; then
-	GAWK=awk
-	URLDL=curl
-fi
 
 NEEDED_COMMANDS="gcc make mount $SUDO zcat tar $URLDL unzip $GAWK bison flex patch xxd"
 
@@ -337,15 +322,8 @@ build_gnused() {
 # Builds lns (Windows), dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools() {
-	build_tools_dmg $PWD/tmp $HOST_DIR $PREFIX
-	build_gnused $PWD/tmp $HOST_DIR $PREFIX
-# Urgh, no thanks - will find a better way to do this.
-#	if [[ `strings /usr/bin/as | grep as_driver | wc -w` < 1 ]]; then
-#		cp /usr/bin/as /usr/bin/i386-redhat-linux-as
-#		message_status "Rename /usr/bin/as in /usr/bin/i386-redhat-linux-as"
-#		cp as_driver/as_driver /usr/bin/as
-#	fi
-#	message_status "as_driver installed in /usr/bin/as"
+	build_tools_dmg $TMP_DIR $HOST_DIR $PREFIX $PWD
+	build_gnused $TMP_DIR $HOST_DIR $PREFIX
 }
 
 toolchain_extract_headers() {
@@ -378,7 +356,6 @@ toolchain_extract_headers() {
 			exit 1
 		fi
 	fi
-
 
 	# iphone_sdk_3.1.3_with_xcode_3.1.4__leopard__9m2809a.dmg
 	# xcode_3.2.6_and_ios_sdk_4.3.dmg
@@ -641,23 +618,24 @@ toolchain_download_darwin_sources() {
 }
 
 toolchain_static_host_libs() {
-	# Version 4.3.2
+	# GMP version 4.3.2
+	mkdir -p $SRC_DIR
+	pushd $SRC_DIR
 	if [[ ! -f $HOST_DIR/include/gmp.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
 		if ! $(downloadUntar ftp://ftp.gnu.org/gnu/gmp/gmp-4.3.2.tar.gz); then
 			error "Failed to get and gmp-4.3.2. Check errors."
 			popd
 			exit 1
 		fi
-		SRCDIR=$PWD
 		mkdir -p $BUILD_DIR/gmp-4.3.2
 		pushd $BUILD_DIR/gmp-4.3.2
-		ABI=32 $SRCDIR/gmp-4.3.2/configure --prefix=$HOST_DIR --disable-shared --enable-static
+		ABI=32 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRCDIR/gmp-4.3.2/configure --prefix=$HOST_DIR --disable-shared --enable-static
 		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
 	fi
-	# Version 2.2.1
+	# MPFR version 2.2.1
 	if [[ ! -f $HOST_DIR/include/mpfr.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
 		if ! $(downloadUntar http://www.mpfr.org/mpfr-2.2.1/mpfr-2.2.1.tar.gz); then
 			error "Failed to get and mpfr-2.2.1. Check errors."
@@ -667,37 +645,24 @@ toolchain_static_host_libs() {
 
 		mkdir -p $BUILD_DIR/mpfr-2.2.1
 		pushd $BUILD_DIR/mpfr-2.2.1
-		ABI=32 $SRCDIR/mpfr-2.2.1/configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
+                CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRCDIR/mpfr-2.2.1/configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
 		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static mpfr is ready!"
 	fi
+	popd
 }
 
 toolchain_cctools() {
 	local CCTOOLS_DIR="$SRC_DIR/cctools-${CCTOOLS_VER_FH}"
 
 	build_as=1
-#	if [ -f "${PREFIX}/bin/${TARGET}-as" ]; then
-#		if ! confirm -N "Build cctools again?"; then
-#			build_as=0
-#		fi
-#	fi
 	if [ "x$build_as" == "x1" ]; then
 	   download_cctools=1
-#	   if [ -d "${SRC_DIR}/cctools-${CCTOOLS_VER_FH}" ]; then
-#		if ! confirm -N "Download cctools again?"; then
-#			download_cctools=0
-#		fi
-#	   fi
            if [ "x$download_cctools" == "x1" ]; then
 		pushd cctools2odcctools
-#		if [ -d odcctools-${CCTOOLS_VER_FH} ]; then
-#		  if confirm "remove downloaded cctools?"; then
-                        rm -fr odcctools-${CCTOOLS_VER_FH}
-#		  fi
-#		fi
+		rm -fr odcctools-${CCTOOLS_VER_FH}
 
 		mkdir -p "${PREFIX}"
 		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
@@ -714,6 +679,8 @@ toolchain_cctools() {
 			fi
 		fi
 
+		mkdir -p "$SRC_DIR"
+		pushd "$SRC_DIR"
 		# Should really be using HOST_DIR as prefix for these.
 		if [[ ! -f $HOST_DIR/include/uuid/uuid.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
 			if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
@@ -721,7 +688,7 @@ toolchain_cctools() {
 				exit 1
 			fi
 			pushd e2fsprogs-libs-1.41.14/
-			patch --backup -p0 < ../../patches/e2fsprogs-libs-1.41.14-WIN.patch
+			patch --backup -p0 < ${PATCHES}/e2fsprogs-libs-1.41.14-WIN.patch
 			CC="gcc $BUILD_ARCH_CFLAGS" ./configure --prefix=$HOST_DIR --disable-elf-shlibs --disable-uuidd
 			pushd lib/uuid/
 			if ! ( make install && make ) ; then
@@ -747,6 +714,7 @@ toolchain_cctools() {
 			popd
 			message_status "openssl is ready!"
 		fi
+		popd
 
 		if [ "$FOREIGNHEADERS" = "-foreign-headers" ] ; then
 			./extract.sh --updatepatch --vers ${CCTOOLSVER} --foreignheaders --osxver ${OSXVER}
@@ -757,7 +725,7 @@ toolchain_cctools() {
 		    error "extract.sh failed"
 		    exit 1
 		fi
-		mkdir -p "$SRC_DIR"
+
 		rm -fr "${CCTOOLS_DIR}"
 		cp -r odcctools-${CCTOOLS_VER_FH} "${CCTOOLS_DIR}"
 		popd
@@ -775,7 +743,12 @@ toolchain_cctools() {
 		if [[ "$(uname-bt)" == "Windows" ]] ; then
 			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 		fi
-		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" "${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib -I$HOST_DIR/include" \
+		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
+			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
+			CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
+			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" \
+			"${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
+			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib -I$HOST_DIR/include" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
@@ -808,8 +781,8 @@ toolchain_llvmgcc_core() {
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-redundant.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
 		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
 		# but there's 3 patches on the bug report and this only includes one of
 		# them. The other two can be dealt with once I get the first one working
@@ -817,14 +790,14 @@ toolchain_llvmgcc_core() {
 		# (and executable filename prefix) is searched when looking for tools.
 		# The patch to collect2.c could've been avoided by putting a link to ld
 		# into the libexec tree.
-#		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-lib-system.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -833,7 +806,7 @@ toolchain_llvmgcc_core() {
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
 	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
-		--prefix=$PREFIX \
+		--prefix=$HOST_DIR \
 		--enable-optimized \
 		--disable-assertions \
 		--target=${TARGET}
@@ -961,9 +934,9 @@ toolchain_gcc()
 		mkdir $SRC_DIR/gcc-5666.3
 		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
 		pushd $SRC_DIR/gcc-5666.3
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-cflags.patch
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-t-darwin_prefix.patch
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-strip_for_target.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-cflags.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-t-darwin_prefix.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-strip_for_target.patch
 		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
 		# but there's 3 patches on the bug report and this only includes one of
 		# them. The other two can be dealt with once I get the first one working
@@ -972,20 +945,19 @@ toolchain_gcc()
 		# The patch to collect2.c could've been avoided by putting a link to ld
 		# into the libexec tree. The target_system_root (-syslibroot bit)
 		# is also needed for ld to operate correctly.
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable.patch
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable-cpp.patch
-#		patch -b -p1 < ../../patches/gcc/gcc-5666.3-relocatable-darwin-h-LINK_SYSROOT_SPEC.patch
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-lib-system.patch
-#		patch -b -p1 < ../../patches/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-host-mingw32.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable-cpp.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-lib-system.patch
+#		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-host-mingw32.patch
 		# The following patch fixes:
 		# 1. getcwd is now in mingw headers (unistd.h)
 		# 2. uid_t  is now in mingw headers (basetypes.h) but gid_t is not so they need testing for separately.
 		# 3. AS_TRADITIONAL_FORMAT was being used if the host as is buggy. Made this not happen when cross compiling.
 		# 4. Stack smash protection was being checked for in the host C libraries, this isn't wanted when
 		#    cross compiling so instead we assume libc has ssp (darwin's libc has this feature)
-		patch -b -p1 < ../../patches/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1017,15 +989,15 @@ toolchain_gcc()
 	fi
 
 	if [[ "$TARGET_ARCH" = "i686" ]] ; then
-		copy_sysroot ../../sdks/${MACOSX}.sdk $PREFIX $TARGET
+		copy_sysroot ${SDKS_DIR}/${MACOSX}.sdk $PREFIX $TARGET
 	else
-		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
+		copy_sysroot ${SDKS_DIR}/${IOS}.sdk $PREFIX $TARGET
 	fi
 
 	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
 	if [[ ! -f $PREFIXGCC/lib/libSystem.B.dylib ]] ; then
 		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/
-		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
+		cp -fR ${SDKS_DIR}/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
 	fi
 	if [[ "$(uname-bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
@@ -1112,7 +1084,7 @@ toolchain_gccdriver_dsymutil() {
 	done
 	popd
 
-	gcc -m32 -O2 $SRC_DIR/../dsymutil.c \
+	gcc -m32 -O2 $TOOLCHAIN/dsymutil.c \
 		-o $PREFIX/bin/${TARGET}-dsymutil${EXEEXT}
 
 	if [[ "$(uname-bt)" = "Darwin" ]] ; then
@@ -1129,7 +1101,7 @@ toolchain_gccdriver_dsymutil() {
 
 build_binmay() {
 	if [[ -z $(which binmay) ]] ; then
-		local _PATCH=$PWD/patches/binmay-add-padding.patch
+		local _PATCH=${PATCHES}/binmay-add-padding.patch
 		download http://www.filewut.com/spages/pages/software/binmay/files/binmay-110615.tar.gz
 		[[ ! -d ${TMP_DIR}/binmay-110615 ]] && mkdir -p ${TMP_DIR}/binmay-110615
 		tar -xf binmay-110615.tar.gz -C ${TMP_DIR}/
@@ -1250,8 +1222,8 @@ toolchain_llvmgcc() {
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-redundant.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-redundant.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
 		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
 		# but there's 3 patches on the bug report and this only includes one of
 		# them. The other two can be dealt with once I get the first one working
@@ -1259,15 +1231,14 @@ toolchain_llvmgcc() {
 		# (and executable filename prefix) is searched when looking for tools.
 		# The patch to collect2.c could've been avoided by putting a link to ld
 		# into the libexec tree.
-#		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-lib-system.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
-		patch -b -p0 < ../../patches/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-lib-system.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1280,7 +1251,7 @@ toolchain_llvmgcc() {
 	# Needed during host phase! (lipo is run on it, just to see if we're on a 64bit system or not?!)
 	if [[ ! -f $PREFIX/lib/libSystem.B.dylib ]] ; then
 		[[ ! -d $PREFIX/lib/ ]] && mkdir -p $PREFIX/lib/
-		cp -fR ../../sdks/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIX/lib
+		cp -fR ${SDKS_DIR}/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIX/lib
 	fi
 	if [[ "$(uname-bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
@@ -1289,9 +1260,9 @@ toolchain_llvmgcc() {
 	WITH_TUNE=
 	if [[ "$TARGET_ARCH" = "i686" ]] ; then
 		WITH_TUNE="--with-tune=generic"
-		copy_sysroot ../../sdks/${MACOSX}.sdk $PREFIX $TARGET
+		copy_sysroot ${SDKS_DIR}/${MACOSX}.sdk $PREFIX $TARGET
 	else
-		copy_sysroot ../../sdks/${IOS}.sdk $PREFIX $TARGET
+		copy_sysroot ${SDKS_DIR}/${IOS}.sdk $PREFIX $TARGET
 	fi
 
 	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
@@ -1825,7 +1796,7 @@ class_dump() {
 	done
 
 	message_status "Copying frameworks to iPhone (${IPHONE_IP})..."
-	echo "rm -Rf /tmp/Frameworks" | ssh root@$IPHONE_IP
+	echo "rm -Rf ${TMP_DIR}/Frameworks" | ssh root@$IPHONE_IP
 	if ! scp -r "${TMP_DIR}/Frameworks" root@$IPHONE_IP:/tmp/; then
 		error "Failed to copy frameworks to iPhone. Check the connection."
 		exit 1
