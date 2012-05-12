@@ -42,7 +42,7 @@ To build:
    Darwin: /multiarch-darwin11-${VERSION}-Darwin-$(date +%y%m%d).7z
 
  I compress as a .7z on Darwin as tar.xz isn't supported and .tar.bz2 is too big.
-  To uncompress this on you can get a binary of pz7ip for Mac OS X from
+  To uncompress this you can get a binary of pz7ip for Mac OS X from
   http://mingw-and-ndk.googlecode.com/files/p7zip-macosx.tar.bz2 or use Keka.
 
 If you just want the toolchain binaries, the latest builds can always be found at:
