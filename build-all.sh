@@ -59,7 +59,7 @@ full_build_for_arch() {
 }
 
 # Clean everything.
-ARM_BUILD=1
+ARM_BUILD=0
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
@@ -91,7 +91,7 @@ if [[ "$UNAME" = "Windows" ]] ; then
 	done
 fi
 
-INTEL_BUILD=1
+INTEL_BUILD=0
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
@@ -129,6 +129,8 @@ if [ $MAKING_DEBUG = no ] ; then
         find $DST/${PREFIX}-osx/libexec -type f -and -not \( -path "*.sh" -or -path "*mkheaders" \) | xargs strip
     fi
 fi
+
+find $DST -type d -empty -exec rmdir {} \;
 
 cp ${BASE_TMP}/src-${PREFIX}-osx/cctools-809/APPLE_LICENSE $DST/${PREFIX}-osx
 chmod 0777 $DST/${PREFIX}-osx/APPLE_LICENSE

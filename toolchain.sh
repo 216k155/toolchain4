@@ -618,10 +618,13 @@ toolchain_download_darwin_sources() {
 }
 
 toolchain_static_host_libs() {
+	# These tools are installed to ${HOST_DIR}-gmp-mpfr rather than ${HOST_DIR} because the --with-gmp / -with-mpfr configure flag
+	# ends up polluting the target CFLAGS and on Windows, win-pthreads is in ${HOST_DIR}/include and that breaks building libgcc.
+
 	# GMP version 4.3.2
 	mkdir -p $SRC_DIR
 	pushd $SRC_DIR
-	if [[ ! -f $HOST_DIR/include/gmp.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+	if [[ ! -f ${HOST_DIR}-gmp-mpfr/include/gmp.h ]] ; then
 		if ! $(downloadUntar ftp://ftp.gnu.org/gnu/gmp/gmp-4.3.2.tar.gz); then
 			error "Failed to get and gmp-4.3.2. Check errors."
 			popd
@@ -629,14 +632,32 @@ toolchain_static_host_libs() {
 		fi
 		mkdir -p $BUILD_DIR/gmp-4.3.2
 		pushd $BUILD_DIR/gmp-4.3.2
-		ABI=32 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/gmp-4.3.2/configure --prefix=$HOST_DIR --disable-shared --enable-static
+
+		# If we use an absolute path for GMP configure, then run into problems building it on Windows.
+		# See Ruben Van Boxem's post about two thirds of the way down on this page:
+		# http://comments.gmane.org/gmane.comp.gnu.mingw.w64.general/1919
+		# "Strange but true: the problem lies in the first bit of the above configure line: the absolute path...
+		#  It seems that caused configure to get confused, not find some gmp conftest headers, and make very wrong
+		#  assumptions about my build environment."
+		# There's a chance this may also be fixed using mklink /D to semi-unify paths between MSYS and Windows
+		# though I've not tried... to give this a go:
+		# from cmd.exe
+		#  cd C:\mingw\msys\1.0
+		#  mklink /D tmp2 C:\tmp2
+		if [[ "$(uname-bt)" != "Windows" ]] ; then
+			GMP_SRC_DIR="$SRC_DIR/gmp-4.3.2"
+		else
+			GMP_SRC_DIR="../../src-${PREFIX_SUFFIX}/gmp-4.3.2"
+		fi
+		ABI=32 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $GMP_SRC_DIR/configure \
+		               --prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static
 		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
 	fi
 	# MPFR version 2.2.1
-	if [[ ! -f $HOST_DIR/include/mpfr.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+	if [[ ! -f ${HOST_DIR}-gmp-mpfr/include/mpfr.h ]] ; then
 		if ! $(downloadUntar http://www.mpfr.org/mpfr-2.2.1/mpfr-2.2.1.tar.gz); then
 			error "Failed to get and mpfr-2.2.1. Check errors."
 			popd
@@ -645,7 +666,8 @@ toolchain_static_host_libs() {
 
 		mkdir -p $BUILD_DIR/mpfr-2.2.1
 		pushd $BUILD_DIR/mpfr-2.2.1
-		CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
+		CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure \
+		               --prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static --with-gmp=${HOST_DIR}-gmp-mpfr
 		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
@@ -758,7 +780,7 @@ toolchain_cctools() {
 		if [[ "$(uname-bt)" = "Windows" ]] ; then
 			make -k &>make.log
 			DESTDIR=C: make install &>install.log
-			cp ${PREFIX}/lib/libLTO.dll ${PREFIX}/bin/
+			cp ${HOST_DIR}/lib/libLTO.dll ${PREFIX}/bin/
 		else
 			if ! ( make -k &>make.log && make install &>install.log ); then
 				error "Build & install failed. Check make.log and install.log"
@@ -809,7 +831,8 @@ toolchain_llvmgcc_core() {
 		--prefix=$HOST_DIR \
 		--enable-optimized \
 		--disable-assertions \
-		--target=${TARGET}
+		--target=${TARGET} \
+		--libexecdir=$HOST_DIR/libexec
 	make -j$JOBS &>make.log
 	make install &>install.log # optional
 	popd
@@ -859,8 +882,9 @@ toolchain_llvmgcc_saurik() {
 			--with-ld="$PREFIX"/bin/${TARGET}-ld${EXEEXT} \
 			--enable-wchar_t=no \
 			--with-gxx-include-dir=/usr/include/c++/4.2.1 \
-			--with-gmp=$HOST_DIR \
-			--with-mpfr=$HOST_DIR
+			--with-gmp=${HOST_DIR}-gmp-mpfr \
+			--with-mpfr=${HOST_DIR}-gmp-mpfr \
+			--libexecdir=$PREFIX/libexec
 		make clean > /dev/null
 		message_status "Building gcc-4.2-${TARGET_ARCH}..."
 		cecho bold "Build progress logged to: $BUILD_DIR/gcc-4.2-${TARGET_ARCH}/make.log"
@@ -1023,8 +1047,9 @@ toolchain_gcc()
 		--disable-werror \
 		--enable-libgomp \
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
-		--with-gmp=$HOST_DIR \
-		--with-mpfr=$HOST_DIR
+		--with-gmp=${HOST_DIR}-gmp-mpfr \
+		--with-mpfr=${HOST_DIR}-gmp-mpfr \
+		--libexecdir=$PREFIXGCC/libexec
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
 	if ( ! make -k &>make.log ); then
 		message_status "Make failed (probably host libiberty, ignoring...)"
@@ -1289,8 +1314,8 @@ toolchain_llvmgcc() {
 		--with-as=$PREFIX/bin/${TARGET}-as${EXEEXT} \
 		--with-ranlib=$PREFIX/bin/${TARGET}-ranlib${EXEEXT} \
 		--with-lipo=$PREFIX/bin/${TARGET}-lipo${EXEEXT} \
-		--with-gmp=$HOST_DIR \
-		--with-mpfr=$HOST_DIR \
+		--with-gmp=${HOST_DIR}-gmp-mpfr \
+		--with-mpfr=${HOST_DIR}-gmp-mpfr \
 		$WITH_TUNE
 	# Falls over at libiberty
 	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.

@@ -211,12 +211,11 @@ build_tools_dmg() {
 				popd
 				exit 1
 			fi
-
 			pushd bzip2-1.0.6
 			# Fails due to chmod a+x without .exe suffix, ignored.
-			cp {$_TOOLCHAIN}/files/bzip2-1.0.6-Makefile ./Makefile
+			cp ${_TOOLCHAIN}/files/bzip2-1.0.6-Makefile ./Makefile
 			do-sed $"s#PREFIX=/usr#PREFIX=$_PREFIX#g" ./Makefile
-			make -j $_JOBS install
+			make -j -k $_JOBS install
 			popd
 
 			[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf bzip2-1.0.6
