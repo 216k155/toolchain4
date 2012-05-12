@@ -629,7 +629,7 @@ toolchain_static_host_libs() {
 		fi
 		mkdir -p $BUILD_DIR/gmp-4.3.2
 		pushd $BUILD_DIR/gmp-4.3.2
-		ABI=32 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRCDIR/gmp-4.3.2/configure --prefix=$HOST_DIR --disable-shared --enable-static
+		ABI=32 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/gmp-4.3.2/configure --prefix=$HOST_DIR --disable-shared --enable-static
 		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
@@ -645,7 +645,7 @@ toolchain_static_host_libs() {
 
 		mkdir -p $BUILD_DIR/mpfr-2.2.1
 		pushd $BUILD_DIR/mpfr-2.2.1
-                CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRCDIR/mpfr-2.2.1/configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
+		CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure --prefix=$HOST_DIR --disable-shared --enable-static --with-gmp=$HOST_DIR
 		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
