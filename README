@@ -12,58 +12,63 @@ New features:
  8. Builds on Fedora and openSUSE - openSUSE is still WIP (see note [2]).
  9. Builds correctly with more recent GCCs (e.g. 4.7.0).
 
-Whereas the javacom version (which I forked) was focused on iPhone, my focus is on Mac OS X; I have
-tested that "Hello World" and "Hello World C++" (gcc and llvmgcc) work on iPhone (armv6 and v7).
-On Mac OS X I've built and tested the entire Google Android NDK (i386 only).
+Whereas the javacom version (which I forked) was focused on iPhone, my focus is on
+Mac OS X; I have tested that "Hello World" and "Hello World C++" (gcc and llvmgcc)
+work on iPhone (armv6 and v7) though. On Mac OS X I've built and tested the entire
+Google Android NDK (i386 only).
 
 To build:
 
- You'll need about 3GB of space in /tmp (or /tmp2 on Windows) and about 1.2GB of space where you clone
-  this repository (this includes space for the SDKs).
+ You'll need about 3GB of space in /tmp (or /tmp2 on Windows) and about 1.2GB of
+  space where you clone this repository (this includes space for the SDKs).
 
- From a Mac get the iPhoneOS4.3.sdk and MacOSX10.7.sdk folders
-  and place them in toolchain4/sdks/ (see note [3])
+ From a Mac get the iPhoneOS4.3.sdk and MacOSX10.7.sdk folders and place them in
+  toolchain4/sdks/ (see note [3])
 
- On Ubuntu (tested with 11.04 i686), Windows (tested with Win7 x64),
- Fedora (tested with 17 TC3 x86_64) and Mac OS X (tested with 10.7.x i686 and x86_64):
+ On Ubuntu (tested with 11.04 i686), Windows (tested with Win7 x64), Fedora
+  (tested with 17 TC3 x86_64) and Mac OS X (tested with 10.7.x i686 and x86_64):
   "./build-all.sh apple" (or "./build-all.sh apple-dbg" for debug versions)
 
  On openSUSE (tested with 12.1 x86_64)
-  "i386 ./build-all.sh apple" (or "i386 ./build-all.sh apple-dbg" for debug versions)
+  "i386 ./build-all.sh apple" (or "i386 ./build-all.sh apple-dbg")
   For openSUSE i686, the command line will be the same as for the other OSes).
 
- The built binaries will be in /tmp/final-release or /tmp2/final-release on Windows (MinGW/MSYS)
+ The built binaries will be in /tmp/final-release (/tmp2/final-release on Windows)
 
  An archive is also made in toolchain4/
-  Windows: /multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-Windows-$(date +%y%m%d).7z
-    Linux: /multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-Linux-$(date +%y%m%d).tar.xz
-   Darwin: /multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-Linux-$(date +%y%m%d).7z
+  ..where VERSION is currently cctools127.2-gcc42-5666.3-llvmgcc42-2336.1:
+    Linux: /multiarch-darwin11-${VERSION}-Linux-$(date +%y%m%d).tar.xz
+  Windows: /multiarch-darwin11-${VERSION}-Windows-$(date +%y%m%d).7z
+   Darwin: /multiarch-darwin11-${VERSION}-Darwin-$(date +%y%m%d).7z
 
- I compress as a .7z on Darwin as tar.xz isn't supported and .tar.bz2 is too big. You can get a binary
-  of pz7ip for Mac OS X from http://mingw-and-ndk.googlecode.com/files/p7zip-macosx.tar.bz2 or use
-  Keka to uncompress .7z archives on Mac OS X.
+ I compress as a .7z on Darwin as tar.xz isn't supported and .tar.bz2 is too big.
+  To uncompress this on you can get a binary of pz7ip for Mac OS X from
+  http://mingw-and-ndk.googlecode.com/files/p7zip-macosx.tar.bz2 or use Keka.
 
 If you just want the toolchain binaries, the latest builds can always be found at:
  http://code.google.com/p/mingw-and-ndk/
- To use the binaries you still need the official SDK(s). It should be fine to use these toolchains with
-  more recent SDKs than those they were built against.
+ To use the binaries you still need the official SDK(s). It should be fine to use
+ these toolchains with more recent SDKs than those they were built against.
 
-Send bug reports and/or patches to Ray Donnelly <mingw.android at gmail dot com> please.
+Send bug-reports/patches to Ray Donnelly <mingw.android at gmail dot com> please.
 
 Notes:
 
  [1] On Windows, the following cctools programs do not currently compile:
      "seg_addr_table", "checksyms" and "redo_prebinding"
 
- [2] There may be an issue with openSUSE (or other strict FHS distros) setting libexecdir to "lib" and the
-     built binaries expecting it to be "libexec". I've implemented a fix for this but it is currently untested.
+ [2] There may be an issue with openSUSE (or other strict FHS distros) setting
+     libexecdir to "lib" and the built binaries expecting it to be "libexec". I've
+     implemented a fix for this but it is currently untested.
 
- [3] The scripts contains some work to extract sdks from xcode dmgs but you're best off not depending
-     on this (i.e. it doesn't work on Windows, requires HFS+ kernel modules on Linux and is fairly untested).
-     On Windows, 7zip should be able to extract the sdk pkgs from the dmg, but extracting the pkgs will present
-     challenges. The script(s) do build the tools required to extract pkgs though, so it *might* be achievable.
+ [3] The scripts contains some work to extract sdks from xcode dmgs but you're
+     best off not depending on this (i.e. it doesn't work on Windows, requires
+     HFS+ kernel modules on Linux and is fairly untested). On Windows, 7zip should
+     be able to extract the sdk pkgs from the dmg, but extracting the pkgs will
+     present challenges. The script(s) do build the tools required to extract pkgs
+     though, so it *might* be achievable.
 
-Thanks.
+Enjoy.
 
 
 Partially redundant original javacom README:
