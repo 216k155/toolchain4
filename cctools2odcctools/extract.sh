@@ -209,6 +209,10 @@ rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer}
 
 if [[ "$(uname -s)" = "Darwin" ]] ; then
     SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
+    if [[ ! -d $SDKROOT ]] ; then
+	# Sandboxing... OSX becomes more like iOS every day.
+	SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSXVER}.sdk
+    fi
 else
     SDKROOT=${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk
 fi

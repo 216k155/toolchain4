@@ -325,8 +325,8 @@ archive-type-for-host() {
 }
 
 # $1 == folder(s) to compress (quoted, must all be relative to the working directory)
-# $2 == full path of output file (but without extensions)
-# $3 == Either xz, bz2, 7z, Windows, Linux, Darwin or nothing (if nothing, chooses most appropriate)
+# $2 == dirname with prefix for filename of output (i.e. without extensions)
+# $3 == Either xz, bz2, 7z, Windows, Linux, Darwin or nothing
 # Returns the name of the compressed file.
 compress-folders() {
 

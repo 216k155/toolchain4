@@ -161,7 +161,6 @@ elif [[ "$(uname-bt)" == "Darwin" ]] ; then
 	URLDL=curl
 fi
 
-
 # Everything is built relative to IPHONEDEV_DIR
 IPHONEDEV_DIR="$PWD"
 
@@ -1027,6 +1026,12 @@ toolchain_gcc()
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
 
+	if [[ "$TARGET_ARCH" = "i686" ]] ; then
+	    MULTILIBS="--enable-multilib"
+	else
+	    MULTILIBS="--disable-multilib"
+	fi
+
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
@@ -1043,7 +1048,7 @@ toolchain_gcc()
 		--enable-static \
 		--enable-shared \
 		--enable-nls \
-		--disable-multilib \
+		$MULTILIBS \
 		--disable-werror \
 		--enable-libgomp \
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
@@ -1290,6 +1295,12 @@ toolchain_llvmgcc() {
 		copy_sysroot ${SDKS_DIR}/${IOS}.sdk $PREFIX $TARGET
 	fi
 
+	if [[ "$TARGET_ARCH" = "i686" ]] ; then
+	    MULTILIBS="--enable-multilib"
+	else
+	    MULTILIBS="--disable-multilib"
+	fi
+
 	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
 	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
@@ -1304,7 +1315,7 @@ toolchain_llvmgcc() {
 		--enable-static \
 		--enable-libgomp \
 		--disable-werror \
-		--disable-multilib \
+		$MULTILIBS \
 		--program-transform-name=/^[cg][^.-]*$/s/$/-4.2/ \
 		--with-gxx-include-dir=$PREFIX/include/c++/4.2.1 \
 		--program-prefix=$TARGET-llvm- \
