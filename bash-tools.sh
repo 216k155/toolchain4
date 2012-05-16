@@ -268,19 +268,98 @@ comment-out-rev()
     cat $_REVTMPFILE | tac > $_OUTFILE
 }
 
-# $1 == folder to compress
-# $2 == dirname with prefix for filename of output (i.e. without extensions)
-# $3 == Either xz, bz2, 7z, Windows, Linux, Darwin or nothing
-# Returns the name of the compressed file.
-compress-folder() {
+# http://stackoverflow.com/questions/6973088/longest-common-prefix-of-two-strings-in-bash
+longest-common-prefix () {
+  local prefix= n
+  ## Truncate the two strings to the minimum of their lengths
+  if [[ ${#1} -gt ${#2} ]]; then
+    set -- "${1:0:${#2}}" "$2"
+  else
+    set -- "$1" "${2:0:${#1}}"
+  fi
+  ## Binary search for the first differing character, accumulating the common prefix
+  while [[ ${#1} -gt 1 ]]; do
+    n=$(((${#1}+1)/2))
+    if [[ ${1:0:$n} == ${2:0:$n} ]]; then
+      prefix=$prefix${1:0:$n}
+      set -- "${1:$n}" "${2:$n}"
+    else
+      set -- "${1:0:$n}" "${2:0:$n}"
+    fi
+  done
+  ## Add the one remaining character, if common
+  if [[ $1 = $2 ]]; then prefix=$prefix$1; fi
+  printf %s "$prefix"
+}
 
-    if [[ ! -d $1 ]] ; then
-	echo ""
-	return 1
+longest-common-prefix-n () {
+    local _ACCUM=""
+    local _PREFIXES="$1"
+    for PREFIX in $_PREFIXES
+    do
+        if [[ -z $_ACCUM ]] ; then
+            _ACCUM=$PREFIX
+        else
+            _ACCUM=$(longest-common-prefix $_ACCUM $PREFIX)
+        fi
+    done
+    printf %s "$_ACCUM"
+}
+
+archive-type-for-host() {
+    local _HOST=$1
+    if [[ -z $_HOST ]] ; then
+        HOST=$(uname-bt)
+    fi
+
+    if [[ "$HOST" = "Linux" ]] ; then
+	echo tar.xz
+	return 0
+    elif [[ "$HOST" = "Windows" ]] ; then
+	echo 7z
+	return 0
+    else
+	echo 7z
+	return 0
+    fi
+}
+
+# $1 == folder(s) to compress (quoted, must all be relative to the working directory)
+# $2 == full path of output file (but without extensions)
+# $3 == Either xz, bz2, 7z, Windows, Linux, Darwin or nothing (if nothing, chooses most appropriate)
+# Returns the name of the compressed file.
+compress-folders() {
+
+    local _FOLDERS="$1"
+    local _COMMONPREFIX=""
+    local _FOLDERSABS
+
+    for FOLDER in $_FOLDERS
+    do
+        if [[ ! -d $FOLDER ]] ; then
+            echo "Folder $FOLDER doesn't exist"
+            return 1
+        fi
+        pushd $FOLDER > /dev/null
+        _FOLDERSABS="$_FOLDERSABS "$PWD
+        popd > /dev/null
+    done
+
+    local _COMMONPREFIX=$(longest-common-prefix-n "$_FOLDERSABS")
+    echo _COMMONPREFIX is $_COMMONPREFIX
+
+    if [[ ${#_FOLDERSABS[@]} = 1 ]] ; then
+        _COMMONPREFIX=$(dirname "$_FOLDERSABS")
+	_RELFOLDERS=$(basename "$_FOLDERSABS")
+    else
+        local _RELFOLDERS=
+        for FOLDER in $_FOLDERSABS
+        do
+            _RELFOLDERS="$_RELFOLDERS "${FOLDER#$_COMMONPREFIX}
+        done
     fi
 
     local _OUTFILE=$2
-
     if [[ "$(basename $_OUTFILE)" = "$_OUTFILE" ]] ; then
 	_OUTFILE=$PWD/$_OUTFILE
     fi
@@ -303,17 +382,18 @@ compress-folder() {
 	#   compilers end up being ~71MB compared to ~19MB as a 7z
 	#   which is too vast a difference for me to ignore.
 	_ARCFMT="7z"
-    else
+    elif [[ "$_ARCFMT" = "Linux" ]] ; then
 	_ARCFMT="xz"
     fi
 
-    pushd $1 > /dev/null
-    if [[ "$_ARCFMT" == "xz" ]] || [[ "$_ARCFMT" == "bz2" ]] ; then
-	# Usually, sorting by the filename part of the full path yields better compression.
-	find -type f -exec sh -c "echo \$(basename {}; echo {} ) " \; | sort | awk '{print $2;}' > /tmp/$$.txt
-	tar -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
+    pushd $_COMMONPREFIX > /dev/null
+#    pushd $1 > /dev/null
+    if [[ "$_ARCFMT" == "7z" ]] ; then
+        find $_RELFOLDERS -maxdepth 1 -mindepth 0 \( ! -path "*.git*" \) -exec sh -c "exec echo {} " \; > /tmp/$$.txt
     else
-	find . -mindepth 1 -maxdepth 1 -type d > /tmp/$$.txt
+        # Usually, sorting by the filename part of the full path yields better compression.
+        find $_RELFOLDERS -type f \( ! -path "*.git*" \) -exec sh -c "echo \$(basename {}; echo {} ) " \; | sort | awk '{print $2;}' > /tmp/$$.txt
+        tar -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
     fi
 
     if [[ "$_ARCFMT" == "xz" ]] ; then
