@@ -81,7 +81,7 @@ if [ "$ARM_BUILD" = "1" ] ; then
     mv 4.2.1/armv7-apple-darwin10 4.2.1/armv7-apple-darwin11
     popd
 fi
-# Copy needed dlls
+# Copy needed dlls.
 if [[ "$UNAME" = "Windows" ]] ; then
 	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
 	do
@@ -119,6 +119,14 @@ if [[ "$UNAME" = "Windows" ]] ; then
 	done
 fi
 
+# For some reason, make install on Windows isn't copying the x86_64 folders so work around that.
+if [[ ! -d $DST/${PREFIX}-osx/lib/llvmgcc42/i686-apple-darwin11/4.2.1/x86_64 ]] ; then
+    cp -rf ${BASE_TMP}/bld-${PREFIX}-osx/llvmgcc42-2336.1-full-i686/gcc/x86_64 $DST/${PREFIX}-osx/lib/llvmgcc/i686-apple-darwin11/4.2.1/
+fi
+if [[ ! -d $DST/${PREFIX}-osx/lib/gcc/i686-apple-darwin11/4.2.1/x86_64 ]] ; then
+    cp -rf ${BASE_TMP}/bld-${PREFIX}-osx/gcc-5666.3-i686/gcc/x86_64 $DST/${PREFIX}-osx/lib/gcc/i686-apple-darwin11/4.2.1/
+fi
+
 if [ $MAKING_DEBUG = no ] ; then
     # Strip executables.
     # Maybe "strip -u -r -S" when on OS X?
@@ -148,5 +156,5 @@ if [ $MAKING_DEBUG = yes ] ; then
 else
     OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX
 fi
-OUTFILE=$(compress-folders "$DST/." $OUTFILEPREFIX)
+OUTFILE=$(compress_folders "$DST/." $OUTFILEPREFIX)
 cp $OUTFILE ~/Dropbox/darwin-compilers-work
