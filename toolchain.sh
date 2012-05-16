@@ -152,11 +152,11 @@ BASE_TMP=/tmp/tc4
 
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
-if [[ "$(uname-bt)" == "Windows" ]] ; then
+if [[ "$(uname_bt)" == "Windows" ]] ; then
 	SUDO=
 	BASE_TMP=/tmp2/tc4
 	EXEEXT=.exe
-elif [[ "$(uname-bt)" == "Darwin" ]] ; then
+elif [[ "$(uname_bt)" == "Darwin" ]] ; then
 	GAWK=awk
 	URLDL=curl
 fi
@@ -193,7 +193,7 @@ BUILD_ARCH=i686
 # (i.e. passed as an option to xgcc, and -m32 fails for arm of course). Instead it's specified as part of CC
 # and CXX, i.e. CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS"
 BUILD_ARCH_CFLAGS="-m32"
-if [[ "$(uname-bt)" = "Darwin" ]] ; then
+if [[ "$(uname_bt)" = "Darwin" ]] ; then
 	if [[ "$BUILD_ARCH" = "i686" ]] ; then
 		BUILD_ARCH_CFLAGS="-m32"
 	elif [[ "$BUILD_ARCH" = "x86_64" ]] ; then
@@ -235,7 +235,7 @@ fi
 #DECRYPTION_KEY_SYSTEM="ec413e58ef2149a2c5a2669d93a4e1a9fe4d7d2f580af2b2ee55c399efc3c22250b8d27a"
 
 JOBS=8
-UNAME=$(uname-bt)
+UNAME=$(uname_bt)
 if [[ "$UNAME" = "Windows" ]] ; then
 	EXEEXT=".exe"
 	JOBS=1
@@ -285,7 +285,7 @@ plist_key() {
 }
 
 ln_s() {
-	if [[ "$(uname-bt)" == "Windows" ]] ; then
+	if [[ "$(uname_bt)" == "Windows" ]] ; then
 		lns -s $1 $2
 	else
 		ln -sf $1 $2
@@ -296,7 +296,7 @@ ln_s() {
 build_gnused() {
     local _TMP=$1
     local _PREFIX=$2
-    if [[ "$(uname-bt)" == "Darwin" ]] ; then
+    if [[ "$(uname_bt)" == "Darwin" ]] ; then
 	if [[ -z $(which gsed) ]] ; then
 		download http://ftp.gnu.org/gnu/sed/sed-4.2.1.tar.gz
 		tar -zxf sed-4.2.1.tar.gz
@@ -643,7 +643,7 @@ toolchain_static_host_libs() {
 		# from cmd.exe
 		#  cd C:\mingw\msys\1.0
 		#  mklink /D tmp2 C:\tmp2
-		if [[ "$(uname-bt)" != "Windows" ]] ; then
+		if [[ "$(uname_bt)" != "Windows" ]] ; then
 			GMP_SRC_DIR="$SRC_DIR/gmp-4.3.2"
 		else
 			GMP_SRC_DIR="../../src-${PREFIX_SUFFIX}/gmp-4.3.2"
@@ -689,9 +689,9 @@ toolchain_cctools() {
 		rm -fr "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
 		mkdir -p "${BUILD_DIR}/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}"
 
-		if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ "$(uname_bt)" == "Windows" ]] ; then
 			OPENSSLPF=mingw
-		elif [[ "$(uname-bt)" == "Linux" ]] ; then
+		elif [[ "$(uname_bt)" == "Linux" ]] ; then
 			# Only if -m32
 			if [[ "$BUILD_ARCH_CFLAGS" = "-m32" ]] ; then
 				OPENSSLPF=linux-generic32
@@ -703,7 +703,7 @@ toolchain_cctools() {
 		mkdir -p "$SRC_DIR"
 		pushd "$SRC_DIR"
 		# Should really be using HOST_DIR as prefix for these.
-		if [[ ! -f $HOST_DIR/include/uuid/uuid.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+		if [[ ! -f $HOST_DIR/include/uuid/uuid.h ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
 			if ! $(downloadUntar http://sourceforge.net/projects/e2fsprogs/files/e2fsprogs/1.41.14/e2fsprogs-libs-1.41.14.tar.gz); then
 				error "Failed to get and extract e2fsprogs-libs-1.41.14 Check errors."
 				exit 1
@@ -721,7 +721,7 @@ toolchain_cctools() {
 			message_status "libuuid is ready!"
 		fi
 
-		if [[ ! -f $HOST_DIR/include/openssl/md5.h ]] && [[ "$(uname-bt)" != "Darwin" ]] ; then
+		if [[ ! -f $HOST_DIR/include/openssl/md5.h ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
 			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
 				error "Failed to get and extract openssl-1.0.0f Check errors."
 				popd
@@ -761,7 +761,7 @@ toolchain_cctools() {
 		# cctools is not very clean, clear out the noise.
 		# This should be done in src-$PREFIX/cctools-809/configure.ac
 		# -include here is surely wrong? maybe -include config.h would make sense?
-		if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ "$(uname_bt)" == "Windows" ]] ; then
 			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 		fi
 		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
@@ -776,7 +776,7 @@ toolchain_cctools() {
 
 		message_status "Building cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}..."
 		cecho bold "Build progress logged to: $BUILD_DIR/cctools-${CCTOOLS_VER_FH}-${TARGET_ARCH}/make.log"
-		if [[ "$(uname-bt)" = "Windows" ]] ; then
+		if [[ "$(uname_bt)" = "Windows" ]] ; then
 			make -k &>make.log
 			DESTDIR=C: make install &>install.log
 			cp ${HOST_DIR}/lib/libLTO.dll ${PREFIX}/bin/
@@ -1022,7 +1022,7 @@ toolchain_gcc()
 		[[ ! -d $PREFIXGCC/lib/ ]] && mkdir -p $PREFIXGCC/lib/
 		cp -fR ${SDKS_DIR}/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
 	fi
-	if [[ "$(uname-bt)" = "Windows" ]] ; then
+	if [[ "$(uname_bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
 
@@ -1077,7 +1077,7 @@ toolchain_gccdriver_dsymutil() {
 
 	ORIG_SRC_DIR=$SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	ORIG_BLD_DIR=$BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-full-${TARGET_ARCH}
-	if [[ "$(uname-bt)" = "Windows" ]] ; then
+	if [[ "$(uname_bt)" = "Windows" ]] ; then
 		REGEX="-L$HOST_DIR/lib -lregex"
 	fi
 	pushd $ORIG_BLD_DIR
@@ -1117,7 +1117,7 @@ toolchain_gccdriver_dsymutil() {
 	gcc -m32 -O2 $TOOLCHAIN/dsymutil.c \
 		-o $PREFIX/bin/${TARGET}-dsymutil${EXEEXT}
 
-	#if [[ "$(uname-bt)" = "Darwin" ]] ; then
+	#if [[ "$(uname_bt)" = "Darwin" ]] ; then
 	#	lipo -output $$PREFIX/bin/llvm-gcc-$MAJ_VERS -create \
 	#	$PREFIX/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
 	#	rm $PREFIX/bin/tmp-*-llvm-gcc-$MAJ_VERS || exit 1
@@ -1214,7 +1214,7 @@ patch_gcc() {
 	pushd libexec/gcc/${TARGET}/4.2.1
 	patch_binary collect2 $PREFIX/bin/$BUILD_ARCH-apple-darwin11-ld $BUILD_ARCH-apple-darwin11-ld
 	pushd install-tools
-	do-sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../../..^" mkheaders
+	do_sed $"s^prefix=$PREFIX^prefix=\$(dirname \$0)/../../../../..^" mkheaders
 	popd
 	# This is where it becomes even more patchy. I've no idea what the working directory
 	# is at the point when it's running the libexec programs, so this may take some
@@ -1283,7 +1283,7 @@ toolchain_llvmgcc() {
 		[[ ! -d $PREFIX/lib/ ]] && mkdir -p $PREFIX/lib/
 		cp -fR ${SDKS_DIR}/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIX/lib
 	fi
-	if [[ "$(uname-bt)" = "Windows" ]] ; then
+	if [[ "$(uname_bt)" = "Windows" ]] ; then
 		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
 	fi
 

@@ -6,7 +6,7 @@
 
 . bash-tools.sh
 
-UNAME=$(uname-bt)
+UNAME=$(uname_bt)
 if [[ "$UNAME" = "Linux" ]] ; then
 	STRACE="strace -F -s 512 -e access,open,execve,stat64,fstat64"
 	COMPARE=bcmp
@@ -124,8 +124,8 @@ ${TOOLCHAIN2} -dumpspecs > $OUT2/specs.txt 2>&1
 ${TOOLCHAIN3} -dumpspecs > $OUT3/specs.txt 2>&1
 ${TOOLCHAIN4} -dumpspecs > $OUT4/specs.txt 2>&1
 
-rm -f $(uname-bt)-test.7z
-rm -f ~/Dropbox/darwin-compilers-work/$(uname-bt)-test.7z
+rm -f $(uname_bt)-test.7z
+rm -f ~/Dropbox/darwin-compilers-work/$(uname_bt)-test.7z
 7za a -mx=9 ${UNAME}-test.7z $OUT1 $OUT2 $OUT3 $OUT4
 cp ${UNAME}-test.7z ~/Dropbox/darwin-compilers-work/
 

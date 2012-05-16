@@ -37,7 +37,7 @@ vercmp() {
 	[[ $V1 < $V2 ]] && echo "older"
 }
 
-uname-bt() {
+uname_bt() {
 	local _UNAME=$(uname -s)
 	case "$_UNAME" in
 	 "MINGW"*)
@@ -53,7 +53,7 @@ download() {
 		_LFNAME=$(basename $1)
 	fi
 	if [[ ! -f $_LFNAME ]] ; then
-		if [[ "$(uname-bt)" == "Darwin" ]] ; then
+		if [[ "$(uname_bt)" == "Darwin" ]] ; then
 			curl -S -L -O $1 -o $_LFNAME
 		else
 			wget -c $1 -O $_LFNAME
@@ -68,7 +68,7 @@ download() {
 }
 
 downloadStdout() {
-	if [[ "$(uname-bt)" == "Darwin" ]] ; then
+	if [[ "$(uname_bt)" == "Darwin" ]] ; then
 		curl -S -L $1
 	else
 		wget -c $1 -O -
@@ -77,7 +77,7 @@ downloadStdout() {
 
 # Beautified echo commands
 cecho() {
-	if [[ "$(uname-bt)" == "Windows" ]] ; then
+	if [[ "$(uname_bt)" == "Windows" ]] ; then
 	    local _COLOR=$1
 	    shift
 	    case $_COLOR in
@@ -143,9 +143,9 @@ message_action() {
 }
 
 # bsd sed doesn't do newlines the same way as gnu sed.
-do-sed()
+do_sed()
 {
-    if [[ "$(uname-bt)" = "Darwin" ]]
+    if [[ "$(uname_bt)" = "Darwin" ]]
     then
 	if [[ ! $(which gsed) ]]
 	then
@@ -204,7 +204,7 @@ END {} ' < $_INFILE > $_TMPFILEF
     mv $_TMPFILEF $_OUTFILE
 }
 
-comment-out-fwd-cxx()
+comment_out_fwd_cxx()
 {
     local _INFILE="$1"
     local _START="$2"
@@ -250,9 +250,9 @@ END {} ' < $_INFILE > $_TMPFILEF
 # $1 is "typedef union" and $2 is "} TAG;"
 # Works by using tac to reverse the input file, calling comment-out-fwd (with swapped delimiters)
 # and then calling tac once more to re-reverse the result of that.
-comment-out-rev()
+comment_out_rev()
 {
-    echo "Top of comment-out-rev"
+    echo "Top of comment_out_rev"
     echo "PWD is $PWD"
     local _INFILE="$1"
     local _START="$2"
@@ -264,12 +264,12 @@ comment-out-rev()
         _OUTFILE=$_INFILE
     fi
     cat $_INFILE | tac > $_REVTMPFILE
-    $(comment-out-fwd-cxx "$_REVTMPFILE" "$_END" "$_START" "1")
+    $(comment_out_fwd_cxx "$_REVTMPFILE" "$_END" "$_START" "1")
     cat $_REVTMPFILE | tac > $_OUTFILE
 }
 
-# http://stackoverflow.com/questions/6973088/longest-common-prefix-of-two-strings-in-bash
-longest-common-prefix () {
+# http://stackoverflow.com/questions/6973088/longest_common_prefix-of-two-strings-in-bash
+longest_common_prefix () {
   local prefix= n
   ## Truncate the two strings to the minimum of their lengths
   if [[ ${#1} -gt ${#2} ]]; then
@@ -292,7 +292,7 @@ longest-common-prefix () {
   printf %s "$prefix"
 }
 
-longest-common-prefix-n () {
+longest_common_prefix-n () {
     local _ACCUM=""
     local _PREFIXES="$1"
     for PREFIX in $_PREFIXES
@@ -300,16 +300,16 @@ longest-common-prefix-n () {
         if [[ -z $_ACCUM ]] ; then
             _ACCUM=$PREFIX
         else
-            _ACCUM=$(longest-common-prefix $_ACCUM $PREFIX)
+            _ACCUM=$(longest_common_prefix $_ACCUM $PREFIX)
         fi
     done
     printf %s "$_ACCUM"
 }
 
-archive-type-for-host() {
+archive_type_for_host() {
     local _HOST=$1
     if [[ -z $_HOST ]] ; then
-        HOST=$(uname-bt)
+        HOST=$(uname_bt)
     fi
 
     if [[ "$HOST" = "Linux" ]] ; then
@@ -328,7 +328,7 @@ archive-type-for-host() {
 # $2 == dirname with prefix for filename of output (i.e. without extensions)
 # $3 == Either xz, bz2, 7z, Windows, Linux, Darwin or nothing
 # Returns the name of the compressed file.
-compress-folders() {
+compress_folders() {
 
     local _FOLDERS="$1"
     local _COMMONPREFIX=""
@@ -345,7 +345,7 @@ compress-folders() {
         popd > /dev/null
     done
 
-    local _COMMONPREFIX=$(longest-common-prefix-n "$_FOLDERSABS")
+    local _COMMONPREFIX=$(longest_common_prefix-n "$_FOLDERSABS")
     echo _COMMONPREFIX is $_COMMONPREFIX
 
     if [[ ${#_FOLDERSABS[@]} = 1 ]] ; then
@@ -367,7 +367,7 @@ compress-folders() {
     local _ARCFMT=$3
 
     if [[ -z "$_ARCFMT" ]] ; then
-	_ARCFMT=$(uname-bt)
+	_ARCFMT=$(uname_bt)
     fi
 
     if [[ "$_ARCFMT" = "Windows" ]] ; then

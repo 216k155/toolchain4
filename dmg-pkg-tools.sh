@@ -33,7 +33,7 @@ patch_mingw_types_h() {
  #define __need_ptrdiff_t
 ' > /tmp/sys-types-uid_daddr_caddr.patch
 
-	if [[ "$(uname-bt)" == "Windows" ]] ; then
+	if [[ "$(uname_bt)" == "Windows" ]] ; then
 		if [[ -f /mingw/include/sys/types.h ]] ; then
 			MINGWTYPES_H=/mingw/include/sys/types.h
 		elif [[ -f /usr/include/sys/types.h ]] ; then
@@ -113,7 +113,7 @@ build_tools_dmg() {
 			if ! make -j $_JOBS install-lib ; then
 				error "Failed to make libiconv-1.14"
 			fi
-			do-sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" $_PREFIX/include/iconv.h
+			do_sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" $_PREFIX/include/iconv.h
 			popd
 		fi
 
@@ -204,7 +204,7 @@ build_tools_dmg() {
 	fi
 
 	if [ -z $(which dmg2img) ] ; then
-		if [[ "$(uname-bt)" == "Windows" ]] ; then
+		if [[ "$(uname_bt)" == "Windows" ]] ; then
 			message_status "Retrieving and building bzip2 1.0.6 ..."
 			if ! $(downloadUntar http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz); then
 				error "Failed to get and extract bzip2-1.0.6 Check errors."
@@ -214,7 +214,7 @@ build_tools_dmg() {
 			pushd bzip2-1.0.6
 			# Fails due to chmod a+x without .exe suffix, ignored.
 			cp ${_TOOLCHAIN}/files/bzip2-1.0.6-Makefile ./Makefile
-			do-sed $"s#PREFIX=/usr#PREFIX=$_PREFIX#g" ./Makefile
+			do_sed $"s#PREFIX=/usr#PREFIX=$_PREFIX#g" ./Makefile
 			make -j -k $_JOBS install
 			popd
 
@@ -279,7 +279,7 @@ build_tools_dmg() {
 		popd
 		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf cpio-2.11
 	fi
-	if [[ "$(uname-bt)" == "Windows" ]] && [[ -z $(which lns) ]] ; then
+	if [[ "$(uname_bt)" == "Windows" ]] && [[ -z $(which lns) ]] ; then
 		message_status "Retrieving and building Nokia's lns ..."
 		git clone git://gitorious.org/qt-labs/qtmodularization.git
 		pushd qtmodularization
@@ -371,7 +371,7 @@ umount_dmg() {
 	if [[ -f $_MNT_LOOPDEV ]] ; then
 		local _MNT_DIR=( $(cat $_MNT_DIRCACHE) )
 
-		if [[ "$(uname-bt)" == "Darwin" ]] ; then
+		if [[ "$(uname_bt)" == "Darwin" ]] ; then
 			$SUDO hdiutil detach $_MNT_DIR
 		else
 			# shouldn't we have a DEBUG var and only
@@ -430,7 +430,7 @@ mount_dmg() {
 		fi
 	fi
 	[[ -d $_MNT_DIR ]] || mkdir -p $_MNT_DIR
-	if [[ "$(uname-bt)" == "Darwin" ]] ; then
+	if [[ "$(uname_bt)" == "Darwin" ]] ; then
 		# echo "In order to extract `basename $1`, I am going to mount it."
 		# echo "This needs to be done as root."
 		sudo hdiutil attach -noverify -mountpoint $_MNT_DIR $_DMG
