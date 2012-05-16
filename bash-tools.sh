@@ -163,7 +163,7 @@ do_sed()
 # This is to be used when tag for uniquely identifying the block appears at the start of the block.
 # One problem with doing it using C comments is that you end up with comments within comments, so either
 # provide an option for using C++ comments or delete the comments within comments.
-comment-out-fwd-c()
+comment_out_fwd_c()
 {
     local _INFILE="$1"
     local _START="$2"
@@ -292,7 +292,7 @@ longest_common_prefix () {
   printf %s "$prefix"
 }
 
-longest_common_prefix-n () {
+longest_common_prefix_n () {
     local _ACCUM=""
     local _PREFIXES="$1"
     for PREFIX in $_PREFIXES
@@ -345,7 +345,7 @@ compress_folders() {
         popd > /dev/null
     done
 
-    local _COMMONPREFIX=$(longest_common_prefix-n "$_FOLDERSABS")
+    local _COMMONPREFIX=$(longest_common_prefix_n "$_FOLDERSABS")
     echo _COMMONPREFIX is $_COMMONPREFIX
 
     if [[ ${#_FOLDERSABS[@]} = 1 ]] ; then
