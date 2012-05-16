@@ -148,5 +148,5 @@ if [ $MAKING_DEBUG = yes ] ; then
 else
     OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX
 fi
-OUTFILE=$(compress-folders "$DST" $OUTFILEPREFIX)
+OUTFILE=$(compress-folders "$DST/." $OUTFILEPREFIX)
 cp $OUTFILE ~/Dropbox/darwin-compilers-work

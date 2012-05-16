@@ -334,29 +334,38 @@ compress_folders() {
     local _COMMONPREFIX=""
     local _FOLDERSABS
 
-    for FOLDER in $_FOLDERS
-    do
-        if [[ ! -d $FOLDER ]] ; then
-            echo "Folder $FOLDER doesn't exist"
-            return 1
-        fi
-        pushd $FOLDER > /dev/null
-        _FOLDERSABS="$_FOLDERSABS "$PWD
+    # Special case: if a single folder is passed in and it ends with a ., then
+    # we don't want the actual folder itself to appear in the archive.
+    if [[ ${#_FOLDERS[@]} = 1 ]] && [[ $(basename "$1") = . ]] ; then
+        pushd $1 > /dev/null
+        _COMMONPREFIX=$PWD
         popd > /dev/null
-    done
-
-    local _COMMONPREFIX=$(longest_common_prefix_n "$_FOLDERSABS")
-    echo _COMMONPREFIX is $_COMMONPREFIX
-
-    if [[ ${#_FOLDERSABS[@]} = 1 ]] ; then
-        _COMMONPREFIX=$(dirname "$_FOLDERSABS")
 	_RELFOLDERS=$(basename "$_FOLDERSABS")
     else
-        local _RELFOLDERS=
-        for FOLDER in $_FOLDERSABS
+        for FOLDER in $_FOLDERS
         do
-            _RELFOLDERS="$_RELFOLDERS "${FOLDER#$_COMMONPREFIX}
+            if [[ ! -d $FOLDER ]] ; then
+                echo "Folder $FOLDER doesn't exist"
+                return 1
+            fi
+            pushd $FOLDER > /dev/null
+            _FOLDERSABS="$_FOLDERSABS "$PWD
+            popd > /dev/null
         done
+    
+        local _COMMONPREFIX=$(longest_common_prefix_n "$_FOLDERSABS")
+        echo _COMMONPREFIX is $_COMMONPREFIX
+    
+        if [[ ${#_FOLDERSABS[@]} = 1 ]] ; then
+            _COMMONPREFIX=$(dirname "$_FOLDERSABS")
+            _RELFOLDERS=$(basename "$_FOLDERSABS")
+        else
+            local _RELFOLDERS=
+            for FOLDER in $_FOLDERSABS
+            do
+                _RELFOLDERS="$_RELFOLDERS "${FOLDER#$_COMMONPREFIX}
+            done
+        fi
     fi
 
     local _OUTFILE=$2
@@ -397,19 +406,30 @@ compress_folders() {
     fi
 
     if [[ "$_ARCFMT" == "xz" ]] ; then
-	xz -z -9 -e -c -q /tmp/$(basename $2).tar > $_OUTFILE.tar.xz
-	echo $_OUTFILE.tar.xz
+        _ARCEXT=".tar.xz"
     elif [[ "$_ARCFMT" == "bz2" ]] ; then
-	bzip2 -z -9 -c -q /tmp/$(basename $2).tar > $_OUTFILE.tar.bz2
-	echo $_OUTFILE.tar.bz2
+        _ARCEXT=".tar.bz2"
+    else
+        _ARCEXT="."$_ARCFMT
+    fi
+
+    if [[ -f $_OUTFILE$_ARCEXT ]] ; then
+        rm -rf $_OUTFILE$_ARCEXT > /dev/null
+    fi
+
+    if [[ "$_ARCFMT" == "xz" ]] ; then
+        _ARCEXT=".tar.xz"
+	xz -z -9 -e -c -q /tmp/$(basename $2).tar > $_OUTFILE$_ARCEXT
+    elif [[ "$_ARCFMT" == "bz2" ]] ; then
+        _ARCEXT=".tar.bz2"
+	bzip2 -z -9 -c -q /tmp/$(basename $2).tar > $_OUTFILE$_ARCEXT
     elif [[ "$_ARCFMT" == "xar" ]] ; then
 	# I'd like to use xz or lzma, but xar -caf results in "lzma support not compiled in."
-	xar --compression-args=9 -cjf $_OUTFILE.xar $(cat /tmp/$$.txt)
-	echo $_OUTFILE.xar
+	xar --compression-args=9 -cjf $_OUTFILE$_ARCEXT $(cat /tmp/$$.txt)
     else
-	7za a -mx=9 $_OUTFILE.7z $(cat /tmp/$$.txt) > /dev/null
-	echo $_OUTFILE.7z
+	7za a -mx=9 $_OUTFILE$_ARCEXT $(cat /tmp/$$.txt) > /dev/null
     fi
+    echo $_OUTFILE$_ARCEXT
     popd > /dev/null
     return 0
 }
