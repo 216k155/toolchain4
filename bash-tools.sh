@@ -402,7 +402,7 @@ compress_folders() {
     else
         # Usually, sorting by the filename part of the full path yields better compression.
         find $_RELFOLDERS -type f \( ! -path "*.git*" \) -exec sh -c "echo \$(basename {}; echo {} ) " \; | sort | awk '{print $2;}' > /tmp/$$.txt
-        tar -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
+        tar --hard-dereference -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
     fi
 
     if [[ "$_ARCFMT" == "xz" ]] ; then
