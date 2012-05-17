@@ -433,3 +433,23 @@ compress_folders() {
     popd > /dev/null
     return 0
 }
+
+# takes a folder $1, for every folder that matches $2-$3, makes a link in that folder from $2
+# So, e.g. suffix_mklinks ndk/toolchains windows x86_64
+suffix_mklinks() {
+    local _FOLDERS=$(find $1 -name "$2-$3" -print)
+    echo FOLDERS is $_FOLDERS
+    echo $_FOLDERS
+    for FOLDER in $_FOLDERS
+    do
+        pushd $(dirname $FOLDER)
+        if [[ "$(uname_bt)" == "Windows" ]] ; then
+            echo Command is cmd.exe /c \"mklink /D $2 $(basename $FOLDER)\"
+            cmd.exe /c \""mklink /D $2 $(basename $FOLDER)\""
+        else
+            echo Command is \"ln -s $2 $(basename $FOLDER)\"
+            ln -s $2 $(basename $FOLDER)
+        fi
+        popd
+    done
+}
