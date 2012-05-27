@@ -336,7 +336,8 @@ compress_folders() {
 
     # Special case: if a single folder is passed in and it ends with a ., then
     # we don't want the actual folder itself to appear in the archive.
-    if [[ ${#_FOLDERS[@]} = 1 ]] && [[ $(basename "$1") = . ]] ; then
+    local _COUNTER=( $_FOLDERS )
+    if [[ ${#_COUNTER[@]} = 1 ]] && [[ $(basename "$1") = . ]] ; then
         pushd $1 > /dev/null
         _COMMONPREFIX=$PWD
         popd > /dev/null
@@ -355,8 +356,8 @@ compress_folders() {
     
         local _COMMONPREFIX=$(longest_common_prefix_n "$_FOLDERSABS")
         echo _COMMONPREFIX is $_COMMONPREFIX
-    
-        if [[ ${#_FOLDERSABS[@]} = 1 ]] ; then
+	_COUNTER=( $_FOLDERSABS )
+        if [[ ${#_COUNTER[@]} = 1 ]] ; then
             _COMMONPREFIX=$(dirname "$_FOLDERSABS")
             _RELFOLDERS=$(basename "$_FOLDERSABS")
         else
