@@ -43,6 +43,7 @@ MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
+MYLINKFLAGSO	= $(LDFLAGS) $(MYLDFLAGS) -lstuff $(MYLIBS)
 
 CFILES = main.c ofile_print.c m68k_disasm.c i860_disasm.c \
          m88k_disasm.c i386_disasm.c ppc_disasm.c hppa_disasm.c \
@@ -65,8 +66,7 @@ $(OBJCOBJS): %.o: %.c
 	$(CC) $(OBJC) $(MYCOMPILEFLAGS) -c -o $@ $<
 
 otool: $(OBJS) $(OBJCOBJS) ofile.o
-	$(CC) -o $@ $^ $(MYLINKFLAGS) -lstuff
-
+	$(CC) -o $@ $^ $(MYLINKFLAGSO)
 
 ofile.o: $(top_srcdir)/libstuff/ofile.c
 	$(CC) -DOTOOL $(MYCOMPILEFLAGS) -c -o $@ $<
@@ -75,6 +75,7 @@ install: otool
 	mkdir -p $(DESTDIR)/$(bindir)
 	$(INSTALL_PROGRAM) otool \
 		$(DESTDIR)/$(bindir)/`echo otool | sed '$(transform)'`
+
 clean:
 	rm -r -f *.o
 	rm -f otool
