@@ -402,7 +402,7 @@ compress_folders() {
         find $_RELFOLDERS -maxdepth 1 -mindepth 0 \( ! -path "*.git*" \) -exec sh -c "exec echo {} " \; > /tmp/$$.txt
     else
         # Usually, sorting by the filename part of the full path yields better compression.
-        find $_RELFOLDERS -type f \( ! -path "*.git*" \) -exec sh -c "echo \$(basename {}; echo {} ) " \; | sort | awk '{print $2;}' > /tmp/$$.txt
+        find $_RELFOLDERS -type f \( ! -path "*.git*" \) -exec sh -c 'echo $(basename "{}")*"{}" ' \; | sort | awk -F\* '{print $2;}' > /tmp/$$.txt
         tar --hard-dereference -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
     fi
 
