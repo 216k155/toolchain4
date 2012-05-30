@@ -47,3 +47,6 @@ Send bug reports and/or patches to Ray Donnelly <mingw.android at gmail dot com>
             Linux :: Compressed to a tar.xz as 7z isn't 'native' enough
 
 16-05-12 :: 64bit OS X compile fixed (--enable-multilibs added to configure for gcc, llvmgcc)
+
+31-05-12 :: Linux  :: Fix pathing issue introduced by multilibs (uses readlink /proc/self/exe)
+            Darwin :: Fix pathing issue introduced by multilibs (uses _NSGetExecutablePath)
