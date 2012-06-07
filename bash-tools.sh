@@ -48,17 +48,17 @@ uname_bt() {
 }
 
 download() {
-	local _LFNAME=$2
+	local _LFNAME="$2"
 	if [[ -z $_LFNAME ]] ; then
-		_LFNAME=$(basename $1)
+		_LFNAME=$(basename "$1")
 	fi
-	if [[ ! -f $_LFNAME ]] ; then
+#	if [[ ! -f $_LFNAME ]] ; then
 		if [[ "$(uname_bt)" == "Darwin" ]] ; then
-			curl -S -L -O $1 -o $_LFNAME
+			curl -S -L -O "$1" -o $_LFNAME
 		else
-			wget -c $1 -O $_LFNAME
+			wget -c "$1" -O $_LFNAME
 		fi
-	fi
+#	fi
 
 	if [[ -f $_LFNAME ]] ; then
 		return 0
@@ -341,7 +341,7 @@ compress_folders() {
         pushd $1 > /dev/null
         _COMMONPREFIX=$PWD
         popd > /dev/null
-	_RELFOLDERS=$(basename "$_FOLDERSABS")
+        _RELFOLDERS=$(basename "$1")
     else
         for FOLDER in $_FOLDERS
         do
@@ -356,7 +356,7 @@ compress_folders() {
     
         local _COMMONPREFIX=$(longest_common_prefix_n "$_FOLDERSABS")
         echo _COMMONPREFIX is $_COMMONPREFIX
-	_COUNTER=( $_FOLDERSABS )
+        _COUNTER=( $_FOLDERSABS )
         if [[ ${#_COUNTER[@]} = 1 ]] ; then
             _COMMONPREFIX=$(dirname "$_FOLDERSABS")
             _RELFOLDERS=$(basename "$_FOLDERSABS")
@@ -402,7 +402,7 @@ compress_folders() {
         find $_RELFOLDERS -maxdepth 1 -mindepth 0 \( ! -path "*.git*" \) -exec sh -c "exec echo {} " \; > /tmp/$$.txt
     else
         # Usually, sorting by the filename part of the full path yields better compression.
-        find $_RELFOLDERS -type f \( ! -path "*.git*" \) -exec sh -c 'echo $(basename "{}")*"{}" ' \; | sort | awk -F\* '{print $2;}' > /tmp/$$.txt
+        find $_RELFOLDERS  \( -type f -or -type l \) \( ! -path "*.git*" \) -exec sh -c 'echo $(basename "{}")*"{}" ' \; | sort | awk -F\* '{print $2;}' > /tmp/$$.txt
         tar --hard-dereference -c --files-from=/tmp/$$.txt -f /tmp/$(basename $2).tar
     fi
 
@@ -453,4 +453,42 @@ suffix_mklinks() {
         fi
         popd
     done
+}
+
+# $1 archive
+# $2 dest path
+extract() {
+    if [ ! -z "$2" -a ! -d "$2" ]; then
+        mkdir -p "$2"
+    fi
+    if [ ! -z "$2" ] ; then
+        TARCHDIR=-C"$2"
+    fi
+	case "$1" in
+		*7z)
+           if [ ! -z "$2" ]; then
+    	       7za x "$1" -o"$2"
+           else
+    	       7za x "$1"
+           fi
+		   ;;
+		*.tar.bz2)
+		   tar -xjf "$1" $TARCHDIR
+		   ;;
+		*.tar.gz)
+		   tar -xzf "$1" $TARCHDIR
+		   ;;
+		*.tar.xz)
+		   tar -xJf "$1" $TARCHDIR
+		   ;;
+		*.zip)
+           if [ ! -z "$2" ]; then
+               unzip "$1" -d "$2"
+           else
+               unzip "$1"
+           fi
+		   ;;
+		*)
+		;;
+	esac
 }
