@@ -151,7 +151,7 @@
 +const struct host_hooks host_hooks = HOST_HOOKS_INITIALIZER;
 --- gcc-5666.3/gcc/config/i386/xm-mingw32.h.orig	1970-01-01 00:00:00 +0000
 +++ gcc-5666.3/gcc/config/i386/xm-mingw32.h	2012-03-29 03:32:59 +0100
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,40 @@
 +/* Configuration for GCC for hosting on Windows32.
 +   using GNU tools and the Windows32 API Library.
 +   Copyright (C) 1997, 1998, 1999, 2001, 2002, 2003, 2004 Free Software
@@ -187,7 +187,11 @@
 +
 +/* MSVCRT does not support the "ll" format specifier for printing
 +   "long long" values.  Instead, we use "I64".  */
-+#define HOST_LONG_LONG_FORMAT "I64"
++#ifndef __USE_MINGW_ANSI_STDIO
++ #define HOST_LONG_LONG_FORMAT "I64"
++#else
++ #define HOST_LONG_LONG_FORMAT "ll"
++#endif
 --- gcc-5666.3/gcc/config/i386/x-mingw32.orig	1970-01-01 00:00:00 +0000
 +++ gcc-5666.3/gcc/config/i386/x-mingw32	2004-12-02 12:12:09 +0000
 @@ -0,0 +1,13 @@

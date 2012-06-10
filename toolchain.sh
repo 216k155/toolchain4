@@ -33,8 +33,9 @@
 # https://github.com/rotten-apples/cctools
 
 # Current status: everything builds, ld64 is much more up to date now (127.2) and links
-# statically with llvmCore (hence massive executables), but I don't like shared libraries
-# being used in core toolchain components like linkers. It just feels wrong somehow.
+# statically (except on Windows where it's a dll) with llvmCore (hence massive executables),
+# ...I don't like shared libraries being used in core toolchain components like linkers. It
+# just feels wrong somehow.
 
 # Usage
 # ======================
@@ -126,6 +127,109 @@
 # collect2: ld returned 1 exit status
 # The equiv command line works fine on Linux.
 
+# Switching to mingw64 also turned up:
+# WINDOWS:
+# gcc   -m32 -O0 -g -D__USE_MINGW_ANSI_STDIO -msse2 -D_CTYPE_H  -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE  -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -pedantic -Wno-long-long -Wno-variadic-macros -Wno-overlength-strings -Wold-style-definition -Wmissing-format-attribute    -DHAVE_CONFIG_H -DGENERATOR_FILE  -o build/genautomata.exe \
+# 	    build/genautomata.o build/rtl.o build/read-rtl.o build/ggc-none.o build/vec.o build/min-insn-modes.o build/gensupport.o build/print-rtl.o build/errors.o ../build-i686-pc-mingw32/libiberty/libiberty.a -lm
+# build/genautomata.exe /tmp2/tc4/src-apple-dbg-osx/gcc-5666.3/gcc/config/i386/i386.md \
+# 	  insn-conditions.md > tmp-automata.c
+# 
+# Automaton `pentium'
+#        48 NDFA states,            138 NDFA arcs
+#        48 DFA states,             138 DFA arcs
+#        20 minimal DFA states,      82 minimal DFA arcs
+#       274 all insns         17 insn equivalence classes
+#     0 locked states
+#    91 transition comb vector els,   340 trans table els: use comb vect
+#   340 min delay table els, compression factor 2
+#
+# LINUX:
+# gcc   -m32 -O0 -g  -msse2 -D_CTYPE_H  -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE  -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -pedantic -Wno-long-long -Wno-variadic-macros -Wno-overlength-strings -Wold-style-definition -Wmissing-format-attribute    -DHAVE_CONFIG_H -DGENERATOR_FILE  -o build/genautomata \
+# 	    build/genautomata.o build/rtl.o build/read-rtl.o build/ggc-none.o build/vec.o build/min-insn-modes.o build/gensupport.o build/print-rtl.o build/errors.o ../build-i686-pc-linux-gnu/libiberty/libiberty.a -lm
+# build/genautomata /tmp/tc4/src-apple-dbg-osx/gcc-5666.3/gcc/config/i386/i386.md \
+# 	  insn-conditions.md > tmp-automata.c
+# 
+# Automaton `pentium'
+#        48 NDFA states,            138 NDFA arcs
+#        48 DFA states,             138 DFA arcs
+#        20 minimal DFA states,      82 minimal DFA arcs
+#       274 all insns         17 insn equivalence classes
+#     0 locked states
+#    88 transition comb vector els,   340 trans table els: use comb vect
+#   340 min delay table els, compression factor 2
+#
+#
+#
+# BUT THE CURRENT ACTUAL FAILURE ON MINGW64 IS:
+# WINDOWS:
+# /tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc/xgcc -B/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc/ -B/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/bin/ -B/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/ -B/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -isystem /tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/include -isystem /tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/sys-include  -O2  -O2 -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE   -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition  -isystem ./include  -fPIC -pipe -g -DHAVE_GTHR_DEFAULT -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED  -dynamiclib -nodefaultlibs -install_name /tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s`if test . = ppc64 ; then echo _. ; fi`.1.dylib -single_module -o ./libgcc_s.1.dylib.tmp -Wl,-exported_symbols_list,libgcc/./libgcc.map -compatibility_version 1 -current_version 1.0  libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# ld: can't read -exported_symbols_list file: libgcc/./libgcc.map
+# collect2: ld returned 1 exit status
+# make[3]: *** [libgcc_s.dylib] Error 1
+#
+# LINUX:
+# /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc/xgcc -B/tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc/ -B/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/bin/ -B/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/ -B/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -isystem /tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/include -isystem /tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/sys-include  -O2  -O2 -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE   -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wold-style-definition  -isystem ./include  -fPIC -pipe -g -DHAVE_GTHR_DEFAULT -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED  -dynamiclib -nodefaultlibs -install_name /tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s`if test . = ppc64 ; then echo _. ; fi`.1.dylib -single_module -o ./libgcc_s.1.dylib.tmp -Wl,-exported_symbols_list,libgcc/./libgcc.map -compatibility_version 1 -current_version 1.0  libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# ld: warning: could not create compact unwind for __Unwind_Resume: non-standard register 0 being saved in prolog
+# ld: warning: could not create compact unwind for __Unwind_ForcedUnwind: non-standard register 0 being saved in prolog
+# ld: warning: could not create compact unwind for __Unwind_RaiseException: non-standard register 0 being saved in prolog
+# ld: warning: could not create compact unwind for __Unwind_Resume_or_Rethrow: non-standard register 0 being saved in prolog
+#
+# Trying to reproduce this results in:
+# ld: library not found for -ldylib1.o
+# collect2: ld returned 1 exit status
+
+# Linux:
+# cd /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc
+# /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc/collect2                   -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name /tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib                 -macosx_version_min 10.4 -single_module -syslibroot /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc/../                 -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -L/tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# Windows:
+# cd C:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc
+# C:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc/collect2.exe -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name C:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib -macosx_version_min 10.4 -single_module -syslibroot c:\mingw64\msys\tmp2\tc4\bld-apple-dbg-osx\gcc-5666.3-i686\gcc\../ -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -LC:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc                                                                                                                        -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# The differences here are:
+# -dylib_install_name /tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib
+# vs
+# -dylib_install_name C:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib 
+# And linux has extra -L's of:
+# -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system 
+
+# Porting that across we get:
+# C:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc/collect2.exe -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name C:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib -macosx_version_min 10.4 -single_module -syslibroot c:\mingw64\msys\tmp2\tc4\bld-apple-dbg-osx\gcc-5666.3-i686\gcc\../ -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -LC:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc -LC:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -LC:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# C:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc/collect2.exe -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name C:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib -macosx_version_min 10.4 -single_module -syslibroot c:\mingw64\msys\tmp2\tc4\bld-apple-dbg-osx\gcc-5666.3-i686\gcc\../ -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -LC:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc -LC:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -LC:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc/collect2                   -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name /tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib                 -macosx_version_min 10.4 -single_module -syslibroot /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc/../                 -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -L/tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/./gcc -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system                                               -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o libgcc/./_get_pc_thunk_dx_s.o libgcc/./_get_pc_thunk_cx_s.o libgcc/./_get_pc_thunk_bx_s.o libgcc/./_get_pc_thunk_si_s.o libgcc/./_get_pc_thunk_di_s.o libgcc/./_get_pc_thunk_bp_s.o libgcc/./_muldi3_s.o libgcc/./_negdi2_s.o libgcc/./_lshrdi3_s.o libgcc/./_ashldi3_s.o libgcc/./_ashrdi3_s.o libgcc/./_cmpdi2_s.o libgcc/./_ucmpdi2_s.o libgcc/./_clear_cache_s.o libgcc/./_enable_execute_stack_s.o libgcc/./_trampoline_s.o libgcc/./__main_s.o libgcc/./_absvsi2_s.o libgcc/./_absvdi2_s.o libgcc/./_addvsi3_s.o libgcc/./_addvdi3_s.o libgcc/./_subvsi3_s.o libgcc/./_subvdi3_s.o libgcc/./_mulvsi3_s.o libgcc/./_mulvdi3_s.o libgcc/./_negvsi2_s.o libgcc/./_negvdi2_s.o libgcc/./_ctors_s.o libgcc/./_ffssi2_s.o libgcc/./_ffsdi2_s.o libgcc/./_clz_s.o libgcc/./_clzsi2_s.o libgcc/./_clzdi2_s.o libgcc/./_ctzsi2_s.o libgcc/./_ctzdi2_s.o libgcc/./_popcount_tab_s.o libgcc/./_popcountsi2_s.o libgcc/./_popcountdi2_s.o libgcc/./_paritysi2_s.o libgcc/./_paritydi2_s.o libgcc/./_powisf2_s.o libgcc/./_powidf2_s.o libgcc/./_powixf2_s.o libgcc/./_powitf2_s.o libgcc/./_mulsc3_s.o libgcc/./_muldc3_s.o libgcc/./_mulxc3_s.o libgcc/./_multc3_s.o libgcc/./_divsc3_s.o libgcc/./_divdc3_s.o libgcc/./_divxc3_s.o libgcc/./_divtc3_s.o libgcc/./_bswapsi2_s.o libgcc/./_bswapdi2_s.o libgcc/./_fixunssfsi_s.o libgcc/./_fixunsdfsi_s.o libgcc/./_fixunsxfsi_s.o libgcc/./_fixsfdi_s.o libgcc/./_fixsfti_s.o libgcc/./_fixunssfdi_s.o libgcc/./_fixunssfti_s.o libgcc/./_floatdisf_s.o libgcc/./_floattisf_s.o libgcc/./_floatundisf_s.o libgcc/./_floatuntisf_s.o libgcc/./_fixdfdi_s.o libgcc/./_fixdfti_s.o libgcc/./_fixunsdfdi_s.o libgcc/./_fixunsdfti_s.o libgcc/./_floatdidf_s.o libgcc/./_floattidf_s.o libgcc/./_floatundidf_s.o libgcc/./_floatuntidf_s.o libgcc/./_fixxfdi_s.o libgcc/./_fixxfti_s.o libgcc/./_fixunsxfdi_s.o libgcc/./_fixunsxfti_s.o libgcc/./_floatdixf_s.o libgcc/./_floattixf_s.o libgcc/./_floatundixf_s.o libgcc/./_floatuntixf_s.o libgcc/./_fixtfdi_s.o libgcc/./_fixtfti_s.o libgcc/./_fixunstfdi_s.o libgcc/./_fixunstfti_s.o libgcc/./_floatditf_s.o libgcc/./_floattitf_s.o libgcc/./_floatunditf_s.o libgcc/./_floatuntitf_s.o libgcc/./_divdi3_s.o libgcc/./_moddi3_s.o libgcc/./_udivdi3_s.o libgcc/./_umoddi3_s.o libgcc/./_udiv_w_sdiv_s.o libgcc/./_udivmoddi4_s.o libgcc/./darwin-64_s.o libgcc/./unwind-dw2_s.o libgcc/./unwind-dw2-fde-darwin_s.o libgcc/./unwind-sjlj_s.o libgcc/./unwind-c_s.o -lc
+# sysroot isn't being copied right?!
+
+# Windows:
+# /tmp2/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-ld.exe -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name C:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib -macosx_version_min 10.4 -single_module -syslibroot c:mingw64msystmp2tc4bld-apple-dbg-osxgcc-5666.3-i686gcc../ -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -LC:/mingw64/msys/tmp2/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc -LC:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -LC:/mingw64/msys/tmp2/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o -v
+# Linux:
+# /tmp/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-ld      -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name C:/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib -macosx_version_min 10.4 -single_module -syslibroot /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc../ -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -L/tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o -v
+
+# It's looking like this is need:
+# 	do_sed $"s^O_RDONLY, 0)^O_RDONLY|O_BINARY, 0)^"                                     ${DISTDIR}/ld64/src/ld/Options.cpp
+
+# And the next issue. libgcc isn't building right on Windows:
+# To test on Linux:
+# cd /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc
+# rm libgcc_s.10.5.dylib x86_64/libgcc_s.10.5.dylib
+# strace -F -s 256 make libgcc_s.10.5.dylib > ~/Dropbox/libgcc_s2.linux 2>&1
+# 
+# [pid 31804] execve("/tmp/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-strip", ["i686-apple-darwin11-strip", "-o", "libgcc_s.10.5.dylib_T", "-s", "/tmp/tc4/src-apple-dbg-osx/gcc-5666.3/gcc/config/i386/darwin-libgcc.10.5.ver", "-c", "-u", ".//libgcc_s.1.dylib.tmp"], [/* 61 vars */]) = 0
+# ... More stuff.
+# ..... Notice this bit, the *, that's expanded by the shell I guess, and what'll happen on Windows I don't know.
+# write(1, "lipo -output libgcc_s.10.5.dylib -create libgcc_s.10.5.dylib_T*\n", 64lipo -output libgcc_s.10.5.dylib -create libgcc_s.10.5.dylib_T*
+# [pid 31807] execve("/tmp/tc4/final-install/apple-dbg-osx/bin/lipo", ["lipo", "-output", "libgcc_s.10.5.dylib", "-create", "libgcc_s.10.5.dylib_T", "libgcc_s.10.5.dylib_Tx86_64"], [/* 61 vars */]) = 0
+# In the make.log output:
+# /tmp/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-lipo -output libgcc_s.10.5.dylib -create libgcc_s.10.5.dylib_T*
+
+# Should also fix this:
+# C:\tmp2\tc4\src-apple-dbg-osx\gcc-5666.3\gcc\config\i386\xm-mingw32.h
+# #define HOST_LONG_LONG_FORMAT "I64"
+# To:
+# ifdef __USE_MINGW_ANSI_STDIO
+# #define HOST_LONG_LONG_FORMAT "ll"
+# #else
+# #define HOST_LONG_LONG_FORMAT "I64"
+# #endif
+# I was going to make a patch for this but it all went a bit awry.
+
 # Error reporting, coloured printing, downloading.
 . bash-tools.sh
 
@@ -163,6 +267,8 @@ SUDO=sudo
 GAWK=gawk
 URLDL=wget
 BASE_TMP=/tmp/tc4
+AUTOHEADER=autoheader
+AUTOCONF=autoconf
 
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
@@ -170,6 +276,17 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
 	SUDO=
 	BASE_TMP=/tmp2/tc4
 	EXEEXT=.exe
+	# In case you've installed the mingw64 provided autotools.
+    if [ -d /opt/autotools/bin ]; then
+        PATH=/opt/autotools/bin:$PATH
+        # Autoconf 2.68 on Windows emits (when configuring libiberty) a configure script script that emits:
+        # ...however, at the time that was true, I didn't run autoheader and that may be the reason for that.
+        # I don't know autotools enough yet...
+        # | #define HAVE_ATEXIT 1
+        # | #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+        AUTOCONF=autoconf-2.59
+        AUTOHEADER=autoheader-2.59
+    fi
 elif [[ "$(uname_bt)" == "Darwin" ]] ; then
 	GAWK=awk
 	URLDL=curl
@@ -275,7 +392,7 @@ IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
 DARWIN_SOURCES_DIR="$FILES_DIR/darwin_sources"
 
 # "mount zcat xxd" are only needed for dmg tools, and that's less important.
-NEEDED_COMMANDS="gcc make $SUDO tar $URLDL unzip $GAWK bison flex patch mount zcat xxd"
+NEEDED_COMMANDS="gcc make $SUDO tar $URLDL unzip $GAWK bison flex patch" # mount zcat xxd
 
 HERE=`pwd`
 
@@ -336,7 +453,7 @@ build_gnused() {
 # Builds lns (Windows), dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
 build_tools() {
-	build_tools_dmg $TMP_DIR $HOST_DIR $PREFIX $PWD
+#	build_tools_dmg $TMP_DIR $HOST_DIR $PREFIX $PWD
 	build_gnused $TMP_DIR $HOST_DIR $PREFIX
 }
 
@@ -777,7 +894,7 @@ toolchain_cctools() {
 		# This should be done in src-$PREFIX/cctools-809/configure.ac
 		# -include here is surely wrong? maybe -include config.h would make sense?
 		if [[ "$(uname_bt)" == "Windows" ]] ; then
-			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
+			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO=1"
 		fi
 		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
 			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
@@ -834,22 +951,25 @@ toolchain_llvmgcc_core() {
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
-                patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-mingw64.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-mingw64.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-libiberty-mingw64.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-slibgcc-darwin-ln-order.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-use-ll-when-__USE_MINGW_ANSI_STDIO.patch
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
 	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
-	CC="gcc $BUILD_ARCH_CFLAGS -fpermissive" CXX="g++ $BUILD_ARCH_CFLAGS -fpermissive" CFLAGS="$SAVE_TEMPS -fpermissive" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS -fpermissive" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$HOST_DIR \
 		--enable-optimized \
 		--disable-assertions \
 		--target=${TARGET} \
 		--libexecdir=$HOST_DIR/libexec
-	make -j$JOBS &>make.log
-	make install &>install.log # optional
+	make -j$JOBS libs-only &>make.log
+	make install-libs &>install.log # optional
 	popd
 }
 
@@ -913,6 +1033,7 @@ toolchain_llvmgcc_saurik() {
 
 
 copy_sysroot() {
+set -x
 	local _SRC=$1
 	local _DST=$2
 	local _TARGET=$3
@@ -958,6 +1079,7 @@ copy_sysroot() {
 	cp -f $_SRC/usr/lib/libc.dylib $_DST/$_TARGET/lib/system
 	cp -f $_SRC/usr/lib/dylib1.o   $_DST/$_TARGET/lib/system
 	cp -fR $_SRC/usr/lib/system    $_DST/$_TARGET/lib
+	set +x
 }
 
 
@@ -997,6 +1119,16 @@ toolchain_gcc()
 		# 4. Stack smash protection was being checked for in the host C libraries, this isn't wanted when
 		#    cross compiling so instead we assume libc has ssp (darwin's libc has this feature)
 		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
+		# Don't work around asprintf already existing. Results in a compile failure.
+		# Requires autoconf'ing in libiberty.
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-libiberty-mingw64.patch
+		# In t-slibgcc-darwin, ln -s is used before the target file exists (which is of course fine), but on mingw
+		# ln -s is cp, and that doesn't work.
+		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-t-slibgcc-darwin-ln-order.patch
+		pushd libiberty
+		$AUTOCONF
+		$AUTOHEADER
+		popd
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1039,7 +1171,7 @@ toolchain_gcc()
 		cp -fR ${SDKS_DIR}/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIXGCC/lib
 	fi
 	if [[ "$(uname_bt)" = "Windows" ]] ; then
-		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
+		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO=1"
 	fi
 
 	if [[ "$TARGET_ARCH" = "i686" ]] ; then
@@ -1286,6 +1418,13 @@ toolchain_llvmgcc() {
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-mingw64.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-libiberty-mingw64.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-slibgcc-darwin-ln-order.patch
+		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-use-ll-when-__USE_MINGW_ANSI_STDIO.patch
+		pushd libiberty
+		$AUTOCONF
+		$AUTOHEADER
+		popd
 	popd
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
@@ -1301,7 +1440,7 @@ toolchain_llvmgcc() {
 		cp -fR ${SDKS_DIR}/${MACOSX}.sdk/usr/lib/libSystem.B.dylib $PREFIX/lib
 	fi
 	if [[ "$(uname_bt)" = "Windows" ]] ; then
-		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO"
+		CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO=1"
 	fi
 
 	WITH_TUNE=
@@ -1318,8 +1457,8 @@ toolchain_llvmgcc() {
 	    MULTILIBS="--disable-multilib"
 	fi
 
-	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -fpermissive" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -fpermissive" \
-	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS -fpermissive" \
+	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -fpermissive" \
+	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \

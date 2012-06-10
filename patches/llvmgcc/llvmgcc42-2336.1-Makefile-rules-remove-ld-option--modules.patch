@@ -6,7 +6,7 @@
  ifdef LOADABLE_MODULE
 +  # -module isn't recognized on any version of gcc/g++/ld that
 +  # I can find so may need to add more OSes to this exclusion.
-+  ifneq ($(HOST_OS),Linux)
++  ifeq ($(HOST_OS),Darwin)
    LD.Flags += -module
 +  endif
  endif
