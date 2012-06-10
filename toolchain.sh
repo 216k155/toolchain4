@@ -970,7 +970,7 @@ toolchain_llvmgcc_core() {
 		--libexecdir=$HOST_DIR/libexec
 	# I did try libs-only and install-libs here but libLTO (and other)
 	# don't get made this way.
-	make -j$JOBS libs &>make.log
+	make -j$JOBS &>make.log
 	make install &>install.log # optional
 	popd
 }
