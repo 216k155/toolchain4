@@ -2,6 +2,9 @@
 
 . ./bash-tools.sh
 
+# Always use CLEAN=1 for release builds as otherwise Apple's proprietary software
+# will be packaged.
+CLEAN=1
 PREFIX=$1
 if [[ -z $PREFIX ]] ; then
     error "Please pass in a PREFIX as argument 1, e.g. apple"
@@ -63,11 +66,13 @@ ARM_BUILD=0
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
-    rm -rf $DST/${PREFIX}-ios/usr/lib
-    rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/lib
-    rm $DST/${PREFIX}-ios/lib/libSystem.B.dylib
-    rm -rf $DST/${PREFIX}-ios/usr/include
-    rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/sys-include
+    if [[ $CLEAN = 1 ]] ; then
+        rm -rf $DST/${PREFIX}-ios/usr/lib
+        rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/lib
+        rm $DST/${PREFIX}-ios/lib/libSystem.B.dylib
+        rm -rf $DST/${PREFIX}-ios/usr/include
+        rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/sys-include
+    fi
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
     if [ ! -d $DST/${PREFIX}-ios/include/c++ ] ; then
         mkdir -p $DST/${PREFIX}-ios/include/c++
@@ -95,11 +100,13 @@ INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
-    rm -rf $DST/${PREFIX}-osx/usr/lib
-    rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/lib
-    rm $DST/${PREFIX}-osx/lib/libSystem.B.dylib
-    rm -rf $DST/${PREFIX}-osx/usr/include
-    rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/sys-include
+    if [[ $CLEAN = 1 ]] ; then
+        rm -rf $DST/${PREFIX}-osx/usr/lib
+        rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/lib
+        rm $DST/${PREFIX}-osx/lib/libSystem.B.dylib
+        rm -rf $DST/${PREFIX}-osx/usr/include
+        rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/sys-include
+    fi
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
     if [ ! -d $DST/${PREFIX}-osx/include/c++ ] ; then
         mkdir -p $DST/${PREFIX}-osx/include/c++
