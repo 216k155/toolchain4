@@ -24,7 +24,7 @@ esac
 
 UNAME=$(uname_bt)
 
-BASE_TMP=/tmp/tc4
+BASE_TMP=/tmp2/tc4
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
 if [[ "$(uname_bt)" == "Windows" ]] ; then
@@ -47,19 +47,19 @@ full_build_for_arch() {
     else
         local _PREFIX_SUFFIX=$1-osx
     fi
-    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
-    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
-    rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
-    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
-    rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
-    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
-    rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
-    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
+#    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
+#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
+#    rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
+#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
+#    rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
+#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
+#    rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
+#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gccdriver $_TARGET_ARCH
 }
 
 # Clean everything.
-ARM_BUILD=1
+ARM_BUILD=0
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm

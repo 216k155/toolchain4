@@ -266,7 +266,9 @@ fi
 SUDO=sudo
 GAWK=gawk
 URLDL=wget
-BASE_TMP=/tmp/tc4
+BASE_TMP=/tmp2/tc4
+# My changes to libiberty configure.ac have broken us with more
+# recent autotools. 2.59 should work though.
 AUTOHEADER=autoheader
 AUTOCONF=autoconf
 
@@ -287,6 +289,10 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
         AUTOCONF=autoconf-2.59
         AUTOHEADER=autoheader-2.59
     fi
+elif [[ "$(uname_bt)" == "Linux" ]] ; then
+    # Ubuntu has autoconf2.59 package.
+    AUTOCONF=autoconf2.59
+    AUTOHEADER=autoheader2.59
 elif [[ "$(uname_bt)" == "Darwin" ]] ; then
 	GAWK=awk
 	URLDL=curl
@@ -1074,6 +1080,11 @@ set -x
 	mkdir -p $_DST/usr/lib
 	cp -f $_SRC/usr/lib/libc.dylib $_DST/usr/lib/
 	cp -f $_SRC/usr/lib/dylib1.o   $_DST/usr/lib/
+    # Not sure what the difference is between
+    # crt1.o (not made by the build process?!?)
+    # and crt3.o (made by the build process) is.
+    # TODO :: Figure out the score on OS X.
+	cp -f $_SRC/usr/lib/crt1.o     $_DST/usr/lib/
 	cp -fR $_SRC/usr/lib/system    $_DST/usr/lib
 
 	rm -rf $_DST/$_TARGET/lib/system
@@ -1220,7 +1231,49 @@ toolchain_gcc()
 	fi
 }
 
+build_gnuregex() {
+	local _TMP_DIR=$1; shift
+	local _PREFIX=$1; shift
+	local _TCPREFIX=$1; shift
+	local _TOOLCHAIN=$1; shift
+	local _SAVE_INTERMEDIATES=1
+	local _JOBS=8
+	local _SUDO=sudo
+	local _MACHFLAG=
+	if [[ "$UNAME" == "Windows" ]] ; then
+		_JOBS=1
+		_SUDO=
+		_MACHFLAG=-mwindows
+	fi
+	mkdir -p $_TMP_DIR
+	pushd $_TMP_DIR
+	mkdir -p $_PREFIX/include
+	mkdir -p $_PREFIX/lib
+
+    if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
+        if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
+            error "Failed to get and extract mingw-regex-2.5.1 Check errors."
+        fi
+    fi
+    if [[ ! -f $_PREFIX/include/regex.h ]] ; then
+        message_status "Building gnuregex"
+        pushd mingw-libgnurx-2.5.1
+        patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
+        ./configure --prefix=$_PREFIX --enable-static --disable-shared
+        if ! make  -j $_JOBS; then
+            error "Failed to make mingw-libgnurx-2.5.1"
+            popd
+            exit 1
+        fi
+        make -j $_JOBS install
+        popd
+    fi
+}
+
 toolchain_gccdriver_dsymutil() {
+	if [[ "$(uname_bt)" = "Windows" ]] ; then
+		build_gnuregex $TMP_DIR $HOST_DIR $PREFIX $PWD
+	fi
 	message_status "Building toolchain gcc drivers"
 
 	# Build driver-drivers.
