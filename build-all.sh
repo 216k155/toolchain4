@@ -50,19 +50,19 @@ full_build_for_arch() {
     else
         local _PREFIX_SUFFIX=$1-osx
     fi
-#    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
-#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
-#    rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
-#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
-#    rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
-#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
-#    rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
-#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
+    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
+    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
+    rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
+    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
+    rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
+    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
+    rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
+    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gccdriver $_TARGET_ARCH
 }
 
 # Clean everything.
-ARM_BUILD=0
+ARM_BUILD=1
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
@@ -88,7 +88,7 @@ if [ "$ARM_BUILD" = "1" ] ; then
 fi
 # Copy needed dlls.
 if [[ "$UNAME" = "Windows" ]] ; then
-	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
+	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
 	do
 		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/bin
 		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
@@ -118,7 +118,7 @@ if [ "$INTEL_BUILD" = "1" ] ; then
 fi
 # Copy needed dlls
 if [[ "$UNAME" = "Windows" ]] ; then
-	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libstdc++-6.dll pthreadGC2.dll
+	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
 	do
 		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/bin
 		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1

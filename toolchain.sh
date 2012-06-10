@@ -385,6 +385,8 @@ TMP_DIR="${BASE_TMP}/tmp"
 MNT_DIR="${FILES_DIR}/mnt"
 FW_DIR="${FILES_DIR}/firmware"
 HOST_DIR="${BASE_TMP}/host-install"
+HOST_STATIC_LIB_CFLAGS="-I${HOST_DIR}/include"
+HOST_STATIC_LIB_LDFLAGS="-L${HOST_DIR}/lib"
 MAJ_VERS=4.2
 
 IPHONE_SDK_DMG="$PWD/../dmgs/xcode_3.2.6_and_ios_sdk_4.3.dmg"
@@ -755,8 +757,9 @@ toolchain_download_darwin_sources() {
 }
 
 toolchain_static_host_libs() {
-	# These tools are installed to ${HOST_DIR}-gmp-mpfr rather than ${HOST_DIR} because the --with-gmp / -with-mpfr configure flag
+	# GMP and MPFR libs are installed to ${HOST_DIR}-gmp-mpfr rather than ${HOST_DIR} because the --with-gmp / -with-mpfr configure flag
 	# ends up polluting the target CFLAGS and on Windows, win-pthreads is in ${HOST_DIR}/include and that breaks building libgcc.
+	# iconv and gettext are installed to ${HOST_DIR}.
 
 	# GMP version 4.3.2
 	mkdir -p $SRC_DIR
@@ -767,6 +770,7 @@ toolchain_static_host_libs() {
 			popd
 			exit 1
 		fi
+		message_status "Building host gmp-4.3.2"
 		mkdir -p $BUILD_DIR/gmp-4.3.2
 		pushd $BUILD_DIR/gmp-4.3.2
 
@@ -800,7 +804,7 @@ toolchain_static_host_libs() {
 			popd
 			exit 1
 		fi
-
+		message_status "Building host mpfr-2.2.1"
 		mkdir -p $BUILD_DIR/mpfr-2.2.1
 		pushd $BUILD_DIR/mpfr-2.2.1
 		CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure \
@@ -810,6 +814,64 @@ toolchain_static_host_libs() {
 		popd
 		message_status "static mpfr is ready!"
 	fi
+
+	if [[ ! -f ${HOST_DIR}/include/iconv.h ]] ; then
+		if ! $(downloadUntar http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz); then
+			error "Failed to get and extract libiconv-1.14 Check errors."
+		fi
+		message_status "Building host libiconv-1.14"
+		pushd libiconv-1.14
+		CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=${HOST_DIR}  CFLAGS=-O2
+		if ! make -j $_JOBS install-lib ; then
+			error "Failed to make libiconv-1.14"
+			exit 1
+		fi
+		do_sed $"s/iconv_t cd,  char\* \* inbuf/iconv_t cd,  const char\* \* inbuf/g" ${HOST_DIR}/include/iconv.h
+		popd
+	fi
+
+	if [[ ! -f ${HOST_DIR}/include/libintl.h ]] ; then
+		if ! $(downloadUntar http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz); then
+			error "Failed to get and extract gettext-0.18.1.1 Check errors."
+		fi
+		message_status "Building host gettext-0.18.1.1"
+		pushd gettext-0.18.1.1
+		patch --backup -p0 < ${_TOOLCHAIN}/patches/gettext-0.18.1.1-win-pthreads.patch
+		# Without NM=... gettext-tools\libgettextpo\exported.sh ends up with /bin/nm and that fails to eval:
+		# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
+		# eval $nm_cmd
+		if [[ "$(uname_bt)" = "Windows" ]] ; then
+			NMHOST="C:/usr/bin/nm.exe"
+		else
+			NMHOST=nm
+		fi
+		NM=$NMHOST ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=${HOST_DIR} --enable-multibyte --prefix=${HOST_DIR} CFLAGS="-O3 -DPTW32_STATIC_LIB"
+		if ! make -j 1 install ; then
+			error "Failed to make gettext-0.18.1.1"
+			exit 1
+		fi
+		popd
+	fi
+
+	if [[ "$(uname_bt)" = "Windows" ]] ; then
+		if [[ ! -f ${HOST_DIR}/include/regex.h ]] ; then
+			if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
+				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
+			fi
+			message_status "Building Windows mingw-libgnurx-2.5.1"
+			pushd mingw-libgnurx-2.5.1
+			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
+			./configure --prefix=${HOST_DIR} --enable-static --disable-shared
+			if ! make  -j $_JOBS; then
+				error "Failed to make mingw-libgnurx-2.5.1"
+				popd
+				exit 1
+			fi
+			make -j 1 install
+			popd
+		fi
+	fi
+
 	popd
 }
 
@@ -903,11 +965,11 @@ toolchain_cctools() {
 			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO=1"
 		fi
 		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
-			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
-			CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
-			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib" HAVE_FOREIGN_HEADERS="NO" \
-			"${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} -I$HOST_DIR/include" \
-			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib -L$HOST_DIR/lib -I$HOST_DIR/include" \
+			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} $HOST_STATIC_LIB_CFLAGS" \
+			CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} $HOST_STATIC_LIB_CFLAGS" \
+			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib $HOST_STATIC_LIB_LDFLAGS" HAVE_FOREIGN_HEADERS="NO" \
+			"${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} $HOST_STATIC_LIB_CFLAGS" \
+			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib $HOST_STATIC_LIB_LDFLAGS $HOST_STATIC_LIB_CFLAGS" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
 		make clean > /dev/null
@@ -1196,7 +1258,7 @@ toolchain_gcc()
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -msse2 -D_CTYPE_H $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS -msse2 -D_CTYPE_H $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -1231,49 +1293,7 @@ toolchain_gcc()
 	fi
 }
 
-build_gnuregex() {
-	local _TMP_DIR=$1; shift
-	local _PREFIX=$1; shift
-	local _TCPREFIX=$1; shift
-	local _TOOLCHAIN=$1; shift
-	local _SAVE_INTERMEDIATES=1
-	local _JOBS=8
-	local _SUDO=sudo
-	local _MACHFLAG=
-	if [[ "$UNAME" == "Windows" ]] ; then
-		_JOBS=1
-		_SUDO=
-		_MACHFLAG=-mwindows
-	fi
-	mkdir -p $_TMP_DIR
-	pushd $_TMP_DIR
-	mkdir -p $_PREFIX/include
-	mkdir -p $_PREFIX/lib
-
-    if [[ ! -d mingw-libgnurx-2.5.1 ]] ; then
-        if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
-            error "Failed to get and extract mingw-regex-2.5.1 Check errors."
-        fi
-    fi
-    if [[ ! -f $_PREFIX/include/regex.h ]] ; then
-        message_status "Building gnuregex"
-        pushd mingw-libgnurx-2.5.1
-        patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
-        ./configure --prefix=$_PREFIX --enable-static --disable-shared
-        if ! make  -j $_JOBS; then
-            error "Failed to make mingw-libgnurx-2.5.1"
-            popd
-            exit 1
-        fi
-        make -j $_JOBS install
-        popd
-    fi
-}
-
 toolchain_gccdriver_dsymutil() {
-	if [[ "$(uname_bt)" = "Windows" ]] ; then
-		build_gnuregex $TMP_DIR $HOST_DIR $PREFIX $PWD
-	fi
 	message_status "Building toolchain gcc drivers"
 
 	# Build driver-drivers.
@@ -1512,8 +1532,8 @@ toolchain_llvmgcc() {
 	    MULTILIBS="--disable-multilib"
 	fi
 
-	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO -fpermissive" \
-	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
+	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \

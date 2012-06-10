@@ -39,11 +39,11 @@ patch_mingw_types_h() {
 		elif [[ -f /usr/include/sys/types.h ]] ; then
 			MINGWTYPES_H=/usr/include/sys/types.h
 		fi
-		if [[ ! $(egrep gid_t $MINGWTYPES_H) ]] ; then
-			pushd $(dirname $(dirname $MINGWTYPES_H))
-			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
-			popd
-		fi
+#		if [[ ! $(egrep gid_t $MINGWTYPES_H) ]] ; then
+#			pushd $(dirname $(dirname $MINGWTYPES_H))
+#			patch -p0 < /tmp/sys-types-uid_daddr_caddr.patch
+#			popd
+#		fi
 	fi
 }
 
@@ -55,6 +55,8 @@ downloadUntar() {
 
 # Builds dmg2img decryption tools and vfdecrypt, which we will use later to convert dmgs to
 # images, so that we can mount them.
+# This needs splitting up; some of the libs are just plain needed and
+#  building the tools for dmg is flaky (on MinGW64) atm. Need 
 build_tools_dmg() {
 	patch_mingw_types_h
 	local _TMP_DIR=$1; shift
@@ -76,32 +78,60 @@ build_tools_dmg() {
 	mkdir -p $_PREFIX/lib
 	export PATH=$_PREFIX/bin:$PATH
 	if [[ "$UNAME" == "Windows" ]] ; then
-		if [[ ! -d zlib-1.2.5 ]] ; then
-			if ! $(downloadUntar http://downloads.sourceforge.net/libpng/zlib/1.2.5/zlib-1.2.5.tar.gz); then
-				error "Failed to get and extract zlib-1.2.5 Check errors."
+		if [[ ! -d zlib-1.2.7 ]] ; then
+			if ! $(downloadUntar http://downloads.sourceforge.net/libpng/zlib/1.2.7/zlib-1.2.7.tar.gz); then
+				error "Failed to get and extract zlib-1.2.7 Check errors."
 				popd
 				exit 1
 			fi
-			pushd zlib-1.2.5
-			if ! INCLUDE_PATH=$_PREFIX/include LIBRARY_PATH=$_PREFIX/lib make -f win32/Makefile.gcc -j $_JOBS install; then
-				error "Failed to make zlib-1.2.5"
+			pushd zlib-1.2.7
+			if ! INCLUDE_PATH=$_PREFIX/include LIBRARY_PATH=$_PREFIX/lib BINARY_PATH=$_PREFIX/bin make -f win32/Makefile.gcc -j $_JOBS install; then
+				error "Failed to make zlib-1.2.7"
 				exit 1
 			fi
 			popd
 		fi
+     
+        if [[ ! $(which cvs) ]] ; then
+            download http://kent.dl.sourceforge.net/project/mingw/MSYS/Extension/cvs/cvs-1.12.13-2/cvs-1.12.13-2-msys-1.0.13-bin.tar.lzma
+            tar -xJf cvs-1.12.13-2-msys-1.0.13-bin.tar.lzma -C /
+            download http://kent.dl.sourceforge.net/project/mingw/MSYS/Base/gettext/gettext-0.17-2/libintl-0.17-2-msys-dll-8.tar.lzma
+            tar -xJf libintl-0.17-2-msys-dll-8.tar.lzma -C /
+            download http://kent.dl.sourceforge.net/project/mingw/MSYS/Base/libiconv/libiconv-1.13.1-2/libiconv-1.13.1-2-msys-1.0.13-dll-2.tar.lzma
+            tar -xJf libiconv-1.13.1-2-msys-1.0.13-dll-2.tar.lzma -C /
+            download http://kent.dl.sourceforge.net/project/mingw/MSYS/Extension/crypt/crypt-1.1_1-3/libcrypt-1.1_1-3-msys-1.0.13-dll-0.tar.lzma
+            tar -xJf libcrypt-1.1_1-3-msys-1.0.13-dll-0.tar.lzma -C /
+        fi
 
-		if [[ ! -d pthreads ]] ; then
-			cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
-			pushd pthreads
-			make -j $_JOBS clean GC-static
-			cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
-			make -j $_JOBS clean GCE-shared
-			cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
-			cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
+#		if [[ ! -d pthreads ]] ; then
+		if [[ ! -d winpthreads ]] ; then
+# On 07062012, pthreads head was broken. They've changed the Makefiles too.
+            svn co https://mingw-w64.svn.sourceforge.net/svnroot/mingw-w64/experimental/winpthreads winpthreads
+            pushd winpthreads
+            ./configure --enable-static --enable-shared --prefix=$_PREFIX
+            make && make install
+            popd
+            
+#            cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout -D "March 16, 2012" pthreads  # -r1.89 ?
+#            pushd pthreads
+#            make -j $_JOBS clean GC-static
+#            cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
+#            make -j $_JOBS clean GCE
+#            cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
+#            cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
+
+#			cvs -d :pserver:anoncvs@sourceware.org:/cvs/pthreads-win32 checkout pthreads
+#			pushd pthreads
+#			make -j $_JOBS clean GC-static -f GNUmakefile
+#			cp libpthreadGC2.a $_PREFIX/lib/libpthreadGC2.a
+#			make -j $_JOBS clean GCE -f GNUmakefile
+#			cp libpthreadGCE2.a $_PREFIX/lib/libpthreadGCE2.a
+#			cp libpthreadGCE2.a $_PREFIX/bin/pthreadGCE2.dll
 			# For GOMP. The usual linux/vs-mingw -l<lib> issue... -> TODORMD :: This may not be needed!
-	 		cp libpthreadGC2.a $_PREFIX/lib/libpthread.a
-			cp pthread.h sched.h semaphore.h $_PREFIX/include/
-			popd
+#	 		cp libpthreadGC2.a $_PREFIX/lib/libpthread.a
+#			cp pthread.h sched.h semaphore.h $_PREFIX/include/
+#			popd
+#			exit 1
 		fi
 
 		if [[ ! -d libiconv-1.14 ]] ; then
@@ -147,6 +177,7 @@ build_tools_dmg() {
 			make -j $_JOBS install
 			popd
 		fi
+
 		# Needed by both dmg2img and xar (and ld64 later...)
 		if [[ ! -d openssl-1.0.0f ]] ; then
 			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
@@ -234,7 +265,7 @@ build_tools_dmg() {
 			error "Failed to make dmg2img-1.6.2"
 			error "Make sure you have libbz2-dev and libssl-dev available on your system."
 			popd
-			exit 1
+#			exit 1
 		fi
 
 		[[ $_SAVE_INTERMEDIATES == 1 ]] || rm -Rf dmg2img-1.6.2
@@ -268,7 +299,7 @@ build_tools_dmg() {
 		if ! $(downloadUntar http://ftp.gnu.org/gnu/cpio/cpio-2.11.tar.gz); then
 			error "Failed to get and extract cpio-2.11 Check errors."
 			popd
-			exit 1
+#			exit 1
 		fi
 		pushd cpio-2.11
 		patch --backup -p1 < ${_TOOLCHAIN}/patches/cpio-2.11-WIN.patch
