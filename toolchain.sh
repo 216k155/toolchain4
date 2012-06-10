@@ -968,8 +968,10 @@ toolchain_llvmgcc_core() {
 		--disable-assertions \
 		--target=${TARGET} \
 		--libexecdir=$HOST_DIR/libexec
-	make -j$JOBS libs-only &>make.log
-	make install-libs &>install.log # optional
+	# I did try libs-only and install-libs here but libLTO (and other)
+	# don't get made this way.
+	make -j$JOBS libs &>make.log
+	make install &>install.log # optional
 	popd
 }
 
