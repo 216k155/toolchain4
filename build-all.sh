@@ -56,6 +56,7 @@ full_build_for_arch() {
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
     rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
+    exit 1
     rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gccdriver $_TARGET_ARCH
@@ -88,12 +89,12 @@ if [ "$ARM_BUILD" = "1" ] ; then
 fi
 # Copy needed dlls.
 if [[ "$UNAME" = "Windows" ]] ; then
-	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
-	do
-		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/bin
-		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
-		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
-	done
+    for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
+    do
+        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/bin
+        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
+        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
+    done
 fi
 
 INTEL_BUILD=1
@@ -118,12 +119,12 @@ if [ "$INTEL_BUILD" = "1" ] ; then
 fi
 # Copy needed dlls
 if [[ "$UNAME" = "Windows" ]] ; then
-	for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
-	do
-		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/bin
-		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
-		cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
-	done
+    for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
+    do
+        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/bin
+        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/gcc/i686-apple-darwin11/4.2.1
+        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-osx/libexec/llvmgcc/i686-apple-darwin11/4.2.1
+    done
 fi
 
 # For some reason, make install on Windows isn't copying the x86_64 folders so work around that.

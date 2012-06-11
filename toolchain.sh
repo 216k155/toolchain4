@@ -815,6 +815,29 @@ toolchain_static_host_libs() {
 		message_status "static mpfr is ready!"
 	fi
 
+	if [[ "$(uname_bt)" = "Windows" ]] ; then
+		if [[ ! -f ${HOST_DIR}/include/regex.h ]] ; then
+			if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
+				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
+			fi
+			message_status "Building Windows mingw-libgnurx-2.5.1"
+			pushd mingw-libgnurx-2.5.1
+			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
+			./configure --prefix=${HOST_DIR} --enable-static --disable-shared
+			if ! make  -j $_JOBS; then
+				error "Failed to make mingw-libgnurx-2.5.1"
+				popd
+				exit 1
+			fi
+			make -j 1 install
+			popd
+		fi
+	fi
+
+	# I'm having some issues with libiconv/gettext to do with winpthreads/pthreads/win32 threads.
+	# so disabling this for now.
+	return 0
+
 	if [[ ! -f ${HOST_DIR}/include/iconv.h ]] ; then
 		if ! $(downloadUntar http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.14.tar.gz); then
 			error "Failed to get and extract libiconv-1.14 Check errors."
@@ -851,25 +874,6 @@ toolchain_static_host_libs() {
 			exit 1
 		fi
 		popd
-	fi
-
-	if [[ "$(uname_bt)" = "Windows" ]] ; then
-		if [[ ! -f ${HOST_DIR}/include/regex.h ]] ; then
-			if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
-				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
-			fi
-			message_status "Building Windows mingw-libgnurx-2.5.1"
-			pushd mingw-libgnurx-2.5.1
-			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
-			./configure --prefix=${HOST_DIR} --enable-static --disable-shared
-			if ! make  -j $_JOBS; then
-				error "Failed to make mingw-libgnurx-2.5.1"
-				popd
-				exit 1
-			fi
-			make -j 1 install
-			popd
-		fi
 	fi
 
 	popd
@@ -962,13 +966,13 @@ toolchain_cctools() {
 		# This should be done in src-$PREFIX/cctools-809/configure.ac
 		# -include here is surely wrong? maybe -include config.h would make sense?
 		if [[ "$(uname_bt)" == "Windows" ]] ; then
-			CF_MINGW_ANSI_STDIO="-D__USE_MINGW_ANSI_STDIO=1"
+			CF_MINGW="-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX"
 		fi
 		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
-			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} $HOST_STATIC_LIB_CFLAGS" \
-			CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} $HOST_STATIC_LIB_CFLAGS" \
+			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW} $HOST_STATIC_LIB_CFLAGS" \
+			CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW} $HOST_STATIC_LIB_CFLAGS" \
 			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib $HOST_STATIC_LIB_LDFLAGS" HAVE_FOREIGN_HEADERS="NO" \
-			"${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW_ANSI_STDIO} $HOST_STATIC_LIB_CFLAGS" \
+			"${CCTOOLS_DIR}"/configure HAVE_FOREIGN_HEADERS=NO CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW} $HOST_STATIC_LIB_CFLAGS" \
 			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib $HOST_STATIC_LIB_LDFLAGS $HOST_STATIC_LIB_CFLAGS" \
 			--target="${TARGET}" \
 			--prefix="${PREFIX}"
@@ -1103,7 +1107,6 @@ toolchain_llvmgcc_saurik() {
 
 
 copy_sysroot() {
-set -x
 	local _SRC=$1
 	local _DST=$2
 	local _TARGET=$3
@@ -1154,7 +1157,6 @@ set -x
 	cp -f $_SRC/usr/lib/libc.dylib $_DST/$_TARGET/lib/system
 	cp -f $_SRC/usr/lib/dylib1.o   $_DST/$_TARGET/lib/system
 	cp -fR $_SRC/usr/lib/system    $_DST/$_TARGET/lib
-	set +x
 }
 
 
@@ -1278,6 +1280,7 @@ toolchain_gcc()
 		--with-gmp=${HOST_DIR}-gmp-mpfr \
 		--with-mpfr=${HOST_DIR}-gmp-mpfr \
 		--libexecdir=$PREFIXGCC/libexec
+            #   --with-libiconv-prefix=${HOST_DIR} \
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
 	if ( ! make -k &>make.log ); then
 		message_status "Make failed (probably host libiberty, ignoring...)"
