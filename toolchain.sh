@@ -1277,7 +1277,8 @@ toolchain_gcc()
 	# of combining all the arches into one assembler (it looks in
 	# -k as "No rule to make target `install'" in libiberty.
 	make install -k &>install.log
-	make install -k &>>install.log
+	# Once again for good luck.
+	make install -k &>install.log
 	popd
 	if [[ ! "$PREFIXGCC" = "$PREFIX" ]] ; then
 		cp -R -a $PREFIXGCC/* $PREFIX
