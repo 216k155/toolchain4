@@ -202,9 +202,6 @@
 # Linux:
 # /tmp/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-ld      -dynamic -dylib -dylib_compatibility_version 1 -dylib_current_version 1.0 -arch i386 -dylib_install_name C:/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/libgcc_s.1.dylib -macosx_version_min 10.4 -single_module -syslibroot /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc../ -weak_reference_mismatches non-weak -o ./libgcc_s.1.dylib.tmp -ldylib1.o -L/tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib -L/tmp/tc4/final-install/apple-dbg-osx/i686-apple-darwin11/lib/system -exported_symbols_list libgcc/./libgcc.map libgcc/./_get_pc_thunk_ax_s.o -v
 
-# It's looking like this is need:
-# 	do_sed $"s^O_RDONLY, 0)^O_RDONLY|O_BINARY, 0)^"                                     ${DISTDIR}/ld64/src/ld/Options.cpp
-
 # And the next issue. libgcc isn't building right on Windows:
 # To test on Linux:
 # cd /tmp/tc4/bld-apple-dbg-osx/gcc-5666.3-i686/gcc
@@ -218,17 +215,6 @@
 # [pid 31807] execve("/tmp/tc4/final-install/apple-dbg-osx/bin/lipo", ["lipo", "-output", "libgcc_s.10.5.dylib", "-create", "libgcc_s.10.5.dylib_T", "libgcc_s.10.5.dylib_Tx86_64"], [/* 61 vars */]) = 0
 # In the make.log output:
 # /tmp/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-lipo -output libgcc_s.10.5.dylib -create libgcc_s.10.5.dylib_T*
-
-# Should also fix this:
-# C:\tmp2\tc4\src-apple-dbg-osx\gcc-5666.3\gcc\config\i386\xm-mingw32.h
-# #define HOST_LONG_LONG_FORMAT "I64"
-# To:
-# ifdef __USE_MINGW_ANSI_STDIO
-# #define HOST_LONG_LONG_FORMAT "ll"
-# #else
-# #define HOST_LONG_LONG_FORMAT "I64"
-# #endif
-# I was going to make a patch for this but it all went a bit awry.
 
 # Error reporting, coloured printing, downloading.
 . bash-tools.sh
@@ -1119,6 +1105,8 @@ copy_sysroot() {
 		SYSHEADERS=(secure/_common.h secure/_stdio.h secure/_string.h stdint.h stdio.h errno.h string.h strings.h alloca.h stdlib.h unistd.h time.h dlfcn.h limits.h _types.h _structs.h Availability.h AvailabilityMacros.h AvailabilityInternal.h vproc.h fcntl.h pthread.h pthread_impl.h sched.h sys/select.h sys/unistd.h sys/wait.h sys/errno.h sys/types.h sys/syslimits.h sys/_types.h sys/_endian.h sys/cdefs.h sys/appleapiopts.h sys/_structs.h sys/_symbol_aliasing.h sys/_posix_availability.h sys/signal.h sys/resource.h sys/stat.h sys/_select.h sys/fcntl.h machine/types.h machine/endian.h machine/signal.h machine/limits.h machine/_structs.h                   machine/_types.h  arm/types.h  arm/_types.h  arm/endian.h  arm/limits.h  arm/_limits.h  arm/_structs.h  arm/signal.h libkern/_OSByteOrder.h libkern/arm/OSByteOrder.h   mach/arm/_structs.h arm/arch.h)
 	fi
 
+	mkdir -p $_DST/usr
+
 	# Ideally wouldn't be installing to $_DST/usr/include or to $_DST/$_TARGET/sys-include but instead to $_DST/$_TARGET/include.
 	rm -rf $_DST/usr/include
 	mkdir -p $_DST/usr/include
@@ -1260,7 +1248,7 @@ toolchain_gcc()
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS -msse2 -D_CTYPE_H $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
+	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS -msse2 -D_CTYPE_H -Wno-enum-compare $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -1289,6 +1277,7 @@ toolchain_gcc()
 	# of combining all the arches into one assembler (it looks in
 	# -k as "No rule to make target `install'" in libiberty.
 	make install -k &>install.log
+	make install -k &>>install.log
 	popd
 	if [[ ! "$PREFIXGCC" = "$PREFIX" ]] ; then
 		cp -R -a $PREFIXGCC/* $PREFIX
@@ -1536,7 +1525,7 @@ toolchain_llvmgcc() {
 	fi
 
 	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
-	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
+	CFLAGS="-Wno-enum-compare $SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \

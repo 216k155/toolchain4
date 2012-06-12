@@ -56,7 +56,6 @@ full_build_for_arch() {
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
     rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
-    exit 1
     rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc $_TARGET_ARCH
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gccdriver $_TARGET_ARCH
@@ -67,12 +66,21 @@ ARM_BUILD=1
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
+
+    # Since I moved to mingw64, the libgcc_s*.dylib aren't being copied to the right place. In fact, I'm
+    # not sure if it's the gcc or the llvmgcc install that's meant to write them. llvmgcc and gcc libgccs are
+    # Probably best kept separate.
+    if [[ "$UNAME" = "Windows" ]] ; then
+        cp $DST/${PREFIX}-ios/arm-apple-darwin11/lib/libgcc_s* /$DST/${PREFIX}-ios/lib/
+    fi
+
     if [[ $CLEAN = 1 ]] ; then
         rm -rf $DST/${PREFIX}-ios/usr/lib
         rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/lib
         rm $DST/${PREFIX}-ios/lib/libSystem.B.dylib
         rm -rf $DST/${PREFIX}-ios/usr/include
         rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11/sys-include
+        rm -rf $DST/${PREFIX}-ios/arm-apple-darwin11
     fi
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
     if [ ! -d $DST/${PREFIX}-ios/include/c++ ] ; then
@@ -87,7 +95,7 @@ if [ "$ARM_BUILD" = "1" ] ; then
     mv 4.2.1/armv7-apple-darwin10 4.2.1/armv7-apple-darwin11
     popd
 fi
-# Copy needed dlls.
+# Copy dlls (only one or other of libgcc_s_dw2-1.dll and libgcc_s_sjlj-1.dll needed)
 if [[ "$UNAME" = "Windows" ]] ; then
     for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
     do
@@ -101,12 +109,21 @@ INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
+    
+    # Since I moved to mingw64, the libgcc_s*.dylib aren't being copied to the right place. In fact, I'm
+    # not sure if it's the gcc or the llvmgcc install that's meant to write them. llvmgcc and gcc libgccs are
+    # Probably best kept separate.
+    if [[ "$UNAME" = "Windows" ]] ; then
+        cp $DST/${PREFIX}-osx/i686-apple-darwin11/lib/libgcc_s* /$DST/${PREFIX}-osx/lib/
+    fi
+
     if [[ $CLEAN = 1 ]] ; then
         rm -rf $DST/${PREFIX}-osx/usr/lib
         rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/lib
         rm $DST/${PREFIX}-osx/lib/libSystem.B.dylib
         rm -rf $DST/${PREFIX}-osx/usr/include
         rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11/sys-include
+        rm -rf $DST/${PREFIX}-osx/i686-apple-darwin11
     fi
     # Since libstdc++ doesn't build, we need to get the headers from an existing SDK.
     if [ ! -d $DST/${PREFIX}-osx/include/c++ ] ; then
@@ -117,7 +134,7 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     cp -rf $TOPDIR/sdks/MacOSX10.7.sdk/usr/include/c++/4.2.1 4.2.1
     popd
 fi
-# Copy needed dlls
+# Copy dlls (only one or other of libgcc_s_dw2-1.dll and libgcc_s_sjlj-1.dll needed)
 if [[ "$UNAME" = "Windows" ]] ; then
     for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
     do
