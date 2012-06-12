@@ -71,7 +71,7 @@ if [ "$ARM_BUILD" = "1" ] ; then
     # not sure if it's the gcc or the llvmgcc install that's meant to write them. llvmgcc and gcc libgccs are
     # Probably best kept separate.
     if [[ "$UNAME" = "Windows" ]] ; then
-        cp $DST/${PREFIX}-ios/arm-apple-darwin11/lib/libgcc_s* /$DST/${PREFIX}-ios/lib/
+        cp $DST/${PREFIX}-ios/arm-apple-darwin11/lib/libgcc_s* $DST/${PREFIX}-ios/lib/
     fi
 
     if [[ $CLEAN = 1 ]] ; then
@@ -114,7 +114,7 @@ if [ "$INTEL_BUILD" = "1" ] ; then
     # not sure if it's the gcc or the llvmgcc install that's meant to write them. llvmgcc and gcc libgccs are
     # Probably best kept separate.
     if [[ "$UNAME" = "Windows" ]] ; then
-        cp $DST/${PREFIX}-osx/i686-apple-darwin11/lib/libgcc_s* /$DST/${PREFIX}-osx/lib/
+        cp $DST/${PREFIX}-osx/i686-apple-darwin11/lib/libgcc_s* $DST/${PREFIX}-osx/lib/
     fi
 
     if [[ $CLEAN = 1 ]] ; then
