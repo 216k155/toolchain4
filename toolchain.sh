@@ -275,13 +275,16 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
         AUTOCONF=autoconf-2.59
         AUTOHEADER=autoheader-2.59
     fi
+    WARN_SUPPRESS=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Linux" ]] ; then
     # Ubuntu has autoconf2.59 package.
     AUTOCONF=autoconf2.59
     AUTOHEADER=autoheader2.59
+    WARN_SUPPRESS=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Darwin" ]] ; then
 	GAWK=awk
 	URLDL=curl
+	WARN_SUPPRESS=
 fi
 
 # Everything is built relative to IPHONEDEV_DIR
@@ -1248,7 +1251,7 @@ toolchain_gcc()
 	# Let's go!
 	export PATH=$PREFIX/bin:$PATH
 	LIPO_FOR_TARGET=$PREFIX/bin/$TARGET-lipo \
-	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS -msse2 -D_CTYPE_H -Wno-enum-compare $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
+	CFLAGS="$BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS -msse2 -D_CTYPE_H $WARN_SUPPRESS $SAVE_TEMPS" CXXFLAGS="$CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/gcc-5666.3/configure \
 		--prefix=$PREFIXGCC \
 		--disable-checking \
@@ -1526,7 +1529,7 @@ toolchain_llvmgcc() {
 	fi
 
 	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $HOST_STATIC_LIB_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO" \
-	CFLAGS="-Wno-enum-compare $SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
+	CFLAGS="$WARN_SUPPRESS $SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
 		--with-sysroot=$PREFIX \
