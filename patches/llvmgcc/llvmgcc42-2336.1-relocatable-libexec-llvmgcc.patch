@@ -108,7 +108,7 @@
 +#elif defined(__linux__)
 +	return readlink("/proc/self/exe", buf, *bufsize);
 +#elif defined(__APPLE__)
-+    return _NSGetExecutablePath(buf, bufsize);
++    return ((!_NSGetExecutablePath(buf, bufsize))?strlen(buf):0);
 +#else
 +	return -1; /* Fail on all other systems for now */
 +#endif /* __MINGW32__ */
