@@ -110,7 +110,9 @@ ld64/Options-defcross.diff ld64/Options_h_includes.diff \
 ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
 ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
 ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
-ld64/cstdio.diff ld64/QSORT_macho_relocatable_file.diff"
+ld64/cstdio.diff"
+else
+    LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff"
 fi
 
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.

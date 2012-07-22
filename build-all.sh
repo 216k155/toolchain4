@@ -34,16 +34,23 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
 	BASE_TMP=/tmp2/tc4
 fi
 
-BINPREFIX=i686-linux
-CC=$BINPREFIX-gcc
-CXX=$BINPREFIX-g++
-LD=$BINPREFIX-ld
-AS=$BINPREFIX-as
-AR=$BINPREFIX-ar
-RANLIB=$BINPREFIX-ranlib
-STRIP=$BINPREFIX-strip
-export CC CXX LD AS AR RANLIB STRIP
-export PATH=$HOME/i686-linux-glibc2.7-4.4.3/bin:$PATH
+DEBIAN_VERSION=
+if [ -f /etc/debian_version ] ; then
+  DEBIAN_VERSION=$(head -n 1 /etc/debian_version)
+fi
+
+if [ ! "$DEBIAN_VERSION" = "6.0.5" ] ; then
+    BINPREFIX=i686-linux
+    CC=$BINPREFIX-gcc
+    CXX=$BINPREFIX-g++
+    LD=$BINPREFIX-ld
+    AS=$BINPREFIX-as
+    AR=$BINPREFIX-ar
+    RANLIB=$BINPREFIX-ranlib
+    STRIP=$BINPREFIX-strip
+    export CC CXX LD AS AR RANLIB STRIP
+    export PATH=$HOME/i686-linux-glibc2.7-4.4.3/bin:$PATH
+fi
 
 DST=${BASE_TMP}/final-install
 
