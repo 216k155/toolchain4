@@ -918,9 +918,10 @@ toolchain_cctools() {
 			fi
 
 			pushd openssl-1.0.1c
+			# OpenSSL doesn't compile right with -jn where n>1
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
-			make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS"
-			make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS"
+			make -j 1 CC="$CC $BUILD_ARCH_CFLAGS"
+			make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS"
 			popd
 			message_status "openssl is ready!"
 		fi
