@@ -226,6 +226,8 @@
 DEVICE="iPhone_3GS"
 FIRMWARE_VERSION="4.3"
 
+JOBS=9
+
 # Set the defaults.
 if [[ -z $CCTOOLSVER ]] ; then
 	CCTOOLSVER=809
@@ -790,8 +792,8 @@ toolchain_static_host_libs() {
 		fi
 		ABI=32 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $GMP_SRC_DIR/configure \
 		               --prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static
-		make -j 1 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
-		make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
 	fi
@@ -807,8 +809,8 @@ toolchain_static_host_libs() {
 		pushd $BUILD_DIR/mpfr-2.2.1
 		CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure \
 				--prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static --with-gmp=${HOST_DIR}-gmp-mpfr
-		make -j 1 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
-		make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static mpfr is ready!"
 	fi
@@ -822,12 +824,12 @@ toolchain_static_host_libs() {
 			pushd mingw-libgnurx-2.5.1
 			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
 			./configure --prefix=${HOST_DIR} --enable-static --disable-shared
-			if ! make  -j $_JOBS; then
+			if ! make  -j $JOBS; then
 				error "Failed to make mingw-libgnurx-2.5.1"
 				popd
 				exit 1
 			fi
-			make -j 1 install
+			make -j $JOBS install
 			popd
 		fi
 	fi
@@ -843,7 +845,7 @@ toolchain_static_host_libs() {
 		message_status "Building host libiconv-1.14"
 		pushd libiconv-1.14
 		CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=${HOST_DIR}  CFLAGS=-O2
-		if ! make -j $_JOBS install-lib ; then
+		if ! make -j $JOBS install-lib ; then
 			error "Failed to make libiconv-1.14"
 			exit 1
 		fi
@@ -867,7 +869,7 @@ toolchain_static_host_libs() {
 			NMHOST=nm
 		fi
 		NM=$NMHOST ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=${HOST_DIR} --enable-multibyte --prefix=${HOST_DIR} CFLAGS="-O3 -DPTW32_STATIC_LIB"
-		if ! make -j 1 install ; then
+		if ! make -j $JOBS install ; then
 			error "Failed to make gettext-0.18.1.1"
 			exit 1
 		fi
@@ -932,8 +934,8 @@ toolchain_cctools() {
 
 			pushd openssl-1.0.0f
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
-			make -j 1 CC="$CC $BUILD_ARCH_CFLAGS"
-			make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS"
+			make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS"
+			make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS"
 			popd
 			message_status "openssl is ready!"
 		fi

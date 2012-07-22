@@ -110,7 +110,7 @@ ld64/Options-defcross.diff ld64/Options_h_includes.diff \
 ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
 ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
 ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
-ld64/cstdio.diff"
+ld64/cstdio.diff ld64/QSORT_macho_relocatable_file.diff"
 fi
 
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
@@ -495,7 +495,7 @@ do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#includ
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/seg_addr_table.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c
-do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/stat.h>\n#include <stdlib.h>\n#include <unistd.h>\n#else\n#include <stdlib.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
+do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/stat.h>\n#include <stdlib.h>\n#include <unistd.h>\n#include <sys/mman.h>\n#else\n#include <stdlib.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
 
 if [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/libstuff/seg_addr_table.c
@@ -533,7 +533,7 @@ do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DI
 do_sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-file.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-scrub.c
-do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/write_object.c
+do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/stat.h>#endif\n#endif^" ${DISTDIR}/as/write_object.c
 if [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^if(realpath == NULL)^if(prefix == NULL)^" ${DISTDIR}/as/driver.c
     # Windows doesn't have SIGHUP or SIGPIPE...
@@ -551,6 +551,8 @@ do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/
 
 # ld, misc.
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/misc/checksyms.c
+do_sed $"s^#include <limits.h>^#include <limits.h>\n#if !defined(ULLONG_MAX)\n#define ULLONG_MAX (__LONG_LONG_MAX__ * 2ULL + 1ULL)\n#endif\n^" ${DISTDIR}/misc/install_name_tool.c
+
 if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
     do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
     do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass1.c
@@ -642,12 +644,11 @@ if [[ "$(uname_bt)" = "Linux" ]] ; then
     do_sed $"s^symbol_address_compare);^\&has_stabs);^"  ${DISTDIR}/ld/pass1.c
     do_sed $"s^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), \&has_stabs,^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), symbol_address_compare,^" ${DISTDIR}/ld/pass1.c
     do_sed $"s^(void \*fail_p, const void \*a_p, const void \*b_p)^(const void \*a_p, const void \*b_p, void \*fail_p)^" ${DISTDIR}/ld/pass1.c
-    do_sed $"s^qsort_r(array, _machOSectionsCount, sizeof(uint32_t), this, \&sectionIndexSorter);^qsort_r(array, _machOSectionsCount, sizeof(uint32_t), \&sectionIndexSorter, this);^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
-    do_sed $"s^qsort_r(array, _symbolsInSections, sizeof(uint32_t), \&extra, \&symbolIndexSorter);^qsort_r(array, _symbolsInSections, sizeof(uint32_t), \&symbolIndexSorter, \&extra);^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
-    do_sed $"s^(void\* extra, const void\* l, const void\* r)^(const void\* l, const void\* r,void\* extra)^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
 fi
 
-if [[ ! "$(uname_bt)" = "Darwin" ]] ; then
+# GCC 4.4.3 doesn't like this (whereas 4.7.0 needs this), so making it Windows only for now, who'd have thought Windows would ever be more uptodate
+# gnu-toolchain-wise than Linux eh?
+if [[ ! "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
 fi
 
