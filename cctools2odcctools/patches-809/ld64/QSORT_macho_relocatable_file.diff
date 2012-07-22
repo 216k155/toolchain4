@@ -1,5 +1,5 @@
---- ld/parsers/macho_relocatable_file.cpp.orig	2011-07-27 01:10:35.000000000 +0100
-+++ ld/parsers/macho_relocatable_file.cpp	2012-07-22 22:25:47.000000000 +0100
+--- src/ld/parsers/macho_relocatable_file.cpp.orig	2011-07-27 01:10:35.000000000 +0100
++++ src/ld/parsers/macho_relocatable_file.cpp	2012-07-22 22:25:47.000000000 +0100
 @@ -50,7 +50,11 @@
  #include "ld.hpp"
  #include "macho_relocatable_file.h"
