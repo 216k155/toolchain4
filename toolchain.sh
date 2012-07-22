@@ -112,21 +112,7 @@
 # ./toolchain.sh classdump
 #   Runs classdump on a selected iPhone over SSH in order to generate useable
 #   Objective-C headers for (mostly) private frameworks.
-
-# New bug, frameworks are not being found on Windows:
-# cd /usr/src/Python-3.3.0a2/i686-apple-darwin11/
-# apple-osx-gcc.exe  -m32  --sysroot /c/Users/nonesush/darwin-cross/MacOSX10.7.sdk -mmacosx-version-min=10.5 -DMAXOSX_DEPLOYEMENT_TARGET=10.5  -g -O0 -Wall -Wstrict-prototypes --sysroot /c/Users/nonesush/darwin-cross/MacOSX10.7.sdk -mmacosx-version-min=10.5 -DMAXOSX_DEPLOYEMENT_TARGET=10.5 --sysroot c:/Users/nonesush/darwin-cross/MacOSX10.7.sdk -mmacosx-version-min=10.5 -DMAXOSX_DEPLOYEMENT_TARGET=10.5 Parser/acceler.o Parser/grammar1.o Parser/listnode.o Parser/node.o Parser/parser.o Parser/bitset.o Parser/metagrammar.o Parser/firstsets.o Parser/grammar.o Parser/pgen.o Objects/obmalloc.o Python/dynamic_annotations.o Python/mysnprintf.o Python/pyctype.o Parser/tokenizer_pgen.o Parser/printgrammar.o Parser/parsetok_pgen.o Parser/pgenmain.o -ldl  -lpthread -framework CoreFoundation -o Parser/pgen
-# Using built-in specs.
-# Target: i686-apple-darwin11
-# Configured with: /tmp2/tc4/src-apple-osx/gcc-5666.3/configure --prefix=/tmp2/tc4/final-install/apple-osx --disable-checking --enable-languages=c,c++,objc,obj-c++ --with-as=/tmp2/tc4/final-install/apple-osx/bin/i686-apple-darwin11-as.exe --with-ld=/tmp2/tc4/final-install/apple-osx/bin/i686-apple-darwin11-ld.exe --with-ranlib=/tmp2/tc4/final-install/apple-osx/bin/i686-apple-darwin11-ranlib.exe --target=i686-apple-darwin11 --with-sysroot=/tmp2/tc4/final-install/apple-osx --enable-static --enable-shared --enable-nls --enable-multilib --disable-werror --enable-libgomp --with-gxx-include-dir=/tmp2/tc4/final-install/apple-osx/include/c++/4.2.1 --with-gmp=/tmp2/tc4/host-install-gmp-mpfr --with-mpfr=/tmp2/tc4/host-install-gmp-mpfr --libexecdir=/tmp2/tc4/final-install/apple-osx/libexec
-# Thread model: posix
-# gcc version 4.2.1 (Apple Inc. build 5666) (dot 3)
-#  c:/users/nonesush/darwin-cross/apple-osx/bin/../libexec/gcc/i686-apple-darwin11/4.2.1/collect2.exe -dynamic -arch i386 -macosx_version_min 10.5
-# -macosx_version_min 10.5 -macosx_version_min 10.5 -syslibroot c:/Users/nonesush/darwin-cross/MacOSX10.7.sdk -weak_reference_mismatches non-weak -o Parser/pgen -lcrt1.10.5.o -Lc:/Users/nonesush/darwin-cross/MacOSX10.7.sdk/usr/lib/i686-apple-darwin11/4.2.1 -Lc:/Users/nonesush/darwin-cross/MacOSX10.7.sdk/usr/lib -Lc:/users/nonesush/darwin-cross/apple-osx/bin/../lib/gcc/i686-apple-darwin11/4.2.1 -Lc:/users/nonesush/darwin-cross/apple-osx/bin/../lib/gcc Parser/acceler.o Parser/grammar1.o Parser/listnode.o Parser/node.o Parser/parser.o Parser/bitset.o Parser/metagrammar.o Parser/firstsets.o Parser/grammar.o Parser/pgen.o Objects/obmalloc.o Python/dynamic_annotations.o Python/mysnprintf.o Python/pyctype.o Parser/tokenizer_pgen.o Parser/printgrammar.o Parser/parsetok_pgen.o Parser/pgenmain.o -ldl -lpthread -framework CoreFoundation -lgcc_s.10.5 -lgcc -lSystem
-# ld: framework not found CoreFoundation
-# collect2: ld returned 1 exit status
-# The equiv command line works fine on Linux.
-
+#
 # Switching to mingw64 also turned up:
 # WINDOWS:
 # gcc   -m32 -O0 -g -D__USE_MINGW_ANSI_STDIO -msse2 -D_CTYPE_H  -DIN_GCC -DCROSS_DIRECTORY_STRUCTURE  -W -Wall -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -pedantic -Wno-long-long -Wno-variadic-macros -Wno-overlength-strings -Wold-style-definition -Wmissing-format-attribute    -DHAVE_CONFIG_H -DGENERATOR_FILE  -o build/genautomata.exe \
