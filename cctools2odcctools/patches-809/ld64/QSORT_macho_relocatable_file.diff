@@ -8,7 +8,7 @@
 +#ifdef __APPLE__
 + #define QSORT_R(_a,_b,_c,_vp,_fn) ::qsort_r((_a), (_b), (_c), (_vp), &(_fn))
 +#else
-+ #define QSORT_R(_a,_b,_c,_vp,_fn) ::qsort_r((_a), (_b), (_c), (int(*)(void*, const void*, const void*))(_fn), (_vp))
++ #define QSORT_R(_a,_b,_c,_vp,_fn) ::qsort_r((_a), (_b), (_c), (int(*)(const void*, const void*, void*))(_fn), (_vp))
 +#endif
  
  extern void throwf(const char* format, ...) __attribute__ ((noreturn,format(printf, 1, 2)));
