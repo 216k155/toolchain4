@@ -628,10 +628,12 @@ AC_SUBST([DL_LIBS])
 case $host_os in
 	 darwin*)
 # Dynamically linked LTO
+AC_LANG_PUSH([C++])
 AC_CHECK_LIB([LTO],[lto_get_version],[
 		 LTO_LIBS=-lLTO
 		 LTO_DEFS="-DLTO_SUPPORT=1"
 		 ])
+AC_LANG_POP([C++])
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 ;;
@@ -648,10 +650,12 @@ AC_SUBST(LTO_DEFS)
 	 *)
 # Statically linked LTO (though static llvmgcc itself isn't yet done)
 # ...requires a large list of libraries. Using gnumake's $(wildcard might be a better plan.
+AC_LANG_PUSH([C++])
 AC_CHECK_LIB([LTO],[lto_get_version],[
 		 LTO_LIBS="-lpthread -Wl,-Bstatic -Wl,--start-group -lCompilerDriver -lEnhancedDisassembly -lLLVMAlphaAsmPrinter -lLLVMAlphaCodeGen -lLLVMAlphaInfo -lLLVMAnalysis -lLLVMArchive -lLLVMARMAsmParser -lLLVMARMAsmPrinter -lLLVMARMCodeGen -lLLVMARMInfo -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBitReader -lLLVMBitWriter -lLLVMBlackfinAsmPrinter -lLLVMBlackfinCodeGen -lLLVMBlackfinInfo -lLLVMCBackend -lLLVMCBackendInfo -lLLVMCellSPUAsmPrinter -lLLVMCellSPUCodeGen -lLLVMCellSPUInfo -lLLVMCodeGen -lLLVMCore -lLLVMCppBackend -lLLVMCppBackendInfo -lLLVMExecutionEngine -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterpreter -lLLVMipa -lLLVMipo -lLLVMJIT -lLLVMLinker -lLLVMMBlazeAsmPrinter -lLLVMMBlazeCodeGen -lLLVMMBlazeInfo -lLLVMMC -lLLVMMCParser -lLLVMMipsAsmPrinter -lLLVMMipsCodeGen -lLLVMMipsInfo -lLLVMMSIL -lLLVMMSILInfo -lLLVMMSP430AsmPrinter -lLLVMMSP430CodeGen -lLLVMMSP430Info -lLLVMPIC16AsmPrinter -lLLVMPIC16CodeGen -lLLVMPIC16Info -lLLVMpic16passes -lLLVMPowerPCAsmPrinter -lLLVMPowerPCCodeGen -lLLVMPowerPCInfo -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSparcAsmPrinter -lLLVMSparcCodeGen -lLLVMSparcInfo -lLLVMSupport -lLLVMSystem -lLLVMSystemZAsmPrinter -lLLVMSystemZCodeGen -lLLVMSystemZInfo -lLLVMTarget -lLLVMTransformUtils -lLLVMX86AsmParser -lLLVMX86AsmPrinter -lLLVMX86CodeGen -lLLVMX86Disassembler -lLLVMX86Info -lLLVMXCoreAsmPrinter -lLLVMXCoreCodeGen -lLLVMXCoreInfo -lLTO -lplugin_llvmc_Base -lplugin_llvmc_Clang -lUnitTestMain -Wl,--end-group -Wl,-Bdynamic"
 		 LTO_DEFS="-DLTO_SUPPORT=1"
 		 ])
+AC_LANG_POP([C++])
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 ;;

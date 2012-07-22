@@ -648,7 +648,7 @@ fi
 
 # GCC 4.4.3 doesn't like this (whereas 4.7.0 needs this), so making it Windows only for now, who'd have thought Windows would ever be more uptodate
 # gnu-toolchain-wise than Linux eh?
-if [[ ! "$(uname_bt)" = "Windows" ]] ; then
+if [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
 fi
 
