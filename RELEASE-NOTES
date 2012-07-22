@@ -55,3 +55,6 @@ Send bug reports and/or patches to Ray Donnelly <mingw.android at gmail dot com>
             Windows :: Built using mingw64 (32bit) compilers.
 
 15-06-12 :: Darwin :: Fix pathing issue, properly this time.
+
+22-07-12 :: Linux :: Now built with glibc2.7 compatible GCC, works on Debian 6.0.5.
+            Linux :: Fix bug with qsort_r in ld64's macho_relocatable_file.c
