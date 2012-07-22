@@ -925,13 +925,13 @@ toolchain_cctools() {
 		fi
 
 		if [[ ! -f $HOST_DIR/include/openssl/md5.h ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
-			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.0f.tar.gz); then
-				error "Failed to get and extract openssl-1.0.0f Check errors."
+			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.1c.tar.gz); then
+				error "Failed to get and extract openssl-1.0.1c Check errors."
 				popd
 				exit 1
 			fi
 
-			pushd openssl-1.0.0f
+			pushd openssl-1.0.1c
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
 			make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS"
 			make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS"
