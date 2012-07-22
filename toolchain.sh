@@ -260,7 +260,6 @@ if [ -z $PREFIX_SUFFIX ] ; then
     error "Set $PREFIX_SUFFIX before calling this!"
 fi
 
-SUDO=sudo
 GAWK=gawk
 URLDL=wget
 BASE_TMP=/tmp2/tc4
@@ -272,7 +271,6 @@ AUTOCONF=autoconf
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
 if [[ "$(uname_bt)" == "Windows" ]] ; then
-	SUDO=
 	BASE_TMP=/tmp2/tc4
 	EXEEXT=.exe
 	# In case you've installed the mingw64 provided autotools.
@@ -289,13 +287,14 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
     WARN_SUPPRESS=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Linux" ]] ; then
     # Ubuntu has autoconf2.59 package.
+    GAWK=awk
     AUTOCONF=autoconf2.59
     AUTOHEADER=autoheader2.59
     WARN_SUPPRESS=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Darwin" ]] ; then
-	GAWK=awk
-	URLDL=curl
-	WARN_SUPPRESS=
+    GAWK=awk
+    URLDL=curl
+    WARN_SUPPRESS=
 fi
 
 # Everything is built relative to IPHONEDEV_DIR
@@ -400,7 +399,7 @@ IPHONEWIKI_KEY_URL="http://www.theiphonewiki.com/wiki/index.php?title=Firmware"
 DARWIN_SOURCES_DIR="$FILES_DIR/darwin_sources"
 
 # "mount zcat xxd" are only needed for dmg tools, and that's less important.
-NEEDED_COMMANDS="gcc make $SUDO tar $URLDL unzip $GAWK bison flex patch" # mount zcat xxd
+NEEDED_COMMANDS="gcc make tar $URLDL unzip $GAWK bison flex patch" # mount zcat xxd
 
 HERE=`pwd`
 
