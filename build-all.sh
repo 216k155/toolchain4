@@ -34,6 +34,17 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
 	BASE_TMP=/tmp2/tc4
 fi
 
+BINPREFIX=i686-linux
+CC=$BINPREFIX-gcc
+CXX=$BINPREFIX-g++
+LD=$BINPREFIX-ld
+AS=$BINPREFIX-as
+AR=$BINPREFIX-ar
+RANLIB=$BINPREFIX-ranlib
+STRIP=$BINPREFIX-strip
+export CC CXX LD AS AR RANLIB STRIP
+export PATH=$HOME/i686-linux-glibc2.7-4.4.3/bin:$PATH
+
 DST=${BASE_TMP}/final-install
 
 if [ $MAKING_DEBUG = yes ] ; then

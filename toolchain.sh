@@ -230,6 +230,15 @@ FIRMWARE_VERSION="4.3"
 if [[ -z $CCTOOLSVER ]] ; then
 	CCTOOLSVER=809
 fi
+
+if [[ -z "$CC" ]] ; then
+        CC=gcc
+fi
+
+if [[ -z "$CXX" ]] ; then
+        CXX=g++
+fi
+
 CCTOOLS_VER_FH="${CCTOOLSVER}"
 
 ONLY_PATCH=0
@@ -317,7 +326,7 @@ IOS="iPhoneOS${IOSVER}"
 BUILD_ARCH=i686
 # -m32 can't be passed into llvmgcc's configure as CFLAGS as erroneously, it gets used for target lib build 
 # (i.e. passed as an option to xgcc, and -m32 fails for arm of course). Instead it's specified as part of CC
-# and CXX, i.e. CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS"
+# and CXX, i.e. CC="$CC $BUILD_ARCH_CFLAGS" CXX="$CXX $BUILD_ARCH_CFLAGS"
 BUILD_ARCH_CFLAGS="-m32"
 if [[ "$(uname_bt)" = "Darwin" ]] ; then
 	if [[ "$BUILD_ARCH" = "i686" ]] ; then
@@ -779,10 +788,10 @@ toolchain_static_host_libs() {
 		else
 			GMP_SRC_DIR="../../src-${PREFIX_SUFFIX}/gmp-4.3.2"
 		fi
-		ABI=32 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $GMP_SRC_DIR/configure \
+                ABI=32 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $GMP_SRC_DIR/configure \
 		               --prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static
-		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
-		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+                make -j 1 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+                make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
 	fi
@@ -796,10 +805,10 @@ toolchain_static_host_libs() {
 		message_status "Building host mpfr-2.2.1"
 		mkdir -p $BUILD_DIR/mpfr-2.2.1
 		pushd $BUILD_DIR/mpfr-2.2.1
-		CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure \
+                CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure \
 		               --prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static --with-gmp=${HOST_DIR}-gmp-mpfr
-		make -j 1 CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
-		make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+                make -j 1 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+                make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static mpfr is ready!"
 	fi
@@ -903,7 +912,7 @@ toolchain_cctools() {
 			fi
 			pushd e2fsprogs-libs-1.41.14/
 			patch --backup -p0 < ${PATCHES}/e2fsprogs-libs-1.41.14-WIN.patch
-			CC="gcc $BUILD_ARCH_CFLAGS" ./configure --prefix=$HOST_DIR --disable-elf-shlibs --disable-uuidd
+                        CC="$CC $BUILD_ARCH_CFLAGS" ./configure --prefix=$HOST_DIR --disable-elf-shlibs --disable-uuidd
 			pushd lib/uuid/
 			if ! ( make install && make ) ; then
 				error "Failed to make libuuid"
@@ -923,8 +932,8 @@ toolchain_cctools() {
 
 			pushd openssl-1.0.0f
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
-			make -j 1 CC="gcc $BUILD_ARCH_CFLAGS"
-			make -j 1 install CC="gcc $BUILD_ARCH_CFLAGS"
+                        make -j 1 CC="$CC $BUILD_ARCH_CFLAGS"
+                        make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS"
 			popd
 			message_status "openssl is ready!"
 		fi
@@ -957,7 +966,7 @@ toolchain_cctools() {
 		if [[ "$(uname_bt)" == "Windows" ]] ; then
 			CF_MINGW="-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX"
 		fi
-		CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
+                CC="$CC $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" CXX="$CXX $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS" \
 			CFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW} $HOST_STATIC_LIB_CFLAGS" \
 			CXXFLAGS="$BUILD_ARCH_CFLAGS $SAVE_TEMPS -D__DARWIN_UNIX03 ${CF_MINGW} $HOST_STATIC_LIB_CFLAGS" \
 			LDFLAGS="$BUILD_ARCH_CFLAGS -L$PREFIX/lib $HOST_STATIC_LIB_LDFLAGS" HAVE_FOREIGN_HEADERS="NO" \
@@ -1022,7 +1031,7 @@ toolchain_llvmgcc_core() {
 	fi
 	mkdir -p $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
 	pushd $BUILD_DIR/llvmgcc42-${GCCLLVMVERS}-core-${TARGET_ARCH}
-	CC="gcc $BUILD_ARCH_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS -fpermissive" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS" \
+        CC="$CC $BUILD_ARCH_CFLAGS" CXX="$CXX $BUILD_ARCH_CFLAGS -fpermissive" CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core/llvmCore/configure \
 		--prefix=$HOST_DIR \
 		--enable-optimized \
@@ -1522,13 +1531,13 @@ toolchain_llvmgcc() {
 		copy_sysroot ${SDKS_DIR}/${IOS}.sdk $PREFIX $TARGET
 	fi
 
-	if [[ "$TARGET_ARCH" = "i686" ]] ; then
+        if [[ "$TARGET_ARCH" = "i686" ]] ; then
 	    MULTILIBS="--enable-multilib"
 	else
 	    MULTILIBS="--disable-multilib"
 	fi
 
-	CC="gcc $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $WARN_SUPPRESS $HOST_STATIC_LIB_CFLAGS" CXX="g++ $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $WARN_SUPPRESS" \
+        CC="$CC $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $WARN_SUPPRESS $HOST_STATIC_LIB_CFLAGS" CXX="$CXX $BUILD_ARCH_CFLAGS $HOST_DEBUG_CFLAGS $CF_MINGW_ANSI_STDIO $WARN_SUPPRESS" \
 	CFLAGS="$SAVE_TEMPS" CXXFLAGS="$CFLAGS -fpermissive" LDFLAGS="$BUILD_ARCH_CFLAGS $HOST_STATIC_LIB_LDFLAGS" \
 		$SRC_DIR/llvmgcc42-${GCCLLVMVERS}/configure \
 		--target=$TARGET \
@@ -2142,7 +2151,7 @@ check_environment() {
 	fi
 
 	# Performs a check for objective-c extensions to gcc
-	if [ ! -z "`LANG=C gcc --help=objc 2>&1 | grep \"warning: unrecognized argument to --help\"`" ]; then
+        if [ ! -z "`LANG=C $CC --help=objc 2>&1 | grep \"warning: unrecognized argument to --help\"`" ]; then
 		error "GCC does not appear to support Objective-C."
 		error "You may need to install support, for example the \"gobjc\" package in debian."
 		exit
