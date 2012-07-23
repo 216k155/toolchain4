@@ -115,14 +115,13 @@ else
     LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff"
 fi
 
-# Removed as/driver.c.diff as we've got _NSGetExecutablePath.
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
 # Removed libstuff/cmd_with_prefix.diff as it's wrong.
 
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
-as/bignum.diff as/input-scrub.diff \
+as/bignum.diff as/input-scrub.diff as/driver.c.diff \
 as/messages.diff as/relax.diff as/use_PRI_macros.diff \
 include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
 ${LD64PATCHES} \
@@ -141,7 +140,7 @@ else
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
 ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
-as/bignum.diff as/input-scrub.diff \
+as/bignum.diff as/input-scrub.diff as/driver.c.diff \
 as/messages.diff as/relax.diff \
 include/stuff/bytesex-floatstate.diff \
 ${LD64PATCHES} \
