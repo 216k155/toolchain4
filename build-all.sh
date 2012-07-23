@@ -70,7 +70,6 @@ full_build_for_arch() {
     fi
     rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
-    exit 1
     rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
     rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
@@ -81,7 +80,7 @@ full_build_for_arch() {
 }
 
 # Clean everything.
-ARM_BUILD=1
+ARM_BUILD=0
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm

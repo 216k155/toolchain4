@@ -1036,7 +1036,7 @@ toolchain_llvmgcc_core() {
 		popd
 	fi
 	make -j$JOBS &>>make.log
-	make install &>install.log # optional
+	make -k install &>install.log
 	popd
 }
 
@@ -1568,7 +1568,7 @@ toolchain_llvmgcc() {
 		make -j$JOBS &>>make.log
         fi
 	# ...which means this also falls over at libiberty!
-	make  -j $JOBS install -k &>install.log
+	make -k -j $JOBS install -k &>install.log
 	popd
 }
 
