@@ -283,6 +283,31 @@ elif [[ "$(uname_bt)" == "Darwin" ]] ; then
     WARN_SUPPRESS=
 fi
 
+set -x
+if [ -z "$(which $AUTOCONF)" ] ; then
+    AUTOCONF=autoconf
+    AUTOHEADER=autoconf
+    export PATH=$HOME/autoconf-2.59/bin:$PATH
+    if [ -z "$(which $AUTOCONF)" ] ; then
+        download http://ftp.gnu.org/gnu/autoconf/autoconf-2.59.tar.gz
+        tar -xzf autoconf-2.59.tar.gz
+        pushd autoconf-2.59
+        ./configure --prefix=$HOME/autoconf-2.59
+        make
+        make install
+        popd
+    fi
+fi
+if [ -z "$(which $AUTOCONF)" ] ; then
+    error "Failed to find $AUTOCONF in PATH"
+    exit 1
+fi
+
+if [ -z "$(which $AUTOHEADER)" ] ; then
+    error "Failed to find $AUTOHEADER in PATH"
+    exit 1
+fi
+
 # Everything is built relative to IPHONEDEV_DIR
 IPHONEDEV_DIR="$PWD"
 
@@ -777,8 +802,8 @@ toolchain_static_host_libs() {
 		fi
 		ABI=32 CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $GMP_SRC_DIR/configure \
 		               --prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static
-		make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
-		make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j$JOBS CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j$JOBS install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static gmp is ready!"
 	fi
@@ -794,8 +819,8 @@ toolchain_static_host_libs() {
 		pushd $BUILD_DIR/mpfr-2.2.1
 		CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS" $SRC_DIR/mpfr-2.2.1/configure \
 				--prefix=${HOST_DIR}-gmp-mpfr --disable-shared --enable-static --with-gmp=${HOST_DIR}-gmp-mpfr
-		make -j $JOBS CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
-		make -j $JOBS install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j$JOBS CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
+		make -j$JOBS install CC="$CC $BUILD_ARCH_CFLAGS" LDFLAGS="$BUILD_ARCH_CFLAGS"
 		popd
 		message_status "static mpfr is ready!"
 	fi
@@ -809,12 +834,12 @@ toolchain_static_host_libs() {
 			pushd mingw-libgnurx-2.5.1
 			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
 			./configure --prefix=${HOST_DIR} --enable-static --disable-shared
-			if ! make  -j $JOBS; then
+			if ! make  -j$JOBS; then
 				error "Failed to make mingw-libgnurx-2.5.1"
 				popd
 				exit 1
 			fi
-			make -j $JOBS install
+			make -j$JOBS install
 			popd
 		fi
 	fi
@@ -830,7 +855,7 @@ toolchain_static_host_libs() {
 		message_status "Building host libiconv-1.14"
 		pushd libiconv-1.14
 		CFLAGS=-O2 && ./configure --enable-static --disable-shared --prefix=${HOST_DIR}  CFLAGS=-O2
-		if ! make -j $JOBS install-lib ; then
+		if ! make -j$JOBS install-lib ; then
 			error "Failed to make libiconv-1.14"
 			exit 1
 		fi
@@ -854,7 +879,7 @@ toolchain_static_host_libs() {
 			NMHOST=nm
 		fi
 		NM=$NMHOST ./configure --disable-java --disable-native-java --disable-tests --enable-static --disable-shared --with-libiconv-prefix=${HOST_DIR} --enable-multibyte --prefix=${HOST_DIR} CFLAGS="-O3 -DPTW32_STATIC_LIB"
-		if ! make -j $JOBS install ; then
+		if ! make -j$JOBS install ; then
 			error "Failed to make gettext-0.18.1.1"
 			exit 1
 		fi
@@ -920,8 +945,8 @@ toolchain_cctools() {
 			pushd openssl-1.0.1c
 			# OpenSSL doesn't compile right with -jn where n>1
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
-			make -j 1 CC="$CC $BUILD_ARCH_CFLAGS"
-			make -j 1 install CC="$CC $BUILD_ARCH_CFLAGS"
+			make -j$JOBS CC="$CC $BUILD_ARCH_CFLAGS"
+			make -j$JOBS install CC="$CC $BUILD_ARCH_CFLAGS"
 			popd
 			message_status "openssl is ready!"
 		fi
@@ -971,7 +996,7 @@ toolchain_cctools() {
 			DESTDIR=C: make install &>install.log
 			cp ${HOST_DIR}/lib/libLTO.dll ${PREFIX}/bin/
 		else
-			if ! ( make -k &>make.log && make install &>install.log ); then
+			if ! ( make -j$JOBS -k &>make.log && make install -j$JOBS  &>install.log ); then
 				error "Build & install failed. Check make.log and install.log"
 				exit 1
 			fi
@@ -1277,15 +1302,15 @@ toolchain_gcc()
 		--libexecdir=$PREFIXGCC/libexec
             #   --with-libiconv-prefix=${HOST_DIR} \
 	# Make fails at configure-target-libiberty [checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.]
-	if ( ! make -k &>make.log ); then
+	if ( ! make -j$JOBS -k &>make.log ); then
 		message_status "Make failed (probably host libiberty, ignoring...)"
 	fi
 	# this might get us the 'tooldir' setup that GCC is expecting; though it doesn't fit in with Apple's way
 	# of combining all the arches into one assembler (it looks in
 	# -k as "No rule to make target `install'" in libiberty.
-	make install -k &>install.log
+	make -j$JOBS install -k &>install.log
 	# Once again for good luck.
-	make install -k &>install.log
+	make -j$JOBS install -k &>install.log
 	popd
 	if [[ ! "$PREFIXGCC" = "$PREFIX" ]] ; then
 		cp -R -a $PREFIXGCC/* $PREFIX
@@ -1561,14 +1586,14 @@ toolchain_llvmgcc() {
 		$WITH_TUNE
 	# Falls over at libiberty
 	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
-	make  -j $JOBS &>make.log
+	make  -j$JOBS &>make.log
 	if [ $? != 0 ] ; then
 		error "tools/edi probably failed, ignoring errors (make -k)"
 		pushd tools/edis
 		make -j$JOBS &>>make.log
         fi
 	# ...which means this also falls over at libiberty!
-	make -k -j $JOBS install -k &>install.log
+	make -k -j$JOBS install -k &>install.log
 	popd
 }
 
