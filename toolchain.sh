@@ -1029,13 +1029,20 @@ toolchain_llvmgcc_core() {
 	# I did try libs-only and install-libs here but libLTO (and other)
 	# don't get made this way.
 	make -j$JOBS &>make.log
+	if [ $? != 0 ] ; then
+		error "tools/edi probably failed, ignoring make errors"
+		pushd tools/edis
+		make -j1 -k &>>make.log
+		popd
+	fi
+	make -j$JOBS &>>make.log
 	make install &>install.log # optional
 	popd
 }
 
 toolchain_llvmgcc_saurik() {
 	local GCC_DIR="$SRC_DIR/gcc"
-	if [ -z $(which ${TARGET}-ar) ] ; then 
+	if [ -z $(which ${TARGET}-ar) ] ; then
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
 
@@ -1126,7 +1133,7 @@ copy_sysroot() {
 	# ..I Could copy them into $PREFIX/usr/$TARGET/lib instead of $PREFIX/usr/$TARGET/lib/system
 	# but gcc-5666.3-lib-system.patch should take care of the problem without needing to get a
 	# LD_FLAGS_FOR_TARGET hack to work.
-	
+
 	# Some redundancy here. Probably only the 2nd block is needed but it won't really hurt to do
 	# both.
 	rm -rf $_DST/usr/lib
@@ -1555,6 +1562,11 @@ toolchain_llvmgcc() {
 	# Falls over at libiberty
 	# configure-target-libiberty, checking for library containing strerror... configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
 	make  -j $JOBS &>make.log
+	if [ $? != 0 ] ; then
+		error "tools/edi probably failed, ignoring errors (make -k)"
+		pushd tools/edis
+		make -j$JOBS &>>make.log
+        fi
 	# ...which means this also falls over at libiberty!
 	make  -j $JOBS install -k &>install.log
 	popd
