@@ -1,18 +1,12 @@
---- ./driver.c.orig	2011-01-21 12:06:04.000000000 +0100
-+++ ./driver.c	2012-01-09 00:00:33.838151605
-@@ -52,11 +52,15 @@
+--- driver.c.orig	2012-07-23 13:26:58.507040328 +0100
++++ driver.c	2012-07-23 13:34:44.310562204 +0100
+@@ -52,6 +52,9 @@
  	 */
  	bufsize = MAXPATHLEN;
  	p = buf;
-+#ifdef __APPLE__
++	if(progname != NULL){
++	    strcpy(p, progname);
++	}
  	i = _NSGetExecutablePath(p, &bufsize);
  	if(i == -1){
  	    p = allocate(bufsize);
- 	    _NSGetExecutablePath(p, &bufsize);
- 	}
-+#else
-+	strcpy(p, "/proc/self/exe");
-+#endif
- 	prefix = realpath(p, resolved_name);
- 	if(realpath == NULL)
- 	    system_fatal("realpath(3) for %s failed", p);

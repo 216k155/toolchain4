@@ -248,7 +248,7 @@ fi
 
 GAWK=gawk
 URLDL=wget
-BASE_TMP=/tmp2/tc4
+BASE_TMP=/tmp/tc4
 # My changes to libiberty configure.ac have broken us with more
 # recent autotools. 2.59 should work though.
 AUTOHEADER=autoheader

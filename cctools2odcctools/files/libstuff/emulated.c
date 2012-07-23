@@ -505,7 +505,7 @@ uint64_t  mach_absolute_time(void)
 }
 
 #ifndef HAVE_QSORT_R
-void *_qsort_thunk = NULL;
+__thread void *_qsort_thunk = NULL;
 int (*_qsort_saved_func)(void *, const void *, const void *) = NULL;
 
 static int _qsort_comparator(const void *a, const void *b);

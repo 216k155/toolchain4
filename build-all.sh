@@ -27,7 +27,7 @@ esac
 
 UNAME=$(uname_bt)
 
-BASE_TMP=/tmp2/tc4
+BASE_TMP=/tmp/tc4
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
 if [[ "$(uname_bt)" == "Windows" ]] ; then
@@ -80,7 +80,7 @@ full_build_for_arch() {
 }
 
 # Clean everything.
-ARM_BUILD=0
+ARM_BUILD=1
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm

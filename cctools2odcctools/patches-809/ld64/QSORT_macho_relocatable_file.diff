@@ -1,11 +1,22 @@
---- src/ld/parsers/macho_relocatable_file.cpp.orig	2011-07-27 01:10:35.000000000 +0100
-+++ src/ld/parsers/macho_relocatable_file.cpp	2012-07-22 22:25:47.000000000 +0100
-@@ -50,7 +50,11 @@
+--- src/ld/parsers/macho_relocatable_file.cpp.orig	2012-07-23 17:17:31.291186980 +0100
++++ src/ld/parsers/macho_relocatable_file.cpp	2012-07-23 17:18:16.164818609 +0100
+@@ -50,7 +50,22 @@
  #include "ld.hpp"
  #include "macho_relocatable_file.h"
  
 -
-+#ifdef __APPLE__
++/*
++  BSD and glibc-2.8 qsort_r have different args,
++  both to qsort_r itself and to the callback.
++  Good work glibc people! emulated.c implements
++  the BSD style.
++*/
++
++#if defined(__APPLE__) || !defined(HAVE_QSORT_R)
++ #define BSD_STYLE_QSORT_R
++#endif
++
++#ifdef BSD_STYLE_QSORT_R
 + #define QSORT_R(_a,_b,_c,_vp,_fn) ::qsort_r((_a), (_b), (_c), (_vp), &(_fn))
 +#else
 + #define QSORT_R(_a,_b,_c,_vp,_fn) ::qsort_r((_a), (_b), (_c), (int(*)(const void*, const void*, void*))(_fn), (_vp))
@@ -13,11 +24,11 @@
  
  extern void throwf(const char* format, ...) __attribute__ ((noreturn,format(printf, 1, 2)));
  extern void warning(const char* format, ...) __attribute__((format(printf, 1, 2)));
-@@ -1058,9 +1062,13 @@
+@@ -1058,9 +1073,13 @@
  	void											makeSortedSymbolsArray(uint32_t symArray[], const uint32_t sectionArray[]);
  	void											makeSortedSectionsArray(uint32_t array[]);
  	static int										pointerSorter(const void* l, const void* r);
-+#ifdef __APPLE__
++#ifdef BSD_STYLE_QSORT_R
  	static int										symbolIndexSorter(void* extra, const void* l, const void* r);
  	static int										sectionIndexSorter(void* extra, const void* l, const void* r);
 -
@@ -28,11 +39,11 @@
  	void											parseDebugInfo();
  	void											parseStabs();
  	static bool										isConstFunStabs(const char *stabStr);
-@@ -1841,8 +1849,13 @@
+@@ -1841,8 +1860,13 @@
  	}
  }
  
-+#ifdef __APPLE__
++#ifdef BSD_STYLE_QSORT_R
  template <typename A>
  int Parser<A>::sectionIndexSorter(void* extra, const void* l, const void* r)
 +#else
@@ -42,7 +53,7 @@
  {
  	Parser<A>* parser = (Parser<A>*)extra;
  	const uint32_t* left = (uint32_t*)l;
-@@ -1885,9 +1898,9 @@
+@@ -1885,9 +1909,9 @@
  	// sort by symbol table address
  	for (uint32_t i=0; i < _machOSectionsCount; ++i)
  		array[i] = i;
@@ -54,12 +65,12 @@
  		fprintf(stderr, "sorted sections:\n");
  		for(unsigned int i=0; i < _machOSectionsCount; ++i ) 
  			fprintf(stderr, "0x%08llX %s %s\n", _sectionsStart[array[i]].addr(), _sectionsStart[array[i]].segname(), _sectionsStart[array[i]].sectname());
-@@ -1895,9 +1908,13 @@
+@@ -1895,9 +1919,13 @@
  }
  
  
 -
-+#ifdef __APPLE__
++#ifdef BSD_STYLE_QSORT_R
  template <typename A>
  int Parser<A>::symbolIndexSorter(void* extra, const void* l, const void* r)
 +#else
@@ -69,7 +80,7 @@
  {
  	ParserAndSectionsArray* extraInfo = (ParserAndSectionsArray*)extra;
  	Parser<A>* parser = extraInfo->parser;
-@@ -1969,7 +1986,7 @@
+@@ -1969,7 +1997,7 @@
  	
  	// sort by symbol table address
  	ParserAndSectionsArray extra = { this, sectionArray };
