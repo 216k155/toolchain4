@@ -283,7 +283,6 @@ elif [[ "$(uname_bt)" == "Darwin" ]] ; then
     WARN_SUPPRESS=
 fi
 
-set -x
 if [ -z "$(which $AUTOCONF)" ] ; then
     AUTOCONF=autoconf
     AUTOHEADER=autoconf
@@ -298,6 +297,7 @@ if [ -z "$(which $AUTOCONF)" ] ; then
         popd
     fi
 fi
+
 if [ -z "$(which $AUTOCONF)" ] ; then
     error "Failed to find $AUTOCONF in PATH"
     exit 1
@@ -310,7 +310,6 @@ fi
 
 # Everything is built relative to IPHONEDEV_DIR
 IPHONEDEV_DIR="$PWD"
-
 
 TOOLCHAIN="${IPHONEDEV_DIR}"
 PATCHES="${TOOLCHAIN}/patches"
@@ -333,7 +332,6 @@ IOS="iPhoneOS${IOSVER}"
 # HOST_DEBUG_CFLAGS="-O2 -pipe"
 # Enabling this will create temp files for all stages of the toolchain build process, including target gcc libs.
 # SAVE_TEMPS="-save-temps"
-
 
 BUILD_ARCH=i686
 # -m32 can't be passed into llvmgcc's configure as CFLAGS as erroneously, it gets used for target lib build 
@@ -825,14 +823,15 @@ toolchain_static_host_libs() {
 		message_status "static mpfr is ready!"
 	fi
 
+	# regex.h is used by driverdrier.c, which is GPL 2 or later, so we're ok to link statically with LGPL libgnurx.
 	if [[ "$(uname_bt)" = "Windows" ]] ; then
 		if [[ ! -f ${HOST_DIR}/include/regex.h ]] ; then
-			if ! $(downloadUntar http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
+			if ! $(downloadUntar http://garr.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz); then
 				error "Failed to get and extract mingw-regex-2.5.1 Check errors."
 			fi
 			message_status "Building Windows mingw-libgnurx-2.5.1"
 			pushd mingw-libgnurx-2.5.1
-			patch --backup -p0 < ${_TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
+			patch --backup -p1 < ${TOOLCHAIN}/patches/mingw-libgnurx-2.5.1-static.patch
 			./configure --prefix=${HOST_DIR} --enable-static --disable-shared
 			if ! make  -j$JOBS; then
 				error "Failed to make mingw-libgnurx-2.5.1"
@@ -869,7 +868,7 @@ toolchain_static_host_libs() {
 		fi
 		message_status "Building host gettext-0.18.1.1"
 		pushd gettext-0.18.1.1
-		patch --backup -p0 < ${_TOOLCHAIN}/patches/gettext-0.18.1.1-win-pthreads.patch
+		patch --backup -p0 < ${TOOLCHAIN}/patches/gettext-0.18.1.1-win-pthreads.patch
 		# Without NM=... gettext-tools\libgettextpo\exported.sh ends up with /bin/nm and that fails to eval:
 		# nm_cmd="/bin/nm $1 | sed -n -e 's/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*_\([_A-Za-z][_A-Za-z0-9]*\)\{0,1\}$/\1 _\2 \2/p'"
 		# eval $nm_cmd
@@ -926,7 +925,7 @@ toolchain_cctools() {
 			patch --backup -p0 < ${PATCHES}/e2fsprogs-libs-1.41.14-WIN.patch
 			CC="$CC $BUILD_ARCH_CFLAGS" ./configure --prefix=$HOST_DIR --disable-elf-shlibs --disable-uuidd
 			pushd lib/uuid/
-			if ! ( make install && make ) ; then
+			if ! ( make && make install ) ; then
 				error "Failed to make libuuid"
 				exit 1
 			fi
@@ -1057,10 +1056,10 @@ toolchain_llvmgcc_core() {
 	if [ $? != 0 ] ; then
 		error "tools/edi probably failed, ignoring make errors"
 		pushd tools/edis
-		make -j1 -k &>>make.log
+		make -j1 -k &>make2.log
 		popd
 	fi
-	make -j$JOBS &>>make.log
+	make -j$JOBS &>make3.log
 	make -k install &>install.log
 	popd
 }
@@ -1590,8 +1589,8 @@ toolchain_llvmgcc() {
 	if [ $? != 0 ] ; then
 		error "tools/edi probably failed, ignoring errors (make -k)"
 		pushd tools/edis
-		make -j$JOBS &>>make.log
-        fi
+		make -j$JOBS &>make2.log
+	fi
 	# ...which means this also falls over at libiberty!
 	make -k -j$JOBS install -k &>install.log
 	popd

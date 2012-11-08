@@ -1,5 +1,6 @@
---- Makefile.in.orig	Sun Jan 15 22:12:20 2012
-+++ Makefile.in	Sun Jan 15 22:13:04 2012
+diff -urN a/Makefile.in b/Makefile.in
+--- a/Makefile.in	Sun Jan 15 22:12:20 2012
++++ b/Makefile.in	Sun Jan 15 22:13:04 2012
 @@ -69,8 +69,8 @@
  libgnurx-$(DLLVERSION).dll libgnurx.dll.a: $(OBJECTS)
  	$(CC) $(CFLAGS) -shared -o libgnurx-$(DLLVERSION).dll $(LDFLAGS) $(OBJECTS)
@@ -11,3 +12,20 @@
  
  gnurx.lib: libgnurx-$(DLLVERSION).dll
  	$(MSVCLIB) -def:libgnurx.def -out:gnurx.lib
+diff -urN a/regcomp.c b/regcomp.c
+--- a/regcomp.c	Thu Nov  8 23:23:56 2012
++++ b/regcomp.c	Thu Nov  8 23:31:07 2012
+@@ -506,11 +506,8 @@
+    from either regcomp or regexec.   We don't use PREG here.  */
+ 
+ size_t
+-regerror (errcode, preg, errbuf, errbuf_size)
+-    int errcode;
+-    const regex_t *__restrict preg;
+-    char *__restrict errbuf;
+-    size_t errbuf_size;
++regerror (int errcode, const regex_t *__restrict preg, 
++          char *__restrict errbuf, size_t errbuf_size)
+ {
+   const char *msg;
+   size_t msg_size;

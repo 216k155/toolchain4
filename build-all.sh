@@ -39,7 +39,7 @@ if [ -f /etc/debian_version ] ; then
   DEBIAN_VERSION=$(head -n 1 /etc/debian_version)
 fi
 
-if [ ! "$DEBIAN_VERSION" = "6.0.5" ] ; then
+if [ ! "$DEBIAN_VERSION" = "6.0.5" -a "$(uname_bt)" = "Linux" ] ; then
     BINPREFIX=i686-linux
     CC=$BINPREFIX-gcc
     CXX=$BINPREFIX-g++
