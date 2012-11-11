@@ -5,6 +5,10 @@ AC_REVISION([$Revision: 1.37 $])
 AC_CONFIG_SRCDIR([APPLE_LICENSE])
 AC_CONFIG_HEADERS([include/config.h])
 
+# Windows needs these.
+AC_TYPE_UID_T
+AC_CHECK_TYPE(caddr_t, char *)
+
 # Causes multiply defined warning unfortunately.
 AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
 
@@ -353,6 +357,9 @@ AC_CHECK_DECLS([asprintf], [], [], [[#include <stdio.h>]])
 AC_CHECK_DECLS([getc_unlocked, strlcpy, strlcat, getuid, getgid, rindex, index, strmode, mkstemp, fchmod, fchdir, pwrite])
 AC_CHECK_DECLS([readlink], [], [], [[#include <unistd.h>]])
 
+AC_CHECK_DECL([uid_t getuid(void)])
+AC_CHECK_DECL([gid_t getgid(void)])
+
 AH_VERBATIM([HAVE_DECL_GETC_UNLOCKED_REPLACEMENT],
 [/* For systems that don't have getc_unlocked, use getc  */
 #if !HAVE_DECL_GETC_UNLOCKED
@@ -408,12 +415,6 @@ int flock (int __fd, int __operation);
 #define ENOTSUP 95
 #define EHOSTUNREACH 113
 #define MIN(_a,_b) (_a)<(_b)?(_a):(_b)
-#endif
-#if !HAVE_DECL_GETUID
-uid_t getuid(void);
-#endif
-#if !HAVE_DECL_GETGID
-gid_t getgid(void);
 #endif
 #if defined(__MINGW32__)
 #ifdef __cplusplus

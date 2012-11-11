@@ -202,6 +202,34 @@
 # In the make.log output:
 # /tmp/tc4/final-install/apple-dbg-osx/bin/i686-apple-darwin11-lipo -output libgcc_s.10.5.dylib -create libgcc_s.10.5.dylib_T*
 
+# Mingw-w64 4.7.2 removed link and unlink, need to use _link and _unlink instead.
+
+#PATCHES=/usr/src/toolchain4/patches
+#mkdir -p /tmp2/tc4/patching
+#pushd /tmp2/tc4/patching
+#rm -rf a b
+#SRC_DIR=$PWD
+#rm -rf $SRC_DIR/gcc-5666.3
+#mkdir $SRC_DIR/gcc-5666.3
+#tar --strip-components=1 -xf ~/Dropbox/darwin-compilers-work/SourceTarballs/gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
+#pushd $SRC_DIR/gcc-5666.3
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-cflags.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-t-darwin_prefix.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-strip_for_target.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable-cpp.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-lib-system.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-host-mingw32.patch
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
+#cd ..
+#mv gcc-5666.3 a
+#cp -rf a b
+#cd b
+#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-libiberty-mingw64.patch
+
+
+
 # Error reporting, coloured printing, downloading.
 . bash-tools.sh
 
@@ -257,19 +285,24 @@ AUTOCONF=autoconf
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
 if [[ "$(uname_bt)" == "Windows" ]] ; then
-	BASE_TMP=/tmp2/tc4
-	EXEEXT=.exe
-	# In case you've installed the mingw64 provided autotools.
-    if [ -d /opt/autotools/bin ]; then
-        PATH=/opt/autotools/bin:$PATH
-        # Autoconf 2.68 on Windows emits (when configuring libiberty) a configure script script that emits:
-        # ...however, at the time that was true, I didn't run autoheader and that may be the reason for that.
-        # I don't know autotools enough yet...
-        # | #define HAVE_ATEXIT 1
-        # | #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-        AUTOCONF=autoconf-2.59
-        AUTOHEADER=autoheader-2.59
-    fi
+    BASE_TMP=/tmp2/tc4
+    EXEEXT=.exe
+    # In case you've installed the mingw64 provided autotools.
+    # Autoconf 2.68 on Windows emits (when configuring libiberty) a configure script script that emits:
+    # | #define HAVE_ATEXIT 1
+    # | #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+    PATH=/opt/autotools/bin:$PATH
+    AUTOCONF=autoconf-2.59
+    AUTOHEADER=autoheader-2.59
+    if [ ! $(which $AUTOCONF) ] ; then
+        if [ ! -d /opt ] ; then
+            mkdir /opt
+        fi
+        pushd /opt
+        download "http://garr.dl.sourceforge.net/project/mingw-w64/3rd party development tools/autotools-20101121-chmod_fixed.tar.xz"
+        tar -xJf autotools-20101121-chmod_fixed.tar.xz
+        popd
+	  fi
     WARN_SUPPRESS_CXX=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Linux" ]] ; then
     # Ubuntu has autoconf2.59 package.
@@ -993,6 +1026,9 @@ toolchain_cctools() {
 		if [[ "$(uname_bt)" = "Windows" ]] ; then
 			make -k &>make.log
 			DESTDIR=C: make install &>install.log
+			if [[ ! -d ${PREFIX}/bin ]] ; then
+				mkdir ${PREFIX}/bin
+			fi
 			cp ${HOST_DIR}/lib/libLTO.dll ${PREFIX}/bin/
 		else
 			if ! ( make -j$JOBS -k &>make.log && make install -j$JOBS  &>install.log ); then

@@ -550,7 +550,10 @@ do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DI
 # libprunetrie
 do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/libprunetrie/PruneTrie.cpp
 
-# ld, misc.
+# libmacho
+# do_sed $"s^#include <mach-o/arch.h>^#include <mach-o/arch.h>\n#include "config.h"\n^" ${DISTDIR}/libmacho/arch.c
+
+# ld, misc
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/misc/checksyms.c
 do_sed $"s^#include <limits.h>^#include <limits.h>\n#if !defined(ULLONG_MAX)\n#define ULLONG_MAX (__LONG_LONG_MAX__ * 2ULL + 1ULL)\n#endif\n^" ${DISTDIR}/misc/install_name_tool.c
 
