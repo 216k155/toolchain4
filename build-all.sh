@@ -27,7 +27,7 @@ esac
 
 UNAME=$(uname_bt)
 
-BASE_TMP=/tmp/tc4
+BASE_TMP=/tmp2/tc4
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
 if [[ "$(uname_bt)" == "Windows" ]] ; then

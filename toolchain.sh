@@ -276,7 +276,7 @@ fi
 
 GAWK=gawk
 URLDL=wget
-BASE_TMP=/tmp/tc4
+BASE_TMP=/tmp2/tc4
 # My changes to libiberty configure.ac have broken us with more
 # recent autotools. 2.59 should work though.
 AUTOHEADER=autoheader
@@ -967,7 +967,7 @@ toolchain_cctools() {
 			message_status "libuuid is ready!"
 		fi
 
-		if [[ ! -f $HOST_DIR/include/openssl/md5.h ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
+		if [[ ! -f $HOST_DIR/lib/libcrypto.a ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
 			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.1c.tar.gz); then
 				error "Failed to get and extract openssl-1.0.1c Check errors."
 				popd
@@ -977,8 +977,8 @@ toolchain_cctools() {
 			pushd openssl-1.0.1c
 			# OpenSSL doesn't compile right with -jn where n>1
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
-			make -j$JOBS CC="$CC $BUILD_ARCH_CFLAGS"
-			make -j$JOBS install CC="$CC $BUILD_ARCH_CFLAGS"
+			make CC="$CC $BUILD_ARCH_CFLAGS" &>make.log
+			make install CC="$CC $BUILD_ARCH_CFLAGS" &>make-install.log
 			popd
 			message_status "openssl is ready!"
 		fi
