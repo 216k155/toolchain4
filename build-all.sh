@@ -27,12 +27,11 @@ esac
 
 UNAME=$(uname_bt)
 
+# On MSYS, /tmp is often in a deep folder (C:\Users\me\blah);
+# deep folders and Windows don't get along, so /tmp2 is used instead.
+# also, to make it easier to compare with other systems, they are
+# also forced to use /tmp2. /var/tmp/tc4 may be better?
 BASE_TMP=/tmp2/tc4
-# On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
-# don't get along, so /tmp2 is used instead.
-if [[ "$(uname_bt)" == "Windows" ]] ; then
-	BASE_TMP=/tmp2/tc4
-fi
 
 DEBIAN_VERSION=
 if [ -f /etc/debian_version ] ; then
@@ -68,10 +67,11 @@ full_build_for_arch() {
     else
         local _PREFIX_SUFFIX=$1-osx
     fi
-    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
-    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
+#    rm -rf bld-$_PREFIX_SUFFIX src-$_PREFIX_SUFFIX $DST/$_PREFIX_SUFFIX
+#    PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh llvmgcc-core $_TARGET_ARCH
     rm -rf bld-$1/cctools-809-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/cctools-809
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh cctools $_TARGET_ARCH
+    exit 1
     rm -rf bld-$1/gcc-5666.3-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/gcc-5666.3
     PREFIX_SUFFIX=$_PREFIX_SUFFIX ./toolchain.sh gcc $_TARGET_ARCH
     rm -rf bld-$_PREFIX_SUFFIX/llvmgcc42-2336.1-full-${_TARGET_ARCH} src-$_PREFIX_SUFFIX/llvmgcc42-2336.1
@@ -80,7 +80,7 @@ full_build_for_arch() {
 }
 
 # Clean everything.
-ARM_BUILD=1
+ARM_BUILD=0
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
@@ -127,7 +127,7 @@ INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
-
+    exit 1
     # Since I moved to mingw64, the libgcc_s*.dylib aren't being copied to the right place. In fact, I'm
     # not sure if it's the gcc or the llvmgcc install that's meant to write them. llvmgcc and gcc libgccs are
     # Probably best kept separate.

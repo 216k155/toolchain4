@@ -29,7 +29,8 @@ LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
 DYLDNAME=dyld
 DYLDVERS=195.5
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
-
+#TARBALLS_URL=http://www.opensource.apple.com/tarballs
+TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
 OSXVER=10.7
 
 TOPSRCDIR=`pwd`
@@ -180,7 +181,7 @@ fi
 
 rm -rf ${DISTDIR}
 mkdir -p ${DISTDIR}
-[[ ! -f "${CCTOOLSDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/cctools/${CCTOOLSDISTFILE}
+[[ ! -f "${CCTOOLSDISTFILE}" ]] && download $TARBALLS_URL/cctools/${CCTOOLSDISTFILE}
 if [[ ! -f "${CCTOOLSDISTFILE}" ]] ; then
     error "Failed to download ${CCTOOLSDISTFILE}"
     exit 1
@@ -189,7 +190,7 @@ tar ${TARSTRIP}=1 -xf ${CCTOOLSDISTFILE} -C ${DISTDIR} > /dev/null 2>&1
 # Fix dodgy timestamps.
 find ${DISTDIR} | xargs touch
 
-[[ ! -f "${LD64DISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/ld64/${LD64DISTFILE}
+[[ ! -f "${LD64DISTFILE}" ]] && download $TARBALLS_URL/ld64/${LD64DISTFILE}
 if [[ ! -f "${LD64DISTFILE}" ]] ; then
     error "Failed to download ${LD64DISTFILE}"
     exit 1
@@ -200,7 +201,7 @@ rm -rf ${DISTDIR}/ld64/FireOpal
 find ${DISTDIR}/ld64 ! -perm +200 -exec chmod u+w {} \;
 find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 
-[[ ! -f "${DYLDDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/dyld/${DYLDDISTFILE}
+[[ ! -f "${DYLDDISTFILE}" ]] && download $TARBALLS_URL/dyld/${DYLDDISTFILE}
 if [[ ! -f "${DYLDDISTFILE}" ]] ; then
     error "Failed to download ${DYLDDISTFILE}"
     exit 1
@@ -236,7 +237,7 @@ message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
 GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
 if [ ! -d $GCC_DIR ]; then
     pushd $(dirname ${GCC_DIR})
-    if [[ $(download http://www.opensource.apple.com/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz) ]] ; then
+    if [[ $(download $TARBALLS_URL/llvmgcc42/llvmgcc42-2336.1.tar.gz) ]] ; then
         error "Failed to download llvmgcc42-2336.1.tar.gz"
         exit 1
     fi
@@ -585,6 +586,7 @@ elif [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/libtool.c
     do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/segedit.c
 fi
+
 do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)\n^" ${DISTDIR}/ld64/src/ld/ld.cpp
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/libtool.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/redo_prebinding.c
@@ -635,6 +637,7 @@ if [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^#include <sys/sysctl.h>^#ifdef __APPLE__\n#include <sys/sysctl.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Resolver.h
     do_sed $"s^#include <sys/sysctl.h>^#ifdef __APPLE__\n#include <sys/sysctl.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
     do_sed $"s^#include <sys/sysctl.h>^#ifdef __APPLE__\n#include <sys/sysctl.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.h
+
     do_sed $"s^#include <execinfo.h>^#ifndef __MINGW32__\n#include <execinfo.h>\n#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
 fi
 

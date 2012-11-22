@@ -1,13 +1,23 @@
-AC_INIT([odcctools], [809.1od1], [peter@pogma.com])
+AC_INIT([odcctools], [809.ma], [mingw.android@gmail.com])
 AC_PREREQ([2.57])
-AC_REVISION([$Revision: 1.37 $])
+AC_REVISION([m4_esyscmd_s([git describe --always])])
 
 AC_CONFIG_SRCDIR([APPLE_LICENSE])
 AC_CONFIG_HEADERS([include/config.h])
 
-# Windows needs these.
+# For Windows:
 AC_TYPE_UID_T
-AC_CHECK_TYPE(caddr_t, char *)
+AC_CHECK_TYPE([caddr_t], [],
+            [AC_DEFINE_UNQUOTED([caddr_t], [char *],
+               [Define to `char *'
+                if not defined.])])
+
+AC_CHECK_DECL([O_BINARY], [],
+            [AC_DEFINE([O_BINARY], 0,
+               [Windows-specific open() flag 
+                to disable text mode])],
+            [[#include <io.h>
+              #include <fcntl.h>]])
 
 # Causes multiply defined warning unfortunately.
 AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])

@@ -257,6 +257,9 @@ fi
 
 CCTOOLS_VER_FH="${CCTOOLSVER}"
 
+#TARBALLS_URL=http://www.opensource.apple.com/tarballs
+TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
+
 ONLY_PATCH=0
 
 if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
@@ -967,7 +970,7 @@ toolchain_cctools() {
 			message_status "libuuid is ready!"
 		fi
 
-		if [[ ! -f $HOST_DIR/lib/libcrypto.a ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
+		if [[ "yes" = "no" ]] && [[ ! -f $HOST_DIR/lib/libcrypto.a ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
 			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.1c.tar.gz); then
 				error "Failed to get and extract openssl-1.0.1c Check errors."
 				popd
@@ -1047,7 +1050,7 @@ GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 toolchain_llvmgcc_core() {
 	toolchain_static_host_libs
 	message_status "Using ${GCCLLVMDISTFILE}..."
-	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
+	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download $TARBALLS_URL/llvmgcc42/${GCCLLVMDISTFILE}
 	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
@@ -1222,7 +1225,7 @@ toolchain_gcc()
 		export PATH="${PREFIX}/bin":"${PATH}"
 	fi
 
-	download http://opensource.apple.com/tarballs/gcc/gcc-5666.3.tar.gz
+	download $TARBALLS_URL/gcc/gcc-5666.3.tar.gz
 	if [[ ! -d $SRC_DIR/gcc-5666.3 ]] ; then
 		mkdir $SRC_DIR/gcc-5666.3
 		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
@@ -1530,7 +1533,7 @@ patch_gcc() {
 toolchain_llvmgcc() {
 	toolchain_static_host_libs
 	message_status "Using ${GCCLLVMDISTFILE}..."
-	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download http://www.opensource.apple.com/tarballs/llvmgcc42/${GCCLLVMDISTFILE}
+	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download $TARBALLS_URL/llvmgcc42/${GCCLLVMDISTFILE}
 	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
