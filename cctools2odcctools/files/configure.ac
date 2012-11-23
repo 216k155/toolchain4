@@ -14,10 +14,31 @@ AC_CHECK_TYPE([caddr_t], [],
 
 AC_CHECK_DECL([O_BINARY], [],
             [AC_DEFINE([O_BINARY], 0,
-               [Windows-specific open() flag 
+               [Windows-specific open() flag
                 to disable text mode])],
             [[#include <io.h>
               #include <fcntl.h>]])
+
+AC_CHECK_HEADERS([sys/mman.h execinfo.h])
+
+# Mac OSX/BSD.
+# have_libc_h=yes
+AC_CHECK_HEADER([libc.h])
+
+# The others... but...
+# AH_VERBATIM does not make into configure, autoheader puts it in
+# config.h.in
+# http://lists.gnu.org/archive/html/autoconf/2006-01/msg00043.html
+if test "$ac_cv_header_libc_h" = no; then
+    case $host in
+        *linux*)
+            AC_DEFINE([LIBC_REPLACEMENTS_LINUX], [1], [Define if host is Linux.])
+        ;;
+        *mingw*)
+            AC_DEFINE([LIBC_REPLACEMENTS_WINDOWS], [1], [Define if host is Windows.])
+        ;;
+    esac
+fi
 
 # Causes multiply defined warning unfortunately.
 AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
@@ -30,18 +51,18 @@ AC_ARG_PROGRAM
 
 case $target_os in
 darwin*)
-	:
-	;;
+    :
+    ;;
 *)
-	AC_MSG_ERROR([$PACKAGE_NAME only supports targeting Darwin])
-	;;
+    AC_MSG_ERROR([$PACKAGE_NAME only supports targeting Darwin])
+    ;;
 esac
 
 case $target_cpu in
      powerpc)
         AC_DEFINE(EMULATED_HOST_CPU_TYPE, 18, [Emulated CPU type])
         AC_DEFINE(EMULATED_HOST_CPU_SUBTYPE, 100, [Emulated CPU subtype])
-	;;
+    ;;
      powerpc64)
         AC_DEFINE(EMULATED_HOST_CPU_TYPE, 16777234, [Emulated CPU type])
         AC_DEFINE(EMULATED_HOST_CPU_SUBTYPE, 0, [Emulated CPU subtype])
@@ -49,18 +70,18 @@ case $target_cpu in
      i?86)
         AC_DEFINE(EMULATED_HOST_CPU_TYPE, 7, [Emulated CPU type])
         AC_DEFINE(EMULATED_HOST_CPU_SUBTYPE, 10, [Emulated CPU subtype])
-	;;
+    ;;
      x86_64)
         AC_DEFINE(EMULATED_HOST_CPU_TYPE, 16777223, [Emulated CPU type])
         AC_DEFINE(EMULATED_HOST_CPU_SUBTYPE, 3, [Emulated CPU subtype])
-	;;
+    ;;
      arm)
         AC_DEFINE(EMULATED_HOST_CPU_TYPE, 12, [Emulated CPU type])
         AC_DEFINE(EMULATED_HOST_CPU_SUBTYPE, 0, [Emulated CPU subtype])
-	;;
+    ;;
      *)
-	AC_MSG_ERROR([Unsupported target $target_cpu])
-	;;
+    AC_MSG_ERROR([Unsupported target $target_cpu])
+    ;;
 esac
 
 
@@ -76,34 +97,34 @@ ASTARGETS=""
 conftargets=""
 AC_MSG_CHECKING([for configured assembler targets])
 AC_ARG_ENABLE([as-targets],
-		AC_HELP_STRING([--enable-as-targets],
-				[space-separated list ("ppc", "ppc64", "i386", "x86_64", "arm", "all")]),
-		[conftargets="$enableval"],
-		[conftargets="default"])
+        AC_HELP_STRING([--enable-as-targets],
+                [space-separated list ("ppc", "ppc64", "i386", "x86_64", "arm", "all")]),
+        [conftargets="$enableval"],
+        [conftargets="default"])
 
 case "$conftargets" in
      all)
         ASTARGETS="ppc ppc64 i386 x86_64 arm"
-	;;
+    ;;
      default)
-	ASTARGETS="ppc ppc64 i386 x86_64 arm"
-	;;
+    ASTARGETS="ppc ppc64 i386 x86_64 arm"
+    ;;
      yes)
-	AC_MSG_ERROR([no assembler targets configured])
-	;;
+    AC_MSG_ERROR([no assembler targets configured])
+    ;;
      no)
-	AC_MSG_ERROR([no assembler targets configured])
-	;;
+    AC_MSG_ERROR([no assembler targets configured])
+    ;;
      *)
-	if [[ -z "$conftargets" ]]; then
-	   AC_MSG_ERROR([no assembler targets configured])
-	fi
-	ASTARGETS="$conftargets"
-	;;
+    if [[ -z "$conftargets" ]]; then
+       AC_MSG_ERROR([no assembler targets configured])
+    fi
+    ASTARGETS="$conftargets"
+    ;;
 esac
 
 AC_MSG_RESULT([$ASTARGETS])
-AC_SUBST([ASTARGETS], [$ASTARGETS]) 
+AC_SUBST([ASTARGETS], [$ASTARGETS])
 
 # On openSUSE, libexec ends up as lib instead. In:
 # /usr/share/site/x86_64-unknown-linux-gnu
@@ -117,9 +138,9 @@ AC_SUBST([ASTARGETS], [$ASTARGETS])
 AC_SUBST([ASLIBEXECDIR], ['${prefix}/libexec/as'])
 
 AC_ARG_WITH([sysroot],
-		AC_HELP_STRING([--with-sysroot],
-				[filesystem root of cross build environment]),
-		[AC_DEFINE_UNQUOTED([CROSS_SYSROOT],["$withval"],[filesystem root of cross build environment])])
+        AC_HELP_STRING([--with-sysroot],
+                [filesystem root of cross build environment]),
+        [AC_DEFINE_UNQUOTED([CROSS_SYSROOT],["$withval"],[filesystem root of cross build environment])])
 
 ORIGCFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -mdynamic-no-pic"
@@ -291,9 +312,9 @@ ORIGLDFLAGS=$LDFLAGS
 LDFLAGS="$LDFLAGS -multiply_defined suppress"
 AC_MSG_CHECKING([if -multiply_defined suppress is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM()],
-	[AC_MSG_RESULT([yes])],
-	[LDFLAGS="$ORIGLDFLAGS"
-	 AC_MSG_RESULT([no])]
+    [AC_MSG_RESULT([yes])],
+    [LDFLAGS="$ORIGLDFLAGS"
+     AC_MSG_RESULT([no])]
 )
 
 AC_LANG_PUSH([C++])
@@ -301,9 +322,9 @@ ORIGCXXFLAGS=$CXXFLAGS
 CXXFLAGS="$CXXFLAGS -Wno-trigraphs"
 AC_MSG_CHECKING([if -Wno-trigraphs is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM()],
-	[AC_MSG_RESULT([yes])],
-	[CXXFLAGS="$ORIGCXXFLAGS"
-	 AC_MSG_RESULT([no])]
+    [AC_MSG_RESULT([yes])],
+    [CXXFLAGS="$ORIGCXXFLAGS"
+     AC_MSG_RESULT([no])]
 )
 
 ORIGCXXFLAGS=$CXXFLAGS
@@ -311,8 +332,8 @@ CXXFLAGS="$CXXFLAGS -Wno-deprecated"
 AC_MSG_CHECKING([if -Wno-deprecated is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM()],
         [AC_MSG_RESULT([yes])],
-	        [CXXFLAGS="$ORIGCXXFLAGS"
-		 AC_MSG_RESULT([no])]
+            [CXXFLAGS="$ORIGCXXFLAGS"
+         AC_MSG_RESULT([no])]
 )
 
 ORIGCXXFLAGS=$CXXFLAGS
@@ -320,8 +341,8 @@ CXXFLAGS="$CXXFLAGS -Wno-strict-aliasing"
 AC_MSG_CHECKING([if -Wno-strict-aliasing is supported])
 AC_LINK_IFELSE([AC_LANG_PROGRAM()],
         [AC_MSG_RESULT([yes])],
-	        [CXXFLAGS="$ORIGCXXFLAGS"
-		 AC_MSG_RESULT([no])]
+            [CXXFLAGS="$ORIGCXXFLAGS"
+         AC_MSG_RESULT([no])]
 )
 
 AC_LANG_POP
@@ -337,19 +358,19 @@ fi
 AC_MSG_CHECKING([for max unsigned long long])
 AC_COMPILE_IFELSE(
    [AC_LANG_SOURCE([[#if HAVE_LIMITS_H
-			 #include <limits.h>
-		     #endif
-		     unsigned long long a = ULLONG_MAX;]])],
+             #include <limits.h>
+             #endif
+             unsigned long long a = ULLONG_MAX;]])],
    [AC_MSG_RESULT([ULLONG_MAX])],
    [AC_COMPILE_IFELSE(
-	[AC_LANG_SOURCE([[#if HAVE_LIMITS_H
-			      #include <limits.h>
-			 #endif
-			 unsigned long long a = 18446744073709551615ULL;]])],
-	[AC_DEFINE(ULLONG_MAX, [18446744073709551615ULL], [max unsigned long long])
-	 AC_MSG_RESULT([18446744073709551615ULL])],
-	[AC_MSG_RESULT([none]) ]
-	)
+    [AC_LANG_SOURCE([[#if HAVE_LIMITS_H
+                  #include <limits.h>
+             #endif
+             unsigned long long a = 18446744073709551615ULL;]])],
+    [AC_DEFINE(ULLONG_MAX, [18446744073709551615ULL], [max unsigned long long])
+     AC_MSG_RESULT([18446744073709551615ULL])],
+    [AC_MSG_RESULT([none]) ]
+    )
     ]
 )
 
@@ -587,14 +608,14 @@ void qsort_r(void *base, size_t nmemb, size_t size, void *thunk, int (*compar)(v
 
 case $host_os in
      darwin*)
-	AC_SUBST([HAVE_FOREIGN_HEADERS],[NO])
-	;;
+    AC_SUBST([HAVE_FOREIGN_HEADERS],[NO])
+    ;;
      *)
-	AC_SUBST([HAVE_FOREIGN_HEADERS],[YES])
-	AC_SUBST([EMULATED_OBJ], [emulated.c])
-	AC_C_BIGENDIAN([AC_SUBST([ENDIAN_FLAG],[-D__BIG_ENDIAN__=1])],
-			[AC_SUBST([ENDIAN_FLAG],[-D__LITTLE_ENDIAN__=1])])
-	;;
+    AC_SUBST([HAVE_FOREIGN_HEADERS],[YES])
+    AC_SUBST([EMULATED_OBJ], [emulated.c])
+    AC_C_BIGENDIAN([AC_SUBST([ENDIAN_FLAG],[-D__BIG_ENDIAN__=1])],
+            [AC_SUBST([ENDIAN_FLAG],[-D__LITTLE_ENDIAN__=1])])
+    ;;
 esac
 
 # There's no fts.h (included from dylib_roots.c) with MinGW. There is however,
@@ -607,48 +628,48 @@ case $host_os in
      ;;
      *)
      CFLAGS="$CFLAGS -O0 -g"
-	AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
-	AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
-	AC_SUBST([NOT_FOR_WINDOWS_PROG],["seg_addr_table checksyms redo_prebinding"])
-	;;
+    AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
+    AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
+    AC_SUBST([NOT_FOR_WINDOWS_PROG],["seg_addr_table checksyms redo_prebinding"])
+    ;;
 esac
 
 AC_CHECK_SIZEOF([long])
 if test $ac_cv_sizeof_long >=8; then
-	LD_CLASSIC=
+    LD_CLASSIC=
 else
-	LD_CLASSIC=ld
+    LD_CLASSIC=ld
 fi
 COMPONENTS="libstuff ar as include libprunetrie libmacho ${LD_CLASSIC} misc otool man ld64"
 AC_SUBST([COMPONENTS], [$COMPONENTS])
 
 AC_CHECK_FUNC([uuid_generate_random],[],
-	      [AC_CHECK_LIB([uuid],[uuid_generate_random],
-			    [UUID_LIBS="-luuid"],
-			    [AC_MSG_ERROR(
-			     [No uuid_generate_random function found])])])
+          [AC_CHECK_LIB([uuid],[uuid_generate_random],
+                [UUID_LIBS="-luuid"],
+                [AC_MSG_ERROR(
+                 [No uuid_generate_random function found])])])
 AC_SUBST([UUID_LIBS])
 
 AC_CHECK_FUNC([dlopen],[],
-	      [AC_CHECK_LIB([dl],[dlopen],
-			    [DL_LIBS="-ldl"],
-			    [AC_MSG_WARN(
-			     [No dlopen function found in dl])])])
+          [AC_CHECK_LIB([dl],[dlopen],
+                [DL_LIBS="-ldl"],
+                [AC_MSG_WARN(
+                 [No dlopen function found in dl])])])
 AC_SUBST([DL_LIBS])
 
 case $host_os in
-	 darwin*)
+     darwin*)
 # Dynamically linked LTO
 AC_LANG_PUSH([C++])
 AC_CHECK_LIB([LTO],[lto_get_version],[
-		 LTO_LIBS=-lLTO
-		 LTO_DEFS="-DLTO_SUPPORT=1"
-		 ])
+         LTO_LIBS=-lLTO
+         LTO_DEFS="-DLTO_SUPPORT=1"
+         ])
 AC_LANG_POP([C++])
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 ;;
-	 mingw*)
+     mingw*)
 # -lEnhancedDisassembly.dll needed, there is a .a but various syms are missing
 # (_imp__SymSetOptions@4,_imp__SymInitialize@12,_imp__SymGetModuleBase@8,_imp__SymFunctionTableAccess@8,_imp__StackWalk@36,_imp__SymGetModuleBase@8,_imp__SymGetSymFromAddr@16,_imp__SymGetLineFromAddr@16,GetProcessMemoryInfo@12)
 # even after there, there's
@@ -658,19 +679,44 @@ LTO_DEFS="-DLTO_SUPPORT=1"
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 ;;
-	 *)
+     *)
 # Statically linked LTO (though static llvmgcc itself isn't yet done)
 # ...requires a large list of libraries. Using gnumake's $(wildcard might be a better plan.
 AC_LANG_PUSH([C++])
 AC_CHECK_LIB([LTO],[lto_get_version],[
-		 LTO_LIBS="-lpthread -Wl,-Bstatic -Wl,--start-group -lCompilerDriver -lEnhancedDisassembly -lLLVMAlphaAsmPrinter -lLLVMAlphaCodeGen -lLLVMAlphaInfo -lLLVMAnalysis -lLLVMArchive -lLLVMARMAsmParser -lLLVMARMAsmPrinter -lLLVMARMCodeGen -lLLVMARMInfo -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBitReader -lLLVMBitWriter -lLLVMBlackfinAsmPrinter -lLLVMBlackfinCodeGen -lLLVMBlackfinInfo -lLLVMCBackend -lLLVMCBackendInfo -lLLVMCellSPUAsmPrinter -lLLVMCellSPUCodeGen -lLLVMCellSPUInfo -lLLVMCodeGen -lLLVMCore -lLLVMCppBackend -lLLVMCppBackendInfo -lLLVMExecutionEngine -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterpreter -lLLVMipa -lLLVMipo -lLLVMJIT -lLLVMLinker -lLLVMMBlazeAsmPrinter -lLLVMMBlazeCodeGen -lLLVMMBlazeInfo -lLLVMMC -lLLVMMCParser -lLLVMMipsAsmPrinter -lLLVMMipsCodeGen -lLLVMMipsInfo -lLLVMMSIL -lLLVMMSILInfo -lLLVMMSP430AsmPrinter -lLLVMMSP430CodeGen -lLLVMMSP430Info -lLLVMPIC16AsmPrinter -lLLVMPIC16CodeGen -lLLVMPIC16Info -lLLVMpic16passes -lLLVMPowerPCAsmPrinter -lLLVMPowerPCCodeGen -lLLVMPowerPCInfo -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSparcAsmPrinter -lLLVMSparcCodeGen -lLLVMSparcInfo -lLLVMSupport -lLLVMSystem -lLLVMSystemZAsmPrinter -lLLVMSystemZCodeGen -lLLVMSystemZInfo -lLLVMTarget -lLLVMTransformUtils -lLLVMX86AsmParser -lLLVMX86AsmPrinter -lLLVMX86CodeGen -lLLVMX86Disassembler -lLLVMX86Info -lLLVMXCoreAsmPrinter -lLLVMXCoreCodeGen -lLLVMXCoreInfo -lLTO -lplugin_llvmc_Base -lplugin_llvmc_Clang -lUnitTestMain -Wl,--end-group -Wl,-Bdynamic"
-		 LTO_DEFS="-DLTO_SUPPORT=1"
-		 ])
+         LTO_LIBS="-lpthread -Wl,-Bstatic -Wl,--start-group -lCompilerDriver -lEnhancedDisassembly -lLLVMAlphaAsmPrinter -lLLVMAlphaCodeGen -lLLVMAlphaInfo -lLLVMAnalysis -lLLVMArchive -lLLVMARMAsmParser -lLLVMARMAsmPrinter -lLLVMARMCodeGen -lLLVMARMInfo -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBitReader -lLLVMBitWriter -lLLVMBlackfinAsmPrinter -lLLVMBlackfinCodeGen -lLLVMBlackfinInfo -lLLVMCBackend -lLLVMCBackendInfo -lLLVMCellSPUAsmPrinter -lLLVMCellSPUCodeGen -lLLVMCellSPUInfo -lLLVMCodeGen -lLLVMCore -lLLVMCppBackend -lLLVMCppBackendInfo -lLLVMExecutionEngine -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterpreter -lLLVMipa -lLLVMipo -lLLVMJIT -lLLVMLinker -lLLVMMBlazeAsmPrinter -lLLVMMBlazeCodeGen -lLLVMMBlazeInfo -lLLVMMC -lLLVMMCParser -lLLVMMipsAsmPrinter -lLLVMMipsCodeGen -lLLVMMipsInfo -lLLVMMSIL -lLLVMMSILInfo -lLLVMMSP430AsmPrinter -lLLVMMSP430CodeGen -lLLVMMSP430Info -lLLVMPIC16AsmPrinter -lLLVMPIC16CodeGen -lLLVMPIC16Info -lLLVMpic16passes -lLLVMPowerPCAsmPrinter -lLLVMPowerPCCodeGen -lLLVMPowerPCInfo -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSparcAsmPrinter -lLLVMSparcCodeGen -lLLVMSparcInfo -lLLVMSupport -lLLVMSystem -lLLVMSystemZAsmPrinter -lLLVMSystemZCodeGen -lLLVMSystemZInfo -lLLVMTarget -lLLVMTransformUtils -lLLVMX86AsmParser -lLLVMX86AsmPrinter -lLLVMX86CodeGen -lLLVMX86Disassembler -lLLVMX86Info -lLLVMXCoreAsmPrinter -lLLVMXCoreCodeGen -lLLVMXCoreInfo -lLTO -lplugin_llvmc_Base -lplugin_llvmc_Clang -lUnitTestMain -Wl,--end-group -Wl,-Bdynamic"
+         LTO_DEFS="-DLTO_SUPPORT=1"
+         ])
 AC_LANG_POP([C++])
 AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 ;;
 esac
+
+AH_VERBATIM([LIBC_REPLACEMENTS_LINUX],
+[/* Linux libc.h replacements. */
+#ifdef LIBC_REPLACEMENTS_LINUX
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ #include <time.h>
+ #include <unistd.h>
+#endif
+])
+
+AH_VERBATIM([LIBC_REPLACEMENTS_WINDOWS],
+[/* Windows libc.h replacements. */
+#ifdef LIBC_REPLACEMENTS_WINDOWS
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
+ #include <sys/param.h>
+ #include <io.h>
+#endif
+])
+
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
 AC_CONFIG_FILES([ar/Makefile])
@@ -678,23 +724,23 @@ AC_CONFIG_FILES([as/Makefile])
 for ast in $ASTARGETS; do
     case $ast in
     ppc)
-	AC_CONFIG_FILES([as/ppc/Makefile:as/ppc/Makefile.in:as/Makefile.arch.in])
-	;;
+    AC_CONFIG_FILES([as/ppc/Makefile:as/ppc/Makefile.in:as/Makefile.arch.in])
+    ;;
     ppc64)
-	AC_CONFIG_FILES([as/ppc64/Makefile:as/ppc64/Makefile.in:as/Makefile.arch.in])
-	;;
+    AC_CONFIG_FILES([as/ppc64/Makefile:as/ppc64/Makefile.in:as/Makefile.arch.in])
+    ;;
     i386)
-	AC_CONFIG_FILES([as/i386/Makefile:as/i386/Makefile.in:as/Makefile.arch.in])
-	;;
+    AC_CONFIG_FILES([as/i386/Makefile:as/i386/Makefile.in:as/Makefile.arch.in])
+    ;;
     x86_64)
-	AC_CONFIG_FILES([as/x86_64/Makefile:as/x86_64/Makefile.in:as/Makefile.arch.in])
-	;;
+    AC_CONFIG_FILES([as/x86_64/Makefile:as/x86_64/Makefile.in:as/Makefile.arch.in])
+    ;;
     arm)
-	AC_CONFIG_FILES([as/arm/Makefile:as/arm/Makefile.in:as/Makefile.arch.in])
-	;;
+    AC_CONFIG_FILES([as/arm/Makefile:as/arm/Makefile.in:as/Makefile.arch.in])
+    ;;
     *)
-	AC_MSG_ERROR([Unrecognized assembler target $ast])
-	;;
+    AC_MSG_ERROR([Unrecognized assembler target $ast])
+    ;;
     esac
 done
 AC_CONFIG_FILES([ld/Makefile])
