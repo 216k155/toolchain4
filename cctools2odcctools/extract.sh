@@ -761,7 +761,8 @@ find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
 $AUTOHEADER
-exit 1
+#echo "kthx bye"
+#exit 1
 $AUTOCONF
 rm -rf autom4te.cache
 popd > /dev/null

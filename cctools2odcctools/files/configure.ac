@@ -25,17 +25,13 @@ AC_CHECK_HEADERS([sys/mman.h execinfo.h])
 # have_libc_h=yes
 AC_CHECK_HEADER([libc.h])
 
-# The others... but...
-# AH_VERBATIM does not make into configure, autoheader puts it in
-# config.h.in
-# http://lists.gnu.org/archive/html/autoconf/2006-01/msg00043.html
 if test "$ac_cv_header_libc_h" = no; then
     case $host in
         *linux*)
-            AC_DEFINE([LIBC_REPLACEMENTS_LINUX], [1], [Define if host is Linux.])
+            AC_DEFINE([HAVE_LIBC_REPLACEMENTS_LINUX], [1], [Define if host is Linux.])
         ;;
         *mingw*)
-            AC_DEFINE([LIBC_REPLACEMENTS_WINDOWS], [1], [Define if host is Windows.])
+            AC_DEFINE([HAVE_LIBC_REPLACEMENTS_WINDOWS], [1], [Define if host is Windows.])
         ;;
     esac
 fi
@@ -178,7 +174,8 @@ ORIGCFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -no-cpp-precomp"
 supported=0
 AC_MSG_CHECKING([if -no-cpp-precomp is supported])
-AC_LANG_CONFTEST([[const char hw[] = "Hello, World\n";]])
+AC_LANG_CONFTEST(
+    [AC_LANG_SOURCE([const char hw[] = "Hello, World\n";])])
 rm -f conftest.$ac_objext conftest$ac_exeext
 out=`$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext 2>&1`
 if [[ $? -ne 0 ]]; then
@@ -693,9 +690,9 @@ AC_SUBST(LTO_DEFS)
 ;;
 esac
 
-AH_VERBATIM([LIBC_REPLACEMENTS_LINUX],
+AH_VERBATIM([_LIBC_REPLACEMENTS_LINUX],
 [/* Linux libc.h replacements. */
-#ifdef LIBC_REPLACEMENTS_LINUX
+#ifdef HAVE_LIBC_REPLACEMENTS_LINUX
  #include <stdio.h>
  #include <stdlib.h>
  #include <fcntl.h>
@@ -706,9 +703,9 @@ AH_VERBATIM([LIBC_REPLACEMENTS_LINUX],
 #endif
 ])
 
-AH_VERBATIM([LIBC_REPLACEMENTS_WINDOWS],
+AH_VERBATIM([_LIBC_REPLACEMENTS_WINDOWS],
 [/* Windows libc.h replacements. */
-#ifdef LIBC_REPLACEMENTS_WINDOWS
+#ifdef HAVE_LIBC_REPLACEMENTS_WINDOWS
  #include <stdio.h>
  #include <stdlib.h>
  #include <fcntl.h>
@@ -716,7 +713,6 @@ AH_VERBATIM([LIBC_REPLACEMENTS_WINDOWS],
  #include <io.h>
 #endif
 ])
-
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
 AC_CONFIG_FILES([ar/Makefile])
