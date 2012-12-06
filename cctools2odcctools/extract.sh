@@ -497,7 +497,7 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 # [windows] stdio.h stdlib.h fcntl.h sys/param.h io.h                              [writeout.c]
 
 
-#libstuff
+# libstuff
 # Darwin has libc.h, Windows/Linux have a combination of stdio.h, stdlib.h, fcntl.h, unistd.h, io.h, sys/param.h (MAXPATHLEN)
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/execute.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c
@@ -544,6 +544,7 @@ do_sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#incl
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-file.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-scrub.c
 do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/stat.h>#endif\n#endif^" ${DISTDIR}/as/write_object.c
+
 if [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^if(realpath == NULL)^if(prefix == NULL)^" ${DISTDIR}/as/driver.c
     # Windows doesn't have SIGHUP or SIGPIPE...
@@ -761,8 +762,6 @@ find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
 $AUTOHEADER
-#echo "kthx bye"
-#exit 1
 $AUTOCONF
 rm -rf autom4te.cache
 popd > /dev/null

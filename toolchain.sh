@@ -970,7 +970,7 @@ toolchain_cctools() {
 			message_status "libuuid is ready!"
 		fi
 
-		if [[ "yes" = "no" ]] && [[ ! -f $HOST_DIR/lib/libcrypto.a ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
+                if [[ ! -f $HOST_DIR/lib/libcrypto.a ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
 			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.1c.tar.gz); then
 				error "Failed to get and extract openssl-1.0.1c Check errors."
 				popd
@@ -1050,6 +1050,7 @@ GCCLLVMDISTFILE=${GCCLLVMNAME}-${GCCLLVMVERS}.tar.gz
 toolchain_llvmgcc_core() {
 	toolchain_static_host_libs
 	message_status "Using ${GCCLLVMDISTFILE}..."
+        set -x
 	[[ ! -f "${GCCLLVMDISTFILE}" ]] && download $TARBALLS_URL/llvmgcc42/${GCCLLVMDISTFILE}
 	rm -rf $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
@@ -1077,6 +1078,7 @@ toolchain_llvmgcc_core() {
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-slibgcc-darwin-ln-order.patch
 		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-use-ll-when-__USE_MINGW_ANSI_STDIO.patch
 	popd
+        set +x
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
 		exit 1
 	fi

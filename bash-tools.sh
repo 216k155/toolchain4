@@ -52,13 +52,15 @@ download() {
 	if [[ -z $_LFNAME ]] ; then
 		_LFNAME=$(basename "$1")
 	fi
-#	if [[ ! -f $_LFNAME ]] ; then
+        if [[ -f "$1" ]] ; then
+                cp -f $1 $_LFNAME
+        else
 		if [[ "$(uname_bt)" == "Darwin" ]] ; then
 			curl -S -L -O "$1" -o $_LFNAME
 		else
 			wget -c "$1" -O $_LFNAME
 		fi
-#	fi
+        fi
 
 	if [[ -f $_LFNAME ]] ; then
 		return 0
