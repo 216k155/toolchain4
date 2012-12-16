@@ -58,7 +58,7 @@ AM_COND_IF([HAVE_SYS_SYSCTL_H], [],
 AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h])
 AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_commoncrypto_commondigest_h" = xyes])
 AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
- AC_CONFIG_HEADERS([CommonCrypto/CommonDigest.h]))
+ AC_CONFIG_HEADERS([include/CommonCrypto/CommonDigest.h]))
 
 # For Windows:
 AC_TYPE_UID_T

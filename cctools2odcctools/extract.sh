@@ -647,9 +647,11 @@ find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
 find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
-$AUTOHEADER
-$AUTOCONF
-rm -rf autom4te.cache
+message_status $PWD
+#$AUTOHEADER
+#$AUTOCONF
+rm -rf autom4te.cache configure config.log config.status
+autoreconf
 popd > /dev/null
 
 if [ $MAKEDISTFILE -eq 1 ]; then

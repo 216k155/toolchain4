@@ -286,6 +286,74 @@ BASE_TMP=/tmp2/tc4
 # recent autotools. 2.59 should work though.
 AUTOHEADER=autoheader
 AUTOCONF=autoconf
+# 2.62 needed for automake 1.11
+AUTOCONF_VER=2.62
+# 1.11 is needed for AM_COND_IF
+AUTOMAKE_VER=1.11
+
+check_install_autoconf_automake ()
+{
+#    PATH=/opt/autotools/bin:$PATH
+#    AUTOCONF=autoconf-2.59
+#    AUTOHEADER=autoheader-2.59
+#    if [ ! $(which $AUTOCONF) ] ; then
+#        if [ ! -d /opt ] ; then
+#            mkdir /opt
+#        fi
+#        pushd /opt
+#        download "http://garr.dl.sourceforge.net/project/mingw-w64/3rd party development tools/autotools-20101121-chmod_fixed.tar.xz"
+#        tar -xJf autotools-20101121-chmod_fixed.tar.xz
+#        popd
+#	fi
+
+	AUTOCONF="autoconf"
+	ACLOCAL="aclocal"
+
+	# Needed versions (for Windows, but may as well target them globally).
+	# The only Automake that's known to work on Windows with the existing
+	local _AUTOCONF_VER=$1
+	local _AUTOMAKE_VER=$2
+
+	if [ -d $HOME/autoconf-$AUTOCONF_VER/bin ] ; then
+	  export PATH=$HOME/autoconf-$AUTOCONF_VER/bin:$PATH
+	fi
+
+	if [ -d $HOME/automake-$AUTOMAKE_VER/bin ] ; then
+	  export PATH=$HOME/automake-$AUTOMAKE_VER/bin:$PATH
+	fi
+
+	AUTOCONF_VER_OK=
+	if [ ! -z "$(which $AUTOCONF)" ] ; then
+	  AUTOCONF_VER_OK=$($AUTOCONF --version | head -1 | grep ".* $_AUTOCONF_VER")
+	fi
+	if [ -z "$AUTOCONF_VER_OK" ] ; then
+	  export PATH=$HOME/autoconf-$_AUTOCONF_VER/bin:$PATH
+	  wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-$_AUTOCONF_VER.tar.gz
+	  tar -xzf autoconf-$_AUTOCONF_VER.tar.gz -C /tmp
+	  pushd /tmp/autoconf-$_AUTOCONF_VER
+	  ./configure --prefix=$HOME/autoconf-$_AUTOCONF_VER
+	  make
+	  make install
+	  popd
+	fi
+
+	AUTOMAKE_VER_OK=
+	if [ ! -z "$(which $ACLOCAL)" ] ; then
+	  AUTOMAKE_VER_OK=$($ACLOCAL --version | head -1 | grep ".* $_AUTOMAKE_VER")
+	fi
+	if [ -z "$AUTOMAKE_VER_OK" ] ; then
+	  export PATH=$HOME/automake-$_AUTOMAKE_VER/bin:$PATH
+	  wget -c http://ftp.gnu.org/gnu/automake/automake-$_AUTOMAKE_VER.tar.gz
+	  tar -xvf automake-$_AUTOMAKE_VER.tar.gz -C /tmp
+	  pushd /tmp/automake-$_AUTOMAKE_VER
+	  ./configure --prefix=$HOME/automake-$_AUTOMAKE_VER
+	  make
+	  make install
+	  popd
+	fi
+}
+
+
 
 # On MSYS, /tmp is in a deep folder (C:\Users\me\blah); deep folders and Windows
 # don't get along, so /tmp2 is used instead.
@@ -296,18 +364,7 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
     # Autoconf 2.68 on Windows emits (when configuring libiberty) a configure script script that emits:
     # | #define HAVE_ATEXIT 1
     # | #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-    PATH=/opt/autotools/bin:$PATH
-    AUTOCONF=autoconf-2.59
-    AUTOHEADER=autoheader-2.59
-    if [ ! $(which $AUTOCONF) ] ; then
-        if [ ! -d /opt ] ; then
-            mkdir /opt
-        fi
-        pushd /opt
-        download "http://garr.dl.sourceforge.net/project/mingw-w64/3rd party development tools/autotools-20101121-chmod_fixed.tar.xz"
-        tar -xJf autotools-20101121-chmod_fixed.tar.xz
-        popd
-	  fi
+	check_install_autoconf_automake $AUTOCONF_VER $AUTOMAKE_VER
     WARN_SUPPRESS_CXX=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Linux" ]] ; then
     # Ubuntu has autoconf2.59 package.

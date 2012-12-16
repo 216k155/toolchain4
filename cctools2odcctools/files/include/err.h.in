@@ -5,23 +5,23 @@
 
 #define warn(...) do {                 \
         fprintf (stderr, __VA_ARGS__); \
-        fprintf (stderr, \"\\\n\");    \
+        fprintf (stderr, "n");         \
 } while (0)
 
 #define warnx(...) do {                \
         fprintf (stderr, __VA_ARGS__); \
-        fprintf (stderr, \"\\\n\");    \
+        fprintf (stderr, "\n");        \
 } while (0)
 
 #define err(code, ...) do {            \
         fprintf (stderr, __VA_ARGS__); \
-        fprintf (stderr, \"\\\n\");    \
+        fprintf (stderr, "\n");        \
         exit (code);                   \
 } while (0)
 
 #define errx(code, ...) do {           \
         fprintf (stderr, __VA_ARGS__); \
-        fprintf (stderr, \"\\\n\");    \
+        fprintf (stderr, "\n");        \
         exit (code);                   \
 } while (0)
 
