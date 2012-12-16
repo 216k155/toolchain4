@@ -1,0 +1,8 @@
+#ifndef COMMONDIGEST_H_INCLUDED
+#define COMMONDIGEST_H_INCLUDED
+
+#include <openssl/md5.h>
+#define CC_MD5 MD5
+
+#endif /* COMMONDIGEST_H_INCLUDED */
+

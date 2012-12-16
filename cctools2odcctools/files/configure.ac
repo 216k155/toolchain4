@@ -3,7 +3,62 @@ AC_PREREQ([2.57])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
 
 AC_CONFIG_SRCDIR([APPLE_LICENSE])
+
+# Causes multiply defined warning unfortunately.
+AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
+
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
 AC_CONFIG_HEADERS([include/config.h])
+
+# To minimise impact on the source code, we provide our own versions of
+# missing system headers.
+AC_CHECK_HEADERS([libc.h])
+AM_CONDITIONAL([HAVE_LIBC_H], [test "x$ac_cv_header_libc_h" = xyes])
+AM_COND_IF([HAVE_LIBC_H], [],
+ AC_CONFIG_HEADERS([include/libc.h]))
+
+AC_CHECK_HEADERS([dlfcn.h])
+AM_CONDITIONAL([HAVE_DLFCN_H], [test "x$ac_cv_header_dlfcn_h" = xyes])
+AM_COND_IF([HAVE_DLFCN_H], [],
+ AC_CONFIG_HEADERS([include/dlfcn.h]))
+
+AC_CHECK_HEADERS([err.h])
+AM_CONDITIONAL([HAVE_ERR_H], [test "x$ac_cv_header_err_h" = xyes])
+AM_COND_IF([HAVE_ERR_H], [],
+ AC_CONFIG_HEADERS([include/err.h]))
+
+AC_CHECK_HEADERS([execinfo.h])
+AM_CONDITIONAL([HAVE_EXECINFO_H], [test "x$ac_cv_header_execinfo_h" = xyes])
+AM_COND_IF([HAVE_EXECINFO_H], [],
+ AC_CONFIG_HEADERS([include/execinfo.h]))
+
+AC_CHECK_HEADERS([sys/cdefs.h])
+AM_CONDITIONAL([HAVE_SYS_CDEFS_H], [test "x$ac_cv_header_sys_cdefs_h" = xyes])
+AM_COND_IF([HAVE_SYS_CDEFS_H], [],
+ AC_CONFIG_HEADERS([include/sys/cdefs.h]))
+
+AC_CHECK_HEADERS([sys/_endian.h])
+AM_CONDITIONAL([HAVE_SYS__ENDIAN_H], [test "x$ac_cv_header_sys__endian_h" = xyes])
+AM_COND_IF([HAVE_SYS__ENDIAN_H], [],
+ AC_CONFIG_HEADERS([include/sys/_endian.h]))
+
+AC_CHECK_HEADERS([sys/mman.h])
+AM_CONDITIONAL([HAVE_SYS_MMAN_H], [test "x$ac_cv_header_sys_mman_h" = xyes])
+AM_COND_IF([HAVE_SYS_MMAN_H], [],
+ AC_CONFIG_HEADERS([include/sys/mman.h]))
+
+AC_CHECK_HEADERS([sys/sysctl.h])
+AM_CONDITIONAL([HAVE_SYS_SYSCTL_H], [test "x$ac_cv_header_sys_sysctl_h" = xyes])
+AM_COND_IF([HAVE_SYS_SYSCTL_H], [],
+ AC_CONFIG_HEADERS([include/sys/sysctl.h]))
+
+AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h])
+AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_commoncrypto_commondigest_h" = xyes])
+AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
+ AC_CONFIG_HEADERS([CommonCrypto/CommonDigest.h]))
 
 # For Windows:
 AC_TYPE_UID_T
@@ -12,36 +67,34 @@ AC_CHECK_TYPE([caddr_t], [],
                [Define to `char *'
                 if not defined.])])
 
+AC_CHECK_TYPE([sigset_t], [],
+            [AC_DEFINE_UNQUOTED([sigset_t], [int32_t],
+               [Define to `int32_t'
+                if not defined.])])
+
+# For everything but Windows:
 AC_CHECK_DECL([O_BINARY], [],
-            [AC_DEFINE([O_BINARY], 0,
+            [AC_DEFINE_UNQUOTED([O_BINARY], [0],
                [Windows-specific open() flag
                 to disable text mode])],
             [[#include <io.h>
               #include <fcntl.h>]])
 
-AC_CHECK_HEADERS([sys/mman.h execinfo.h])
+# For everything but Darwin:
+AC_CHECK_DECL([__unused], [],
+            [AC_DEFINE_UNQUOTED([__unused], [__attribute__((__unused__))],
+               [__unused macro to save some typing])],
+            [#include <sys/cdefs.h>])
 
-# Mac OSX/BSD.
-# have_libc_h=yes
-AC_CHECK_HEADER([libc.h])
+AC_CHECK_DECL([AR_EFMT1], [],
+            [AC_DEFINE_UNQUOTED([AR_EFMT1], ["#1"],
+               [AR_EFMT1])],
+            [#include <ar.h>])
 
-if test "$ac_cv_header_libc_h" = no; then
-    case $host in
-        *linux*)
-            AC_DEFINE([HAVE_LIBC_REPLACEMENTS_LINUX], [1], [Define if host is Linux.])
-        ;;
-        *mingw*)
-            AC_DEFINE([HAVE_LIBC_REPLACEMENTS_WINDOWS], [1], [Define if host is Windows.])
-        ;;
-    esac
-fi
-
-# Causes multiply defined warning unfortunately.
-AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
-
-AC_CANONICAL_BUILD
-AC_CANONICAL_HOST
-AC_CANONICAL_TARGET
+AC_CHECK_DECL([ULLONG_MAX], [],
+            [AC_DEFINE_UNQUOTED([ULLONG_MAX], [0xffffffffffffffffULL],
+               [ULLONG_MAX])],
+            [#include <i386/limits.h>])
 
 AC_ARG_PROGRAM
 
@@ -678,7 +731,7 @@ AC_SUBST(LTO_DEFS)
 ;;
      *)
 # Statically linked LTO (though static llvmgcc itself isn't yet done)
-# ...requires a large list of libraries. Using gnumake's $(wildcard might be a better plan.
+# ...requires a large list of libraries. Using gnumake's $(wildcard) might be a better plan.
 AC_LANG_PUSH([C++])
 AC_CHECK_LIB([LTO],[lto_get_version],[
          LTO_LIBS="-lpthread -Wl,-Bstatic -Wl,--start-group -lCompilerDriver -lEnhancedDisassembly -lLLVMAlphaAsmPrinter -lLLVMAlphaCodeGen -lLLVMAlphaInfo -lLLVMAnalysis -lLLVMArchive -lLLVMARMAsmParser -lLLVMARMAsmPrinter -lLLVMARMCodeGen -lLLVMARMInfo -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBitReader -lLLVMBitWriter -lLLVMBlackfinAsmPrinter -lLLVMBlackfinCodeGen -lLLVMBlackfinInfo -lLLVMCBackend -lLLVMCBackendInfo -lLLVMCellSPUAsmPrinter -lLLVMCellSPUCodeGen -lLLVMCellSPUInfo -lLLVMCodeGen -lLLVMCore -lLLVMCppBackend -lLLVMCppBackendInfo -lLLVMExecutionEngine -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterpreter -lLLVMipa -lLLVMipo -lLLVMJIT -lLLVMLinker -lLLVMMBlazeAsmPrinter -lLLVMMBlazeCodeGen -lLLVMMBlazeInfo -lLLVMMC -lLLVMMCParser -lLLVMMipsAsmPrinter -lLLVMMipsCodeGen -lLLVMMipsInfo -lLLVMMSIL -lLLVMMSILInfo -lLLVMMSP430AsmPrinter -lLLVMMSP430CodeGen -lLLVMMSP430Info -lLLVMPIC16AsmPrinter -lLLVMPIC16CodeGen -lLLVMPIC16Info -lLLVMpic16passes -lLLVMPowerPCAsmPrinter -lLLVMPowerPCCodeGen -lLLVMPowerPCInfo -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSparcAsmPrinter -lLLVMSparcCodeGen -lLLVMSparcInfo -lLLVMSupport -lLLVMSystem -lLLVMSystemZAsmPrinter -lLLVMSystemZCodeGen -lLLVMSystemZInfo -lLLVMTarget -lLLVMTransformUtils -lLLVMX86AsmParser -lLLVMX86AsmPrinter -lLLVMX86CodeGen -lLLVMX86Disassembler -lLLVMX86Info -lLLVMXCoreAsmPrinter -lLLVMXCoreCodeGen -lLLVMXCoreInfo -lLTO -lplugin_llvmc_Base -lplugin_llvmc_Clang -lUnitTestMain -Wl,--end-group -Wl,-Bdynamic"

@@ -1,0 +1,14 @@
+#ifndef SYS__ENDIAN_H_INCLUDED
+#define SYS__ENDIAN_H_INCLUDED
+
+#define HTONS(_h) (((((uint16_t)(_h) & 0xff)) << 8)  | (((uint16_t)(_h) & 0xff00) >> 8))
+#define NTOHS(_n) (((((uint16_t)(_n) & 0xff)) << 8)  | (((uint16_t)(_n) & 0xff00) >> 8))
+#define HTONL(_h) (((((uint32_t)(_h) & 0xff)) << 24) | ((((uint32_t)(_h) & 0xff00)) << 8) | ((((uint32_t)(_h) & 0xff0000)) >> 8) | ((((uint32_t)(_h) & 0xff000000)) >> 24))
+#define NTOHL(_h) (((((uint32_t)(_n) & 0xff)) << 24) | ((((uint32_t)(_n) & 0xff00)) << 8) | ((((uint32_t)(_n) & 0xff0000)) >> 8) | ((((uint32_t)(_n) & 0xff000000)) >> 24))
+
+#define htons(_h) HTONS(_h)
+#define ntohs(_n) NTOHS(_n)
+#define htonl(_h) HTONL(_h)
+#define ntohl(_n) NTOHL(_n)
+
+#endif /* SYS__ENDIAN_H_INCLUDED */

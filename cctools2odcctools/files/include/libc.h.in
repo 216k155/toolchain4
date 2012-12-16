@@ -1,0 +1,22 @@
+#ifndef FAKE_LIBC_H_INCLUDED
+#define FAKE_LIBC_H_INCLUDED
+
+#ifdef __LINUX__
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ #include <time.h>
+ #include <unistd.h>
+#endif
+
+#ifdef __MINGW32__
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
+ #include <sys/param.h>
+ #include <io.h>
+#endif
+
+#endif /* FAKE_LIBC_H_INCLUDED */

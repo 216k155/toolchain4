@@ -1,0 +1,27 @@
+#ifndef FAKE_DLFCN_H_INCLUDED
+#define FAKE_DLFCN_H_INCLUDED
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+typedef struct
+{
+    const char *dli_fname;
+    void       *dli_fbase;
+    const char *dli_sname;
+    void       *dli_saddr;
+} Dl_info;
+
+#define RTLD_LAZY 0
+#define RTLD_NOW 1
+
+typedef Dl_info dyldInfo;
+typedef Dl_info dl_info;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* FAKE_DLFCN_H_INCLUDED */

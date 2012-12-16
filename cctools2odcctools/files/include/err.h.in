@@ -1,0 +1,28 @@
+#ifndef ERR_H_INCLUDED
+#define ERR_H_INCLUDED
+
+#include <stdlib.h>
+
+#define warn(...) do {                 \
+        fprintf (stderr, __VA_ARGS__); \
+        fprintf (stderr, \"\\\n\");    \
+} while (0)
+
+#define warnx(...) do {                \
+        fprintf (stderr, __VA_ARGS__); \
+        fprintf (stderr, \"\\\n\");    \
+} while (0)
+
+#define err(code, ...) do {            \
+        fprintf (stderr, __VA_ARGS__); \
+        fprintf (stderr, \"\\\n\");    \
+        exit (code);                   \
+} while (0)
+
+#define errx(code, ...) do {           \
+        fprintf (stderr, __VA_ARGS__); \
+        fprintf (stderr, \"\\\n\");    \
+        exit (code);                   \
+} while (0)
+
+#endif /* ERR_H_INCLUDED */

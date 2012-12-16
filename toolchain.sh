@@ -259,6 +259,8 @@ CCTOOLS_VER_FH="${CCTOOLSVER}"
 
 #TARBALLS_URL=http://www.opensource.apple.com/tarballs
 TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
+#MPFR_URL=http://www.mpfr.org
+MPFR_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
 
 ONLY_PATCH=0
 
@@ -843,7 +845,8 @@ toolchain_static_host_libs() {
 	fi
 	# MPFR version 2.2.1
 	if [[ ! -f ${HOST_DIR}-gmp-mpfr/include/mpfr.h ]] ; then
-		if ! $(downloadUntar http://www.mpfr.org/mpfr-2.2.1/mpfr-2.2.1.tar.gz); then
+#		if ! $(downloadUntar http://www.mpfr.org/mpfr-2.2.1/mpfr-2.2.1.tar.gz); then
+		if ! $(downloadUntar $MPFR_URL/mpfr-2.2.1/mpfr-2.2.1.tar.gz); then
 			error "Failed to get and mpfr-2.2.1. Check errors."
 			popd
 			exit 1
