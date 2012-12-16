@@ -5,7 +5,7 @@
 
 #define warn(...) do {                 \
         fprintf (stderr, __VA_ARGS__); \
-        fprintf (stderr, "n");         \
+        fprintf (stderr, "\n");        \
 } while (0)
 
 #define warnx(...) do {                \
