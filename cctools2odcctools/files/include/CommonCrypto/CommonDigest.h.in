@@ -10,6 +10,4 @@
 #define CC_MD5_Update        MD5_Update
 #define CC_MD5_Final         MD5_Final
 
-
 #endif /* COMMONDIGEST_H_INCLUDED */
-
