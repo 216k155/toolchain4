@@ -470,7 +470,7 @@ do_sed $"s^#include <paths.h>\n^\n^" ${DISTDIR}/ar/ar.c
 #    do_sed $"s^static int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};^#ifdef __MINGW32__\nstatic int sig\[\] = { SIGINT, SIGTERM, 0};\n#else\nstatic int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};\n#endif^" ${DISTDIR}/as/as.c
 #    do_sed $"s^static int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};^#ifdef __MINGW32__\nstatic int sig\[\] = { SIGINT, SIGTERM, 0};\n#else\nstatic int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};\n#endif^" ${DISTDIR}/as/as.c
 #    do_sed $"s^    const char \*AS = \"/as\";^#ifdef __MINGW32__\n    const char \*AS = \"/as.exe\";\n#else\n    const char \*AS = \"/as\";\n#endif^" ${DISTDIR}/as/driver.c
-    do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n#else\n    const char \*AS = \"/as\";\n#endif^" ${DISTDIR}/as/driver.c
+    do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
 #    do_sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/atof-generic.c
 #    do_sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/arm.c
 #    do_sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/i386.c
