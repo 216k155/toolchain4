@@ -17,6 +17,8 @@
  #include <fcntl.h>
  #include <sys/param.h>
  #include <io.h>
+ #include <string.h>
+ #include <malloc.h>
 #endif
 
 #endif /* FAKE_LIBC_H_INCLUDED */

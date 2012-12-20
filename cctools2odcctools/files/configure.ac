@@ -96,6 +96,28 @@ AC_CHECK_DECL([ULLONG_MAX], [],
                [ULLONG_MAX])],
             [#include <i386/limits.h>])
 
+AC_CHECK_DECL([CTL_KERN], [],
+            [AC_DEFINE_UNQUOTED([CTL_KERN], [1],
+               [CTL_KERN])],
+            [#include <sys/sysctl.h>])
+
+AC_CHECK_DECL([KERN_OSRELEASE], [],
+            [AC_DEFINE_UNQUOTED([KERN_OSRELEASE], [2],
+               [KERN_OSRELEASE])],
+            [#include <sys/sysctl.h>])
+
+# Windows doesn't have SIGHUP  or SIGPIPE, so define
+# them arbitrarily  to SIGTERM and SIGINT.
+AC_CHECK_DECL([SIGHUP], [],
+            [AC_DEFINE_UNQUOTED([SIGHUP], [SIGTERM],
+               [SIGHUP])],
+            [#include <sys/signal.h>])
+
+AC_CHECK_DECL([SIGPIPE], [],
+            [AC_DEFINE_UNQUOTED([SIGPIPE], [SIGINT],
+               [SIGPIPE])],
+            [#include <sys/signal.h>])
+
 AC_ARG_PROGRAM
 
 case $target_os in
@@ -674,14 +696,16 @@ esac
 # from cygwin which is under the BSD license, so I could maybe use that if seg_addr_table is needed.
 case $host_os in
      mingw*)
-     CFLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO"
+       [AC_DEFINE_UNQUOTED([EXEEXT],[".exe"], ["Define executable extension"])]
+       CFLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO"
      ;;
      *)
-     CFLAGS="$CFLAGS -O0 -g"
-    AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
-    AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
-    AC_SUBST([NOT_FOR_WINDOWS_PROG],["seg_addr_table checksyms redo_prebinding"])
-    ;;
+       [AC_DEFINE_UNQUOTED([EXEEXT],[""], ["Define executable extension"])]
+#       CFLAGS="$CFLAGS -O0 -g"
+       AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
+       AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
+       AC_SUBST([NOT_FOR_WINDOWS_PROG],["seg_addr_table checksyms redo_prebinding"])
+     ;;
 esac
 
 AC_CHECK_SIZEOF([long])
@@ -742,30 +766,6 @@ AC_SUBST(LTO_LIBS)
 AC_SUBST(LTO_DEFS)
 ;;
 esac
-
-AH_VERBATIM([_LIBC_REPLACEMENTS_LINUX],
-[/* Linux libc.h replacements. */
-#ifdef HAVE_LIBC_REPLACEMENTS_LINUX
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
- #include <sys/param.h>
- #include <sys/stat.h>
- #include <time.h>
- #include <unistd.h>
-#endif
-])
-
-AH_VERBATIM([_LIBC_REPLACEMENTS_WINDOWS],
-[/* Windows libc.h replacements. */
-#ifdef HAVE_LIBC_REPLACEMENTS_WINDOWS
- #include <stdio.h>
- #include <stdlib.h>
- #include <fcntl.h>
- #include <sys/param.h>
- #include <io.h>
-#endif
-])
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
 AC_CONFIG_FILES([ar/Makefile])
