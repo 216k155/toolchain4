@@ -1,0 +1,4 @@
+#ifndef FAKE_PATHS_H_INCLUDED
+#define FAKE_PATHS_H_INCLUDED
+
+#endif /* FAKE_PATHS_H_INCLUDED */

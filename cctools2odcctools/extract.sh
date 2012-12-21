@@ -455,8 +455,8 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 # ar
 #do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#ifndef __APPLE__\n#include <sys/file.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ar/archive.c
 #do_sed $"s^#include <paths.h>^#ifndef __MINGW32__\n#include <paths.h>\n#endif^" ${DISTDIR}/ar/ar.c
-do_sed $"s^#include <paths.h>\n^\n^" ${DISTDIR}/ar/ar.c
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
+#do_sed $"s^#include <paths.h>\n^\n^" ${DISTDIR}/ar/ar.c
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
 
 # as
 #do_sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
@@ -630,6 +630,7 @@ do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
 
 AUTOHEADER=autoheader
 AUTOCONF=autoconf
+AUTORECONF=autoreconf
 ## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
 # Fix temporary file location in tmp() in ar/misc.c
 if [[ "$(uname_bt)" = "Windows" ]] ; then
@@ -638,14 +639,14 @@ if [[ "$(uname_bt)" = "Windows" ]] ; then
     do_sed $"s^%s/%s^%s\\\\\\\\%s^" ${DISTDIR}/ar/misc.c
 fi
 
-if [[ "$(uname_bt)" = "Windows" ]] ; then
-    if [ -d /opt/autotools/bin ]; then
-        PATH=/opt/autotools/bin:$PATH
-        AUTOCONF=autoconf-2.68
-        AUTORECONF=autoreconf-2.68
-        AUTOHEADER=autoheader-2.68
-    fi
-fi
+#if [[ "$(uname_bt)" = "Windows" ]] ; then
+#    if [ -d /opt/autotools/bin ]; then
+#        PATH=/opt/autotools/bin:$PATH
+#        AUTOCONF=autoconf-2.68
+#        AUTORECONF=autoreconf-2.68
+#        AUTOHEADER=autoheader-2.68
+#    fi
+#fi
 
 # Attempt fix for ar header output:
 #define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10qd%2s"

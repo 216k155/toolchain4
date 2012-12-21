@@ -19,6 +19,7 @@
  #include <io.h>
  #include <string.h>
  #include <malloc.h>
+ #include <stdint.h>
 #endif
 
 #endif /* FAKE_LIBC_H_INCLUDED */

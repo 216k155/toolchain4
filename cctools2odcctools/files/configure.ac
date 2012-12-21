@@ -60,6 +60,11 @@ AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_commonc
 AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
  AC_CONFIG_HEADERS([include/CommonCrypto/CommonDigest.h]))
 
+AC_CHECK_HEADERS([paths.h])
+AM_CONDITIONAL([HAVE_PATHS_H], [test "x$ac_cv_header_paths_h" = xyes])
+AM_COND_IF([HAVE_PATHS_H], [],
+ AC_CONFIG_HEADERS([include/paths.h]))
+
 # For Windows:
 AC_TYPE_UID_T
 AC_CHECK_TYPE([caddr_t], [],
@@ -71,6 +76,28 @@ AC_CHECK_TYPE([sigset_t], [],
             [AC_DEFINE([sigset_t], [int32_t],
                [Define to `int32_t'
                 if not defined.])])
+
+AC_CHECK_TYPE([u_int32_t], [],
+            [AC_DEFINE([u_int32_t], [uint32_t],
+               [Define to `uint32_t'])],
+            [#include <sys/types.h>])
+
+AC_CHECK_TYPE([u_char], [],
+            [AC_DEFINE([u_char], [uint8_t],
+               [Define to `uint32_t'])],
+            [#include <sys/types.h>])
+
+# Windows doesn't have SIGHUP  or SIGPIPE, so define
+# them arbitrarily  to SIGTERM and SIGINT.
+AC_CHECK_DECL([SIGHUP], [],
+            [AC_DEFINE([SIGHUP], [SIGTERM],
+               [SIGHUP])],
+            [#include <sys/signal.h>])
+
+AC_CHECK_DECL([SIGPIPE], [],
+            [AC_DEFINE([SIGPIPE], [SIGINT],
+               [SIGPIPE])],
+            [#include <sys/signal.h>])
 
 # For everything but Windows:
 AC_CHECK_DECL([O_BINARY], [],
@@ -94,7 +121,7 @@ AC_CHECK_DECL([AR_EFMT1], [],
 AC_CHECK_DECL([ULLONG_MAX], [],
             [AC_DEFINE([ULLONG_MAX], [0xffffffffffffffffULL],
                [ULLONG_MAX])],
-            [#include <i386/limits.h>])
+            [#include <limits.h>])
 
 AC_CHECK_DECL([CTL_KERN], [],
             [AC_DEFINE([CTL_KERN], [1],
@@ -105,18 +132,6 @@ AC_CHECK_DECL([KERN_OSRELEASE], [],
             [AC_DEFINE([KERN_OSRELEASE], [2],
                [KERN_OSRELEASE])],
             [#include <sys/sysctl.h>])
-
-# Windows doesn't have SIGHUP  or SIGPIPE, so define
-# them arbitrarily  to SIGTERM and SIGINT.
-AC_CHECK_DECL([SIGHUP], [],
-            [AC_DEFINE([SIGHUP], [SIGTERM],
-               [SIGHUP])],
-            [#include <sys/signal.h>])
-
-AC_CHECK_DECL([SIGPIPE], [],
-            [AC_DEFINE([SIGPIPE], [SIGINT],
-               [SIGPIPE])],
-            [#include <sys/signal.h>])
 
 AC_ARG_PROGRAM
 
@@ -696,11 +711,11 @@ esac
 # from cygwin which is under the BSD license, so I could maybe use that if seg_addr_table is needed.
 case $host_os in
      mingw*)
-       [AC_DEFINE_UNQUOTED([EXEEXT],[".exe"], ["Define executable extension"])]
+       AC_DEFINE_UNQUOTED([EXEEXT],[".exe"], ["Define executable extension"])
        CFLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO"
      ;;
      *)
-       [AC_DEFINE_UNQUOTED([EXEEXT],[""], ["Define executable extension"])]
+       AC_DEFINE_UNQUOTED([EXEEXT],[""], ["Define executable extension"])
 #       CFLAGS="$CFLAGS -O0 -g"
        AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
        AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
