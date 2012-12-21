@@ -63,18 +63,18 @@ AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
 # For Windows:
 AC_TYPE_UID_T
 AC_CHECK_TYPE([caddr_t], [],
-            [AC_DEFINE_UNQUOTED([caddr_t], [char *],
+            [AC_DEFINE([caddr_t], [char *],
                [Define to `char *'
                 if not defined.])])
 
 AC_CHECK_TYPE([sigset_t], [],
-            [AC_DEFINE_UNQUOTED([sigset_t], [int32_t],
+            [AC_DEFINE([sigset_t], [int32_t],
                [Define to `int32_t'
                 if not defined.])])
 
 # For everything but Windows:
 AC_CHECK_DECL([O_BINARY], [],
-            [AC_DEFINE_UNQUOTED([O_BINARY], [0],
+            [AC_DEFINE([O_BINARY], [0],
                [Windows-specific open() flag
                 to disable text mode])],
             [[#include <io.h>
@@ -82,39 +82,39 @@ AC_CHECK_DECL([O_BINARY], [],
 
 # For everything but Darwin:
 AC_CHECK_DECL([__unused], [],
-            [AC_DEFINE_UNQUOTED([__unused], [__attribute__((__unused__))],
+            [AC_DEFINE([__unused], [__attribute__((__unused__))],
                [__unused macro to save some typing])],
             [#include <sys/cdefs.h>])
 
 AC_CHECK_DECL([AR_EFMT1], [],
-            [AC_DEFINE_UNQUOTED([AR_EFMT1], ["#1"],
+            [AC_DEFINE([AR_EFMT1], ["#1"],
                [AR_EFMT1])],
             [#include <ar.h>])
 
 AC_CHECK_DECL([ULLONG_MAX], [],
-            [AC_DEFINE_UNQUOTED([ULLONG_MAX], [0xffffffffffffffffULL],
+            [AC_DEFINE([ULLONG_MAX], [0xffffffffffffffffULL],
                [ULLONG_MAX])],
             [#include <i386/limits.h>])
 
 AC_CHECK_DECL([CTL_KERN], [],
-            [AC_DEFINE_UNQUOTED([CTL_KERN], [1],
+            [AC_DEFINE([CTL_KERN], [1],
                [CTL_KERN])],
             [#include <sys/sysctl.h>])
 
 AC_CHECK_DECL([KERN_OSRELEASE], [],
-            [AC_DEFINE_UNQUOTED([KERN_OSRELEASE], [2],
+            [AC_DEFINE([KERN_OSRELEASE], [2],
                [KERN_OSRELEASE])],
             [#include <sys/sysctl.h>])
 
 # Windows doesn't have SIGHUP  or SIGPIPE, so define
 # them arbitrarily  to SIGTERM and SIGINT.
 AC_CHECK_DECL([SIGHUP], [],
-            [AC_DEFINE_UNQUOTED([SIGHUP], [SIGTERM],
+            [AC_DEFINE([SIGHUP], [SIGTERM],
                [SIGHUP])],
             [#include <sys/signal.h>])
 
 AC_CHECK_DECL([SIGPIPE], [],
-            [AC_DEFINE_UNQUOTED([SIGPIPE], [SIGINT],
+            [AC_DEFINE([SIGPIPE], [SIGINT],
                [SIGPIPE])],
             [#include <sys/signal.h>])
 

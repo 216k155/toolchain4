@@ -287,9 +287,9 @@ BASE_TMP=/tmp2/tc4
 AUTOHEADER=autoheader
 AUTOCONF=autoconf
 # 2.62 needed for automake 1.11
-AUTOCONF_VER=2.62
+AUTOCONF_VER=2.69
 # 1.11 is needed for AM_COND_IF
-AUTOMAKE_VER=1.11
+AUTOMAKE_VER=1.12.6
 
 check_install_autoconf_automake ()
 {

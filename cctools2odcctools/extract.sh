@@ -642,6 +642,7 @@ if [[ "$(uname_bt)" = "Windows" ]] ; then
     if [ -d /opt/autotools/bin ]; then
         PATH=/opt/autotools/bin:$PATH
         AUTOCONF=autoconf-2.68
+        AUTORECONF=autoreconf-2.68
         AUTOHEADER=autoheader-2.68
     fi
 fi
@@ -657,11 +658,14 @@ find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
 find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
+set -x
 message_status $PWD
 #$AUTOHEADER
+#echo $(which $AUTOCONF)
+#echo $($AUTOCONF --version)
 #$AUTOCONF
-rm -rf autom4te.cache configure config.log config.status
-autoreconf
+#rm -rf autom4te.cache configure config.log config.status
+$AUTORECONF -vi
 popd > /dev/null
 
 if [ $MAKEDISTFILE -eq 1 ]; then
