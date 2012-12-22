@@ -488,6 +488,11 @@ do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/misc/checksyms.c
 #do_sed $"s^#include <limits.h>^#include <limits.h>\n#if !defined(ULLONG_MAX)\n#define ULLONG_MAX (__LONG_LONG_MAX__ * 2ULL + 1ULL)\n#endif\n^" ${DISTDIR}/misc/install_name_tool.c
 
+do_sed $"s^#include <vector>^#include <libc.h>\n#include <stdarg.h>\n#include <vector>^" ${DISTDIR}/ld64/src/ld/Options.cpp
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+
 #if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
 #    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
 #    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass1.c
@@ -518,6 +523,8 @@ do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/
 #    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/libtool.c
 #    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/segedit.c
 #fi
+
+do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
 do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)\n^" ${DISTDIR}/ld64/src/ld/ld.cpp
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/libtool.c
@@ -568,6 +575,12 @@ if [[ "$(uname_bt)" = "Windows" ]] ; then
 fi
 
 #do_sed $"s^#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
+
+do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass1.c
+do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass2.c
+do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/misc/libtool.c
+
+#if defined(VM_SYNC_DEACTIVATE) && (HAVE_DECL_VM_MSYNC)
 
 #do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/macho_dylib_file.cpp
 

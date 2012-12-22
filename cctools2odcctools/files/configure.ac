@@ -462,6 +462,9 @@ AC_COMPILE_IFELSE(
 )
 
 AC_CHECK_FUNCS([qsort_r qsort getattrlist NSIsSymbolNameDefined strlcpy strlcat _NSGetExecutablePath])
+AC_CHECK_DECLS([vm_msync], [], [], [[#include <mach/vm_map.h>]])
+
+# Not right for Darwin?
 AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h],[],[SSL_LIBS="-lssl -lcrypto"])
 AC_SUBST(SSL_LIBS)
 
