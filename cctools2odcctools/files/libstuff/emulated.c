@@ -659,7 +659,7 @@ size_t strlcat(char *dst, const char *src, size_t siz)
  * http://dev.monetdb.org/hg/MonetDB/file/54ad354daff8/common/utils/mutils.c#l340
  * Really, bufsize should be set to the size required too.
  */
-int _NSGetExecutablePath(char *buf, size_t *bufsize)
+int _NSGetExecutablePath(char *buf, uint32_t *bufsize)
 {
 #if defined(_MSC_VER) || defined(__MINGW32__)
 	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {

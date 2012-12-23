@@ -5,7 +5,15 @@ AC_REVISION([m4_esyscmd_s([git describe --always])])
 AC_CONFIG_SRCDIR([APPLE_LICENSE])
 
 # Causes multiply defined warning unfortunately.
-AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
+AC_GNU_SOURCE
+#AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
+
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_CC
+AC_PROG_CXX
+
+AC_PROG_CC_C99
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -20,6 +28,7 @@ AM_CONDITIONAL([HAVE_LIBC_H], [test "x$ac_cv_header_libc_h" = xyes])
 AM_COND_IF([HAVE_LIBC_H], [],
  AC_CONFIG_HEADERS([include/libc.h]))
 
+# Need this to happen even on Linux which has it's own dlfcn.h
 AC_CHECK_HEADERS([dlfcn.h])
 AM_CONDITIONAL([HAVE_DLFCN_H], [test "x$ac_cv_header_dlfcn_h" = xyes])
 AM_COND_IF([HAVE_DLFCN_H], [],
@@ -87,6 +96,13 @@ AC_CHECK_TYPE([u_char], [],
                [Define to `uint32_t'])],
             [#include <sys/types.h>])
 
+# Linux's dlfcn.h has the exact same structure layout for
+# Dl_info as Mac OS X, it's just missing the dl_info alias.
+AC_CHECK_TYPE([dl_info], [],
+            [AC_DEFINE([dl_info], [Dl_info],
+               [Define to `Dl_info'])],
+            [#include <dlfcn.h>])
+
 # Windows doesn't have SIGHUP  or SIGPIPE, so define
 # them arbitrarily  to SIGTERM and SIGINT.
 AC_CHECK_DECL([SIGHUP], [],
@@ -108,10 +124,10 @@ AC_CHECK_DECL([O_BINARY], [],
               #include <fcntl.h>]])
 
 # For everything but Darwin:
-AC_CHECK_DECL([AR_EFMT1], [],
-            [AC_DEFINE([AR_EFMT1], ["#1"],
-               [AR_EFMT1])],
-            [#include <ar.h>])
+#AC_CHECK_DECL([AR_EFMT1], [],
+#            [AC_DEFINE([AR_EFMT1], ["#1"],
+#               [AR_EFMT1])],
+#            [#include <ar.h>])
 
 AC_CHECK_DECL([ULLONG_MAX], [],
             [AC_DEFINE([ULLONG_MAX], [0xffffffffffffffffULL],
@@ -204,11 +220,6 @@ case $target_cpu in
     AC_MSG_ERROR([Unsupported target $target_cpu])
     ;;
 esac
-
-AC_PROG_INSTALL
-AC_PROG_LN_S
-AC_PROG_CC
-AC_PROG_CXX
 
 AC_CHECK_TOOL([HOST_RANLIB], [ranlib], :)
 AC_CHECK_TOOL([HOST_AR], [ar], :)

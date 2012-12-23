@@ -449,6 +449,7 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 #do_sed $"s^#include <sys/sysctl.h>^#include <stdint.h>\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 #do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
+
 do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/ld.cpp
 do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
 do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.h
@@ -500,13 +501,13 @@ do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/misc/checksyms.c
 #do_sed $"s^#include <limits.h>^#include <limits.h>\n#if !defined(ULLONG_MAX)\n#define ULLONG_MAX (__LONG_LONG_MAX__ * 2ULL + 1ULL)\n#endif\n^" ${DISTDIR}/misc/install_name_tool.c
 
-do_sed $"s^#include <vector>^#include <libc.h>\n#include <stdarg.h>\n#include <vector>^" ${DISTDIR}/ld64/src/ld/Options.cpp
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
+#do_sed $"s^#include <vector>^#include <libc.h>\n#include <stdarg.h>\n#include <vector>^" ${DISTDIR}/ld64/src/ld/Options.cpp
+#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
+#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
+#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
+#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
 
 #if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
 #    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
@@ -566,7 +567,8 @@ do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, con
 #do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/opaque_section_file.cpp
 #do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
 #do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/archive_file.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
+
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
 
 # qsort_r on linux has the last 2 parameters swapped wrt darwin...
 # Also, the swap function is all swapped around, darwin it's:
