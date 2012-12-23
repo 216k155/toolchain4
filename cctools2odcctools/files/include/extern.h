@@ -24,3 +24,5 @@
 # include <sys/param.h>
 # include <stdarg.h>
 #endif
+
+#include <sys/sysctl.h>

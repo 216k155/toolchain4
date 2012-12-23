@@ -450,15 +450,15 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 #do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/ld.cpp
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.h
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.h
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.h
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.h
-do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/ld.cpp
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.h
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.h
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.h
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.h
+#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
 
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#include <string.h>\n#endif^" ${DISTDIR}/libstuff/lto.c
 
