@@ -1,27 +1,5 @@
 --- ofile.c.orig	2012-04-06 23:21:16 +0100
 +++ ofile.c	2012-04-06 23:26:03 +0100
-@@ -36,7 +36,9 @@
- #ifdef SHLIB
- #include "shlib.h"
- #endif
-+#ifdef __APPLE__
- #include <libc.h>
-+#endif
- #include <mach/mach.h>
- #include "stuff/openstep_mach.h"
- #include <stddef.h>
-@@ -47,7 +49,11 @@
- #include <ar.h>
- #include <sys/file.h>
- #include <sys/types.h>
-+#ifndef __MINGW32__
- #include <sys/mman.h>
-+#else
-+#include <stdlib.h>
-+#endif
- #include <mach-o/fat.h>
- #include <mach-o/loader.h>
- #include <mach/m68k/thread_status.h>
 @@ -874,6 +880,20 @@
  	    printf("Modification time = %ld\n", (long int)stat_buf.st_mtime);
  #endif /* OTOOL */

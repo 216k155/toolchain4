@@ -447,6 +447,18 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 #fi
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/SymLoc.c
 #do_sed $"s^#include <sys/sysctl.h>^#include <stdint.h>\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+#do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/ld.cpp
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.h
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.h
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.h
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.h
+do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
+
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#include <string.h>\n#endif^" ${DISTDIR}/libstuff/lto.c
 
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#include <stdint.h>\n#include <string.h>\n#endif^" ${DISTDIR}/libstuff/llvm.c
@@ -492,6 +504,9 @@ do_sed $"s^#include <vector>^#include <libc.h>\n#include <stdarg.h>\n#include <v
 do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
 do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
 do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
 
 #if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
 #    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
@@ -607,12 +622,12 @@ do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^
 do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
 do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/ld64/src/other/rebase.cpp
 do_sed $"s^O_RDWR : O_RDONLY^O_RDWR|O_BINARY : O_RDONLY|O_BINARY^"                  ${DISTDIR}/ld64/src/other/rebase.cpp
-do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
 do_sed $"s^O_RDONLY, 0)^O_RDONLY|O_BINARY, 0)^"                                     ${DISTDIR}/ld64/src/ld/Options.cpp
 do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC ^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"  ${DISTDIR}/misc/segedit.c
 do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/segedit.c
 do_sed $"s^O_WRONLY|O_CREAT^O_WRONLY|O_CREAT|O_BINARY^"                             ${DISTDIR}/misc/strip.c
 do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/strip.c
+#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
 
 # I don't think these any point to these changes anymore!
 do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/rld.c

@@ -108,11 +108,6 @@ AC_CHECK_DECL([O_BINARY], [],
               #include <fcntl.h>]])
 
 # For everything but Darwin:
-AC_CHECK_DECL([__unused], [],
-            [AC_DEFINE([__unused], [__attribute__((__unused__))],
-               [__unused macro to save some typing])],
-            [#include <sys/cdefs.h>])
-
 AC_CHECK_DECL([AR_EFMT1], [],
             [AC_DEFINE([AR_EFMT1], ["#1"],
                [AR_EFMT1])],
@@ -123,15 +118,55 @@ AC_CHECK_DECL([ULLONG_MAX], [],
                [ULLONG_MAX])],
             [#include <limits.h>])
 
-AC_CHECK_DECL([CTL_KERN], [],
-            [AC_DEFINE([CTL_KERN], [1],
-               [CTL_KERN])],
-            [#include <sys/sysctl.h>])
+CHECK_ENUM(CTL_KERN, [sys/sysctl.h],
+            [], [AC_DEFINE([CTL_KERN], [1],
+               [CTL_KERN])])
 
-AC_CHECK_DECL([KERN_OSRELEASE], [],
-            [AC_DEFINE([KERN_OSRELEASE], [2],
-               [KERN_OSRELEASE])],
-            [#include <sys/sysctl.h>])
+CHECK_ENUM(KERN_OSRELEASE, [sys/sysctl.h],
+            [], [AC_DEFINE([KERN_OSRELEASE], [2],
+               [KERN_OSRELEASE])])
+
+# This must be checked for after CTL_KERN amd KERN_OSRELEASE because
+# on Linux, sysctl.h contains "unsigned long __unused[4];"
+AC_CHECK_DECL([__unused], [],
+            [AC_DEFINE([__unused], [__attribute__((__unused__))],
+               [__unused macro to save some typing])],
+            [#include <sys/cdefs.h>])
+
+AC_CHECK_DECL([FP_PREC_24B], [],
+            [AC_DEFINE([FP_PREC_24B], [0],
+               [FP_PREC_24B])],
+            [#include <_structs.h>])
+
+AC_CHECK_DECL([FP_PREC_53B], [],
+            [AC_DEFINE([FP_PREC_53B], [2],
+               [FP_PREC_53B])],
+            [#include <_structs.h>])
+
+AC_CHECK_DECL([FP_PREC_64B], [],
+            [AC_DEFINE([FP_PREC_64B], [3],
+               [FP_PREC_64B])],
+            [#include <_structs.h>])
+
+AC_CHECK_DECL([FP_RND_NEAR], [],
+            [AC_DEFINE([FP_RND_NEAR], [0],
+               [FP_RND_NEAR])],
+            [#include <_structs.h>])
+
+AC_CHECK_DECL([FP_RND_DOWN], [],
+            [AC_DEFINE([FP_RND_DOWN], [1],
+               [FP_RND_DOWN])],
+            [#include <_structs.h>])
+
+AC_CHECK_DECL([FP_RND_UP], [],
+            [AC_DEFINE([FP_RND_UP], [2],
+               [FP_RND_UP])],
+            [#include <_structs.h>])
+
+AC_CHECK_DECL([FP_CHOP], [],
+            [AC_DEFINE([FP_CHOP], [3],
+               [FP_CHOP])],
+            [#include <_structs.h>])
 
 AC_ARG_PROGRAM
 
@@ -170,7 +205,6 @@ case $target_cpu in
     ;;
 esac
 
-
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_CC
@@ -189,23 +223,23 @@ AC_ARG_ENABLE([as-targets],
         [conftargets="default"])
 
 case "$conftargets" in
-     all)
+    all)
         ASTARGETS="ppc ppc64 i386 x86_64 arm"
     ;;
-     default)
-    ASTARGETS="ppc ppc64 i386 x86_64 arm"
+    default)
+        ASTARGETS="ppc ppc64 i386 x86_64 arm"
     ;;
-     yes)
-    AC_MSG_ERROR([no assembler targets configured])
+    yes)
+        AC_MSG_ERROR([no assembler targets configured])
     ;;
-     no)
-    AC_MSG_ERROR([no assembler targets configured])
+    no)
+        AC_MSG_ERROR([no assembler targets configured])
     ;;
-     *)
-    if [[ -z "$conftargets" ]]; then
-       AC_MSG_ERROR([no assembler targets configured])
-    fi
-    ASTARGETS="$conftargets"
+    *)
+        if [[ -z "$conftargets" ]]; then
+            AC_MSG_ERROR([no assembler targets configured])
+        fi
+        ASTARGETS="$conftargets"
     ;;
 esac
 
