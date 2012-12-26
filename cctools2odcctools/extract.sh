@@ -294,11 +294,16 @@ find ${DISTDIR} -type f -name \*.[ch] | while read f; do
     mv -f $f.tmp $f
 done
 
-message_status "Removing __private_extern__"
-find ${DISTDIR} -type f -name \*.h | while read f; do
-    sed -e 's/^__private_extern__/extern/' < $f > $f.tmp
-    mv -f $f.tmp $f
-done
+# This shouldn't be needed as autoconf will #define it, but actually, whereas
+# autoconf (used to be extern.h) makes it default to hidden visibility, this is
+# just making it extern. This is probably wrong then...
+# The only reason it's still here (for now) is because the patches need fixing
+# without it!
+#message_status "Removing __private_extern__"
+#find ${DISTDIR} -type f -name \*.h | while read f; do
+#    sed -e 's/^__private_extern__/extern/' < $f > $f.tmp
+#    mv -f $f.tmp $f
+#done
 
 #echo "Removing static enum bool"
 #find ${DISTDIR} -type f -name \*.[ch] | while read f; do

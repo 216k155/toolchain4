@@ -19,6 +19,7 @@ CPPFLAGS        = @CPPFLAGS@
 DEFS            = @DEFS@ @ENDIAN_FLAG@
 LDFLAGS         = @LDFLAGS@
 HAVE_PRIVEXT    = @HAVE_PRIVEXT@
+HAVE_LIBC_CXX_H = @HAVE_LIBC_CXX_H@
 HAVE_FOREIGN_HEADERS    = @HAVE_FOREIGN_HEADERS@
 UUID_LIBS	= @UUID_LIBS@
 SSL_LIBS	= @SSL_LIBS@
@@ -28,6 +29,10 @@ DL_LIBS		= @DL_LIBS@
 
 ifeq ($(HAVE_PRIVEXT),NO)
 INCPRIVEXT      = -include $(top_srcdir)/include/extern.h
+endif
+
+ifeq ($(HAVE_LIBC_CXX_H),YES)
+INCPRIVEXT      = -include $(top_builddir)/include/libc_cxx.h
 endif
 
 ifeq ($(HAVE_FOREIGN_HEADERS),YES)

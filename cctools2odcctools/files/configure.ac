@@ -2,6 +2,10 @@ AC_INIT([odcctools], [809.ma], [mingw.android@gmail.com])
 AC_PREREQ([2.57])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
 
+m4_include([m4/ax_append_flag.m4])
+m4_include([m4/ax_check_compile_flag.m4])
+m4_include([m4/ax_append_compile_flags.m4])
+
 AC_CONFIG_SRCDIR([APPLE_LICENSE])
 
 # Causes multiply defined warning unfortunately.
@@ -22,11 +26,15 @@ AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([include/config.h])
 
 # To minimise impact on the source code, we provide our own versions of
-# missing system headers.
+# missing system headers. This is almost entirely a check for Darwin,
+# but it may also apply to *BSD.
 AC_CHECK_HEADERS([libc.h])
 AM_CONDITIONAL([HAVE_LIBC_H], [test "x$ac_cv_header_libc_h" = xyes])
-AM_COND_IF([HAVE_LIBC_H], [],
- AC_CONFIG_HEADERS([include/libc.h]))
+AM_COND_IF([HAVE_LIBC_H],
+ [AC_SUBST([HAVE_LIBC_CXX_H], [NO])],
+ [AC_CONFIG_HEADERS([include/libc.h include/libc_cxx.h])
+  AC_SUBST([HAVE_LIBC_CXX_H], [YES])]
+  )
 
 # Need this to happen even on Linux which has it's own dlfcn.h
 AC_CHECK_HEADERS([dlfcn.h])
@@ -266,6 +274,7 @@ AC_SUBST([ASTARGETS], [$ASTARGETS])
 # ..however, even when I did specify it to configure, it didn't work.
 # Fact is, we always want ${prefix}/libexec for Darwin cross compilers.
 # AC_SUBST([ASLIBEXECDIR], ['${libexecdir}/as'])
+
 AC_SUBST([ASLIBEXECDIR], ['${prefix}/libexec/as'])
 
 AC_ARG_WITH([sysroot],
@@ -273,37 +282,13 @@ AC_ARG_WITH([sysroot],
                 [filesystem root of cross build environment]),
         [AC_DEFINE_UNQUOTED([CROSS_SYSROOT],["$withval"],[filesystem root of cross build environment])])
 
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -mdynamic-no-pic"
-AC_MSG_CHECKING([if -mdynamic-no-pic is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [AC_SUBST([MDYNAMICNOPIC],[-mdynamic-no-pic])
-    AC_MSG_RESULT([yes])],
-   [AC_SUBST([MDYNAMICNOPIC],[])
-    AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
 
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -fno-builtin-round"
-AC_MSG_CHECKING([if -fno-builtin-round is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [AC_MSG_RESULT([yes])],
-   [CFLAGS=$ORIGCFLAGS
-    AC_MSG_RESULT([no])]
-)
+# Not sure why MDYNAMICNOPIC is used instead of just WARNINGS
+MDYNAMICNOPIC=""
+AX_APPEND_COMPILE_FLAGS([-mdynamic-no-pic], [MDYNAMICNOPIC])
+AC_SUBST([MDYNAMICNOPIC])
 
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -fno-builtin-trunc"
-AC_MSG_CHECKING([if -fno-builtin-trunc is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [AC_MSG_RESULT([yes])],
-   [CFLAGS=$ORIGCFLAGS
-    AC_MSG_RESULT([no])]
-)
+AX_APPEND_COMPILE_FLAGS([-fno-builtin-round -fno-builtin-trunc],[CFLAGS])
 
 ORIGCFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -no-cpp-precomp"
@@ -323,7 +308,6 @@ else
       supported=1;
    fi
 fi
-
 if [[ $supported -eq 1 ]]; then
    AC_MSG_RESULT([yes])
 else
@@ -332,83 +316,44 @@ else
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 
-WARNINGS=""
+#ORIGCFLAGS=$CFLAGS
+#CFLAGS="$CFLAGS -mdynamic-no-pic"
+#AC_MSG_CHECKING([if -mdynamic-no-pic is supported])
+#AC_COMPILE_IFELSE(
+#   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
+#   [AC_SUBST([MDYNAMICNOPIC],[-mdynamic-no-pic])
+#    AC_MSG_RESULT([yes])],
+#   [AC_SUBST([MDYNAMICNOPIC],[])
+#    AC_MSG_RESULT([no])]
+#)
+#CFLAGS=$ORIGCFLAGS
 
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wall"
-AC_MSG_CHECKING([if -Wall is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wall"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
+#ORIGCFLAGS=$CFLAGS
+#CFLAGS="$CFLAGS -fno-builtin-round"
+#AC_MSG_CHECKING([if -fno-builtin-round is supported])
+#AC_COMPILE_IFELSE(
+#   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
+#   [AC_MSG_RESULT([yes])],
+#   [CFLAGS=$ORIGCFLAGS
+#    AC_MSG_RESULT([no])]
+#)
 
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wno-import"
-AC_MSG_CHECKING([if -Wno-import is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wno-import"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
+#ORIGCFLAGS=$CFLAGS
+#CFLAGS="$CFLAGS -fno-builtin-trunc"
+#AC_MSG_CHECKING([if -fno-builtin-trunc is supported])
+#AC_COMPILE_IFELSE(
+#   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
+#   [AC_MSG_RESULT([yes])],
+#   [CFLAGS=$ORIGCFLAGS
+#    AC_MSG_RESULT([no])]
+#)
 
+# Some flag checks need to parse  the output: "-no-cpp-precomp" greps for "unrecog"
+# Some seem to need -Werror at the same time: "-Werror -Wall",  "-Werror -Wno-import"
+# ...can bodge around needing -Werror by setting it temporarily (though I'd like it on globally anyway...)
 ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wno-unused-variable"
-AC_MSG_CHECKING([if -Wno-unused-variable is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wno-unused-variable"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
-
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wno-unused-but-set-variable"
-AC_MSG_CHECKING([if -Wno-unused-but-set-variable is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wno-unused-but-set-variable"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
-
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wno-deprecated-declarations"
-AC_MSG_CHECKING([if -Wno-deprecated-declarations is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wno-deprecated-declarations"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
-
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wno-attributes"
-AC_MSG_CHECKING([if -Wno-attributes is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wno-attributes"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
-CFLAGS=$ORIGCFLAGS
-
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror -Wno-enum-compare"
-AC_MSG_CHECKING([if -Wno-enum-compare is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-   [WARNINGS="$WARNINGS -Wno-enum-compare"
-    AC_MSG_RESULT([yes])],
-   [AC_MSG_RESULT([no])]
-)
+CFLAGS="$CFLAGS -Werror"
+AX_APPEND_COMPILE_FLAGS([-Wall -Wno-import -Wno-unused-variable -Wno-unused-but-set-variable -Wno-deprecated-declarations -Wno-attributes -Wno-enum-compare], [WARNINGS])
 CFLAGS=$ORIGCFLAGS
 
 AC_SUBST([WARNINGS], [$WARNINGS])
@@ -431,12 +376,13 @@ void bar(void) {
 AC_SUBST([OBJC], [$OBJC])
 CFLAGS=$ORIGCFLAGS
 
+# HAVE_PRIVEXT is no longer needed, we put it into config.h
 AC_MSG_CHECKING([if __private_extern__ is supported])
 AC_COMPILE_IFELSE(
    [AC_LANG_SOURCE([[__private_extern__ int foo;]])],
    [AC_SUBST([HAVE_PRIVEXT], [YES])
     AC_MSG_RESULT([yes])],
-   [AC_SUBST([HAVE_PRIVEXT], [NO])
+   [AC_DEFINE([__private_extern__], [__attribute__((visibility("hidden")))], [private extern as hidden visibility])
     AC_MSG_RESULT([no])]
 )
 
@@ -450,34 +396,9 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM()],
 )
 
 AC_LANG_PUSH([C++])
-ORIGCXXFLAGS=$CXXFLAGS
-CXXFLAGS="$CXXFLAGS -Wno-trigraphs"
-AC_MSG_CHECKING([if -Wno-trigraphs is supported])
-AC_LINK_IFELSE([AC_LANG_PROGRAM()],
-    [AC_MSG_RESULT([yes])],
-    [CXXFLAGS="$ORIGCXXFLAGS"
-     AC_MSG_RESULT([no])]
-)
-
-ORIGCXXFLAGS=$CXXFLAGS
-CXXFLAGS="$CXXFLAGS -Wno-deprecated"
-AC_MSG_CHECKING([if -Wno-deprecated is supported])
-AC_LINK_IFELSE([AC_LANG_PROGRAM()],
-        [AC_MSG_RESULT([yes])],
-            [CXXFLAGS="$ORIGCXXFLAGS"
-         AC_MSG_RESULT([no])]
-)
-
-ORIGCXXFLAGS=$CXXFLAGS
-CXXFLAGS="$CXXFLAGS -Wno-strict-aliasing"
-AC_MSG_CHECKING([if -Wno-strict-aliasing is supported])
-AC_LINK_IFELSE([AC_LANG_PROGRAM()],
-        [AC_MSG_RESULT([yes])],
-            [CXXFLAGS="$ORIGCXXFLAGS"
-         AC_MSG_RESULT([no])]
-)
-
+AX_APPEND_COMPILE_FLAGS([-Wno-trigraphs -Wno-deprecated -Wno-strict-aliasing], [CXXFLAGS])
 AC_LANG_POP
+
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdio.h errno.h limits.h])
 if [[ "x$OBJC" != "x" ]]; then
