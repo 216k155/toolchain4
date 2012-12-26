@@ -1,9 +1,9 @@
---- bytesex.h.orig	2006-09-17 13:54:31.000000000 -0700
-+++ bytesex.h	2006-09-17 13:55:07.000000000 -0700
-@@ -227,7 +227,11 @@
+--- ./bytesex.h.orig	2012-12-26 21:11:57.000000000 +0000
++++ ./bytesex.h	2012-12-26 21:14:26.445606944 +0000
+@@ -234,7 +234,11 @@
  /* current i386 thread states */
  #if i386_THREAD_STATE == 1
- extern void swap_i386_float_state(
+ __private_extern__ void swap_i386_float_state(
 -    struct __darwin_i386_float_state *fpu,
 +#ifdef _STRUCT_X86_FLOAT_STATE32
 +    _STRUCT_X86_FLOAT_STATE32 *fpu,
@@ -12,4 +12,4 @@
 +#endif
      enum byte_sex target_byte_sex);
  
- extern void swap_i386_exception_state(
+ __private_extern__ void swap_i386_exception_state(
