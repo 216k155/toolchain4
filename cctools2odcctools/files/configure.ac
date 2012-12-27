@@ -348,14 +348,18 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 #    AC_MSG_RESULT([no])]
 #)
 
-# Some flag checks need to parse  the output: "-no-cpp-precomp" greps for "unrecog"
-# Some seem to need -Werror at the same time: "-Werror -Wall",  "-Werror -Wno-import"
-# ...can bodge around needing -Werror by setting it temporarily (though I'd like it on globally anyway...)
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -Werror"
-AX_APPEND_COMPILE_FLAGS([-Wall -Wno-import -Wno-unused-variable -Wno-unused-but-set-variable -Wno-deprecated-declarations -Wno-attributes -Wno-enum-compare], [WARNINGS])
-CFLAGS=$ORIGCFLAGS
-
+# There's a bug in Google's 4.4.3 GCC where it never reports -Wno-* as missing, unless there are other warnings present as well.
+# i.e. the following command returns an exit code of 0 and reports no error:
+#  /home/nonesuch/i686-linux-glibc2.7-4.4.3/bin/i686-linux-gcc -Wall -Wno-way-this-warning-exists conftest.c
+# whereas this command fails, reporting an error:
+#  /home/nonesuch/i686-linux-glibc2.7-4.4.3/bin/i686-linux-gcc -Wall -Wway-this-warning-exists conftest.c
+# for this reason, I form INVERSE_WARNINGS (containing -Wimport instead of -Wno-import) then transform them afterwards.
+# A cleaner approach might be to create and use AX_ENABLE_WARNING and AX_DISABLE_WARNING where e.g. 'import', 'unused-variable' etc are the names specified.
+AX_APPEND_COMPILE_FLAGS([-Wimport -Wunused-variable -Wunused-but-set-variable -Wdeprecated-declarations -Wattributes], [INVERSE_WARNINGS], [-Wall -Werror])
+WARNINGS=""
+for WARNING in $INVERSE_WARNINGS; do
+    WARNINGS=$WARNINGS" ${WARNING//-W/-Wno-}"
+done
 AC_SUBST([WARNINGS], [$WARNINGS])
 
 ORIGCFLAGS=$CFLAGS
@@ -376,12 +380,10 @@ void bar(void) {
 AC_SUBST([OBJC], [$OBJC])
 CFLAGS=$ORIGCFLAGS
 
-# HAVE_PRIVEXT is no longer needed, we put it into config.h
 AC_MSG_CHECKING([if __private_extern__ is supported])
 AC_COMPILE_IFELSE(
    [AC_LANG_SOURCE([[__private_extern__ int foo;]])],
-   [AC_SUBST([HAVE_PRIVEXT], [YES])
-    AC_MSG_RESULT([yes])],
+   [AC_MSG_RESULT([yes])],
    [AC_DEFINE([__private_extern__], [__attribute__((visibility("hidden")))], [private extern as hidden visibility])
     AC_MSG_RESULT([no])]
 )
@@ -395,8 +397,14 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM()],
      AC_MSG_RESULT([no])]
 )
 
+# Again, work around the -Wno-* bug.
 AC_LANG_PUSH([C++])
-AX_APPEND_COMPILE_FLAGS([-Wno-trigraphs -Wno-deprecated -Wno-strict-aliasing], [CXXFLAGS])
+AX_APPEND_COMPILE_FLAGS([-Wtrigraphs -Wdeprecated -Wstrict-aliasing -Wenum-compare], [INVERSE_CXXWARNINGS], [-Wall -Werror])
+CXXWARNINGS=""
+for WARNING in $INVERSE_CXXWARNINGS; do
+    CXXWARNINGS=$CXXWARNINGS" ${WARNING//-W/-Wno-}"
+done
+CXXFLAGS=$CXXFLAGS" $CXXWARNINGS"
 AC_LANG_POP
 
 AC_HEADER_STDC
