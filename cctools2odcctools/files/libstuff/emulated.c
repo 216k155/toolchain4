@@ -1,7 +1,3 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if (HAVE_DECL_MMAP==0) || (HAVE_DECL_FCHMOD==0) || (HAVE_DECL_FCHDIR==0) || (HAVE_DECL_UTIMES==0)
 #define WINVER 0x0600
 #define _WIN32_WINNT 0x0600
@@ -99,28 +95,28 @@ uid_t getuid(void)
 {
     return (uid_t)0;
 }
-#endif /*HAVE_DECL_GETUID*/
+#endif /* HAVE_DECL_GETUID */
 
 #if (HAVE_DECL_GETUID==0)
 gid_t getgid(void)
 {
     return (gid_t)0;
 }
-#endif /*HAVE_DECL_GETGID*/
+#endif /* HAVE_DECL_GETGID */
 
 #if (HAVE_DECL_RINDEX==0)
 char *rindex(const char *s, int c)
 {
     return strrchr(s,c);
 }
-#endif /*HAVE_DECL_RINDEX*/
+#endif /* HAVE_DECL_RINDEX */
 
 #if (HAVE_DECL_INDEX==0)
 char *index(const char *s, int c)
 {
     return strchr(s,c);
 }
-#endif /*HAVE_DECL_INDEX*/
+#endif /* HAVE_DECL_INDEX */
 
 #if (HAVE_DECL_STRMODE==0)
 #include <sys/stat.h>
@@ -234,32 +230,32 @@ void strmode(int mode, char *p)
 	*p++ = ' ';		/* will be a '+' if ACL's implemented */
 	*p = '\0';
 }
-#endif /*HAVE_DECL_STRMODE*/
+#endif /* HAVE_DECL_STRMODE */
 
 #if (HAVE_DECL_MKSTEMP==0)
 #include <io.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-int mkstemp(char *template)
+int mkstemp(char *tmplate)
 {
     int ret;
-    mktemp(template);
-    ret=_open(template,O_RDWR|O_BINARY|O_CREAT|O_EXCL|_O_SHORT_LIVED, _S_IREAD|_S_IWRITE);
+    mktemp(tmplate);
+    ret=_open(tmplate,O_RDWR|O_BINARY|O_CREAT|O_EXCL|_O_SHORT_LIVED, _S_IREAD|_S_IWRITE);
     return ret;
 }
-#endif/*HAVE_DECL_MKSTEMP*/
+#endif /* HAVE_DECL_MKSTEMP */
 #if (HAVE_DECL_SIGFILLSET==0)
 int sigfillset (sigset_t *__set)
 {
     return 0;
 }
-#endif/*HAVE_DECL_SIGFILLSET*/
+#endif /* HAVE_DECL_SIGFILLSET */
 #if (HAVE_DECL_SIGPROCMASK==0)
 int sigprocmask (int __how, __const sigset_t * __set, sigset_t * __oset)
 {
     return 0;
 }
-#endif/*HAVE_DECL_SIGPROCMASK*/
+#endif /* HAVE_DECL_SIGPROCMASK */
 
 #if (HAVE_DECL_FCHMOD==0)
 WINBASEAPI BOOL WINAPI SetFileInformationByHandle(HANDLE,FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD);
@@ -277,7 +273,7 @@ int fchmod(int fildes, mode_t mode)
 		return -1;
 	return 0;
 }
-#endif/*HAVE_DECL_FCHMOD*/
+#endif /* HAVE_DECL_FCHMOD */
 
 #if (HAVE_DECL_FCHDIR==0)
 WINBASEAPI BOOL WINAPI SetFileInformationByHandle(HANDLE,FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD);
@@ -296,7 +292,7 @@ int fchdir(int fildes)
 	SetCurrentDirectoryW(pNameInfo->FileName);
 	return 0;
 }
-#endif/*HAVE_DECL_FCHDIR*/
+#endif /* HAVE_DECL_FCHDIR */
 
 #if (HAVE_DECL_UTIMES==0)
 #include <time.h>
@@ -331,21 +327,21 @@ int utimes(const char *filename, const struct timeval times[2])
     CloseHandle(hFile);
     return 0;
 }
-#endif/*HAVE_DECL_UTIMES*/
+#endif /* HAVE_DECL_UTIMES */
 
 #if (HAVE_DECL_DLOPEN==0)
 void *dlopen(const char* file, int mode)
 {
     return (void*)LoadLibrary(file);
 }
-#endif/*HAVE_DECL_DLOPEN*/
+#endif /* HAVE_DECL_DLOPEN */
 
 #if (HAVE_DECL_DLSYM==0)
 void *dlsym(void* handle, const char* name)
 {
     return (void*)GetProcAddress((HMODULE)handle,(LPCSTR)name);
 }
-#endif/*HAVE_DECL_DLSYM*/
+#endif /* HAVE_DECL_DLSYM */
 
 #if (HAVE_DECL_DLCLOSE==0)
 int dlclose(void* handle)
@@ -360,7 +356,7 @@ int dladdr(void *addr, Dl_info *info)
     memset(info,0,sizeof(info));
     return 0;
 }
-#endif/*HAVE_DECL_DLCLOSE*/
+#endif /* HAVE_DECL_DLCLOSE */
 
 #if (HAVE_DECL_DLERROR==0)
 const char *dlerror(void)
@@ -389,14 +385,14 @@ int asprintf( char **sptr, char *fmt, ... )
     va_end( argv );
     return retval;
 }
-#endif/*HAVE_DECL_ASPRINTF*/
+#endif /* HAVE_DECL_ASPRINTF */
 
 #if (HAVE_DECL_BACKTRACE==0)
 int backtrace(void **__array, int __size)
 {
     return 0;
 }
-#endif
+#endif /* HAVE_DECL_BACKTRACE */
 
 #if (HAVE_DECL_PWRITE==0)
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
@@ -411,98 +407,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 
     return res;    
 }
-#endif
-
-kern_return_t mach_timebase_info( mach_timebase_info_t info)
-{
-   info->numer = 1;
-   info->denom = 1;
-   return 0;
-}
-
-char* mach_error_string(mach_error_t error_value)
-{
-  return "Unknown mach error";
-}
-
-mach_port_t mach_host_self(void)
-{
-  return 0;
-}
-
-kern_return_t host_info(host_t host, host_flavor_t flavor, host_info_t host_info_out, mach_msg_type_number_t *host_info_outCnt)
-{
-  if(flavor == HOST_BASIC_INFO)
-  {
-    host_basic_info_t      basic_info;
-
-    basic_info = (host_basic_info_t) host_info_out;
-    memset(basic_info, 0x00, sizeof(*basic_info));
-    basic_info->cpu_type = EMULATED_HOST_CPU_TYPE;
-    basic_info->cpu_subtype = EMULATED_HOST_CPU_SUBTYPE;
-  }
-
-  return 0;
-}
-
-mach_port_t     mach_task_self_ = 0;
-
-kern_return_t mach_port_deallocate(ipc_space_t task, mach_port_name_t name)
-{
-  return 0;
-}
-
-kern_return_t vm_allocate(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags)
-{
-
-  vm_address_t addr = 0;
-
-  addr = (vm_address_t)calloc(size, sizeof(char));
-  if(addr == 0)
-    return 1;
-
-  *address = addr;
-
-  return 0;
-}
-
-kern_return_t vm_deallocate(vm_map_t target_task, vm_address_t address, vm_size_t size)
-{
-  /*  free((void *)address); leak it here */
-  return 0;
-}
-kern_return_t host_statistics(host_t host_priv, host_flavor_t flavor,
-	host_info_t host_info_out, mach_msg_type_number_t *host_info_outCnt)
-{
- return ENOTSUP;
-}
-kern_return_t map_fd(int fd, vm_offset_t offset, vm_offset_t *va, boolean_t findspace,
-	vm_size_t size)
-{
-  void *addr = NULL;
-
-  addr = mmap(0, size, PROT_READ|PROT_WRITE,
-	      MAP_PRIVATE|MAP_FILE, fd, offset);
-
-  if(addr == (void *)-1)
-  {
-    return 1;
-  }
-
-  *va = (vm_offset_t)addr;
-
-  return 0;
-}
-
-
-uint64_t  mach_absolute_time(void)
-{
-  uint64_t t = 0;
-  struct timeval tv;
-  if (gettimeofday(&tv,NULL)) return t;
-  t = ((uint64_t)tv.tv_sec << 32)  | tv.tv_usec;
-  return t;
-}
+#endif /* HAVE_DECL_PWRITE */
 
 #ifndef HAVE_QSORT_R
 __thread void *_qsort_thunk = NULL;
@@ -517,7 +422,7 @@ static int _qsort_comparator(const void *a, const void *b)
 
 void
 qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
-	int (*compar)(void *, const void *, const void *))
+    int (*compar)(void *, const void *, const void *))
 {
   _qsort_thunk = thunk;
   _qsort_saved_func = compar;
@@ -525,17 +430,49 @@ qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
   qsort(base, nmemb, size, _qsort_comparator);
 }
 
-#endif
+#endif /* HAVE_QSORT_R */
 
-
-int    getattrlist(const char* a,void* b,void* c,size_t d,unsigned int e)
+#ifndef HAVE__NSGETEXECUTABLEPATH
+/**
+ * Based on MonetDB's get_bin_path
+ * http://dev.monetdb.org/hg/MonetDB/file/54ad354daff8/common/utils/mutils.c#l340
+ * Really, bufsize should be set to the size required too.
+ */
+int _NSGetExecutablePath(char* buf, unsigned long* bufsize)
 {
-  errno = ENOTSUP;
-  return -1;
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    if (GetModuleFileName(NULL, buf, (DWORD)(*bufsize)) != 0) {
+        /* Early conversion to unix slashes instead of more changes
+         * everywhere else... */
+        char *winslash = strchr(buf,'\\');
+        while (winslash) {
+            *winslash = '/';
+            winslash = strchr(winslash,'\\');
+        }
+		return strlen(buf);
+	}
+	return -1;
+#elif (HAVE_DECL_READLINK) /* Linux */
+    return readlink("/proc/self/exe", buf, (size_t)(*bufsize));
+#else
+	return -1; /* Fail on all other systems for now */
+#endif /* _MSC_VER */
 }
+#endif/* HAVE__NSGETEXECUTABLEPATH */
 
-vm_size_t       vm_page_size = 4096; /* hardcoded to match expectations of darwin */
-
+#if (HAVE_DECL_REALPATH==0)
+char *realpath(const char *path, char *resolved)
+{
+    char* winslash;
+    _fullpath(resolved,path,255);
+    winslash = strchr(resolved,'\\');
+    while (winslash) {
+        *winslash = '/';
+        winslash = strchr(winslash,'\\');
+    }
+    return resolved;
+}
+#endif /* HAVE_DECL_REALPATH */
 
 #ifndef HAVE_STRLCPY
 
@@ -591,8 +528,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz)
         return(s - src - 1);        /* count does not include NUL */
 }
 
-#endif
-
+#endif /* HAVE_STRLCPY */
 
 #ifndef HAVE_STRLCAT
 
@@ -651,50 +587,105 @@ size_t strlcat(char *dst, const char *src, size_t siz)
         return(dlen + (s - src));	/* count does not include NUL */
 }
 
-#endif
+#endif /* HAVE_STRLCAT */
 
-#ifndef HAVE__NSGETEXECUTABLEPATH
-/**
- * Based on MonetDB's get_bin_path
- * http://dev.monetdb.org/hg/MonetDB/file/54ad354daff8/common/utils/mutils.c#l340
- * Really, bufsize should be set to the size required too.
- */
-int _NSGetExecutablePath(char *buf, uint32_t *bufsize)
+#if (HAVE_DECL_GETATTRLIST==0)
+int getattrlist(const char* a,void* b,void* c,size_t d,unsigned int e)
 {
-#if defined(_MSC_VER) || defined(__MINGW32__)
-	if (GetModuleFileName(NULL, buf, (DWORD)*bufsize) != 0) {
-        /* Early conversion to unix slashes instead of more changes
-         * everywhere else... */
-        char *winslash = strchr(buf,'\\');
-        while (winslash) {
-            *winslash = '/';
-            winslash = strchr(winslash,'\\');
-        }
-		return strlen(buf);
-	}
-	return -1;
-#elif (HAVE_DECL_READLINK) /* Linux */
-	return readlink("/proc/self/exe", buf, *bufsize);
-#else
-	return -1; /* Fail on all other systems for now */
-#endif /* _MSC_VER */
+  errno = ENOTSUP;
+  return -1;
 }
-#endif/* HAVE__NSGETEXECUTABLEPATH */
+#endif /* HAVE_DECL_GETATTRLIST */
 
-#ifdef __cplusplus
-}
-#endif
-
-#if defined(__MINGW32__)
-char *realpath(const char *path, char *resolved)
+kern_return_t mach_timebase_info( mach_timebase_info_t info)
 {
-    char* winslash;
-    _fullpath(resolved,path,255);
-    winslash = strchr(resolved,'\\');
-    while (winslash) {
-        *winslash = '/';
-        winslash = strchr(winslash,'\\');
-    }
-    return resolved;
+   info->numer = 1;
+   info->denom = 1;
+   return 0;
 }
-#endif
+
+char* mach_error_string(mach_error_t error_value)
+{
+  return "Unknown mach error";
+}
+
+mach_port_t mach_host_self(void)
+{
+  return 0;
+}
+
+kern_return_t host_info(host_t host, host_flavor_t flavor, host_info_t host_info_out, mach_msg_type_number_t *host_info_outCnt)
+{
+  if(flavor == HOST_BASIC_INFO)
+  {
+    host_basic_info_t      basic_info;
+
+    basic_info = (host_basic_info_t) host_info_out;
+    memset(basic_info, 0x00, sizeof(*basic_info));
+    basic_info->cpu_type = EMULATED_HOST_CPU_TYPE;
+    basic_info->cpu_subtype = EMULATED_HOST_CPU_SUBTYPE;
+  }
+
+  return 0;
+}
+
+mach_port_t mach_task_self_ = 0;
+
+kern_return_t mach_port_deallocate(ipc_space_t task, mach_port_name_t name)
+{
+  return 0;
+}
+
+kern_return_t vm_allocate(vm_map_t target_task, vm_address_t *address, vm_size_t size, int flags)
+{
+  vm_address_t addr = 0;
+
+  addr = (vm_address_t)calloc(size, sizeof(char));
+  if(addr == 0)
+    return 1;
+
+  *address = addr;
+
+  return 0;
+}
+
+kern_return_t vm_deallocate(vm_map_t target_task, vm_address_t address, vm_size_t size)
+{
+  /*  free((void *)address); leak it here */
+  return 0;
+}
+
+kern_return_t host_statistics(host_t host_priv, host_flavor_t flavor,
+    host_info_t host_info_out, mach_msg_type_number_t *host_info_outCnt)
+{
+  return ENOTSUP;
+}
+
+kern_return_t map_fd(int fd, vm_offset_t offset, vm_offset_t *va, boolean_t findspace,
+    vm_size_t size)
+{
+  void *addr = NULL;
+
+  addr = mmap(0, size, PROT_READ|PROT_WRITE,
+          MAP_PRIVATE|MAP_FILE, fd, offset);
+
+  if(addr == (void *)-1)
+  {
+    return 1;
+  }
+
+  *va = (vm_offset_t)addr;
+
+  return 0;
+}
+
+uint64_t mach_absolute_time(void)
+{
+  uint64_t t = 0;
+  struct timeval tv;
+  if (gettimeofday(&tv,NULL)) return t;
+  t = ((uint64_t)tv.tv_sec << 32)  | tv.tv_usec;
+  return t;
+}
+
+vm_size_t vm_page_size = 4096; /* hardcoded to match expectations of darwin */

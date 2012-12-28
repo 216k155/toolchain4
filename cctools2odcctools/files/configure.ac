@@ -2,6 +2,10 @@ AC_INIT([odcctools], [809.ma], [mingw.android@gmail.com])
 AC_PREREQ([2.57])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
 
+# Weird. Doesn't seem to do anything...
+AC_CONFIG_MACRO_DIR([m4])
+
+# ...as I still need these:
 m4_include([m4/ax_append_flag.m4])
 m4_include([m4/ax_check_compile_flag.m4])
 m4_include([m4/ax_append_compile_flags.m4])
@@ -10,7 +14,6 @@ AC_CONFIG_SRCDIR([APPLE_LICENSE])
 
 # Causes multiply defined warning unfortunately.
 AC_GNU_SOURCE
-#AC_DEFINE(_GNU_SOURCE, [], [To make the decl checks below work])
 
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -104,6 +107,16 @@ AC_CHECK_TYPE([u_char], [],
                [Define to `uint32_t'])],
             [#include <sys/types.h>])
 
+AC_CHECK_TYPE([u_short], [],
+            [AC_DEFINE([u_short], [unsigned short],
+               [Define to `unsigned short'])],
+            [#include <sys/types.h>])
+
+AC_CHECK_TYPE([u_int], [],
+            [AC_DEFINE([u_int], [unsigned int],
+               [Define to `unsigned int'])],
+            [#include <sys/types.h>])
+
 # Linux's dlfcn.h has the exact same structure layout for
 # Dl_info as Mac OS X, it's just missing the dl_info alias.
 AC_CHECK_TYPE([dl_info], [],
@@ -123,6 +136,9 @@ AC_CHECK_DECL([SIGPIPE], [],
                [SIGPIPE])],
             [#include <sys/signal.h>])
 
+AC_CHECK_FUNC([sleep], [],
+            [AC_DEFINE([sleep], [_sleep], [_sleep will suffice])])
+
 # For everything but Windows:
 AC_CHECK_DECL([O_BINARY], [],
             [AC_DEFINE([O_BINARY], [0],
@@ -131,7 +147,28 @@ AC_CHECK_DECL([O_BINARY], [],
             [[#include <io.h>
               #include <fcntl.h>]])
 
-# For everything but Darwin:
+# For everything but Darwin/BSD:
+AC_CHECK_FUNC([bcmp], [],
+            [AC_DEFINE([bcmp], [memcmp], [memcmp will suffice])])
+
+AC_CHECK_FUNC([bcopy], [],
+            [AC_DEFINE([bcopy(_s,_d,_n)], [memmove(_d,_s,_n)], [memmove will suffice])])
+
+AC_CHECK_FUNC([bzero], [],
+            [AC_DEFINE([bzero(_p,_n)], [memset(_p,0,_n)], [memset will suffice])])
+
+AC_CHECK_FUNC([setbuffer], [],
+            [AC_DEFINE([setbuffer(_f,_b,_n)], [do {} while(0)], [not needed])])
+
+AC_CHECK_FUNC([getwd], [],
+            [AC_DEFINE([getwd(_p)], [getcwd(_p,MAXPATHLEN-1)], [getcwd will suffice])])
+
+AC_CHECK_FUNC([ffs], [],
+            [AC_DEFINE([ffs(_x)], [__builtin_ffs(_x)], [__builtin_ffs will suffice])])
+
+AC_CHECK_FUNC([getc_unlocked], [],
+            [AC_DEFINE([getc_unlocked(_f)], [getc(_f)], [getc will suffice])])
+
 #AC_CHECK_DECL([AR_EFMT1], [],
 #            [AC_DEFINE([AR_EFMT1], ["#1"],
 #               [AR_EFMT1])],
@@ -191,6 +228,42 @@ AC_CHECK_DECL([FP_CHOP], [],
             [AC_DEFINE([FP_CHOP], [3],
                [FP_CHOP])],
             [#include <_structs.h>])
+
+AC_CHECK_DECL([S_IFSOCK], [],
+            [AC_DEFINE([S_IFSOCK], [0140000], [0140000])])
+
+AC_CHECK_DECL([S_ISUID], [],
+            [AC_DEFINE([S_ISUID], [0004000], [0004000])])
+
+AC_CHECK_DECL([S_IFLNK], [],
+            [AC_DEFINE([S_IFLNK], [0120000], [0120000])])
+
+AC_CHECK_DECL([S_IRGRP], [],
+            [AC_DEFINE([S_IRGRP], [00040], [00040])])
+
+AC_CHECK_DECL([S_IWGRP], [],
+            [AC_DEFINE([S_IWGRP], [00020], [00020])])
+
+AC_CHECK_DECL([S_IXGRP], [],
+            [AC_DEFINE([S_IXGRP], [00010], [00010])])
+
+AC_CHECK_DECL([S_ISGID], [],
+            [AC_DEFINE([S_ISGID], [0002000], [0002000])])
+
+AC_CHECK_DECL([S_ISGID], [],
+            [AC_DEFINE([S_ISGID], [0002000], [0002000])])
+
+AC_CHECK_DECL([S_IROTH], [],
+            [AC_DEFINE([S_IROTH], [00004], [00004])])
+
+AC_CHECK_DECL([S_IWOTH], [],
+            [AC_DEFINE([S_IWOTH], [00002], [00002])])
+
+AC_CHECK_DECL([S_IXOTH], [],
+            [AC_DEFINE([S_IXOTH], [00001], [00001])])
+
+AC_CHECK_DECL([S_ISVTX], [],
+            [AC_DEFINE([S_ISVTX], [0001000], [0001000])])
 
 AC_ARG_PROGRAM
 
@@ -449,226 +522,23 @@ AC_CHECK_DECLS([flock], [], [], [[#include <sys/file.h>]])
 AC_CHECK_DECLS([sigfillset, sigprocmask], [], [], [[#include <signal.h>]])
 AC_CHECK_DECLS([utimes], [], [], [[#include <sys/time.h>]])
 AC_CHECK_DECLS([asprintf], [], [], [[#include <stdio.h>]])
-AC_CHECK_DECLS([getc_unlocked, strlcpy, strlcat, getuid, getgid, rindex, index, strmode, mkstemp, fchmod, fchdir, pwrite])
+AC_CHECK_DECLS([strlcpy, strlcat, getuid, getgid, rindex, index, strmode, mkstemp, fchmod, fchdir, pwrite, realpath])
 AC_CHECK_DECLS([readlink], [], [], [[#include <unistd.h>]])
 
-AC_CHECK_DECL([uid_t getuid(void)])
-AC_CHECK_DECL([gid_t getgid(void)])
-
-AH_VERBATIM([HAVE_DECL_GETC_UNLOCKED_REPLACEMENT],
-[/* For systems that don't have getc_unlocked, use getc  */
-#if !HAVE_DECL_GETC_UNLOCKED
-# define getc_unlocked(a) getc(a)
-#endif])
-
-AH_VERBATIM([X_DECLS],
-[/* Declare functions that are missing declarations */
-#if !HAVE_DECL_STRLCPY || ! HAVE_DECL_STRLCAT
-#include <sys/types.h>
-#endif
-#if !HAVE_DECL_STRLCPY
-#ifdef __cplusplus
-extern "C"
-#endif
-size_t strlcpy(char *dst, const char *src, size_t size);
-#endif
-#if !HAVE_DECL_STRLCAT
-#ifdef __cplusplus
-extern "C"
-#endif
-size_t strlcat(char *dst, const char *src, size_t size);
-#endif
-#if !HAVE_DECL_MMAP
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-#include <sys/stat.h>
-#include <unistd.h>
-#define PROT_READ 0
-#define PROT_WRITE 0
-#define MAP_FILE 0
-#define MAP_PRIVATE 0
-#define O_FSYNC 0
-#define MAXNAMLEN 255
-#define DEFFILEMODE (0666)
-#define L_SET SEEK_SET
-typedef unsigned int u_int;
-typedef unsigned short u_short;
-void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset);
-int munmap(void *start, size_t length);
-#ifdef __cplusplus
-}
-#endif
-#endif
-#if !HAVE_DECL_FLOCK
-int flock (int __fd, int __operation);
-#define LOCK_EX 2
-#define LOCK_NB 4
-#define EOVERFLOW 75
-#define ESTALE 116
-#define ENOTSUP 95
-#define EHOSTUNREACH 113
-#define MIN(_a,_b) (_a)<(_b)?(_a):(_b)
-#endif
-#if defined(__MINGW32__)
-#ifdef __cplusplus
-extern "C"
-#endif
-char *realpath(const char *path, char *resolved);
-#define sleep(_x) _sleep(_x)
-#define bcmp(_a,_b,_n) memcmp(_a,_b,_n)
-#define bcopy(_s,_d,_n) memmove(_d,_s,_n)
-#define bzero(_p,_n) memset(_p,0,_n)
-#define setbuffer(_f,_b,_n) do {} while(0)
-#define getwd(_p) getcwd(_p,MAXPATHLEN-1)
-#define ffs(_x) __builtin_ffs(_x)
-#endif
-#if !HAVE_DECL_RINDEX
-char *rindex(const char *s, int c);
-#endif
-#if !HAVE_DECL_INDEX
-char *index(const char *s, int c);
-#endif
-#if !HAVE_DECL_STRMODE
-void strmode(int mode, char *p);
-#endif
-#if !HAVE_DECL_MKSTEMP
-int mkstemp(char *__template);
-#endif
-#if !HAVE_DECL_SIGFILLSET
-#define SIG_BLOCK 0
-#define SIG_SETMASK 0
-int sigfillset(sigset_t *__set);
-#endif
-#if !HAVE_DECL_SIGPROCMASK
-int sigprocmask(int __how, __const sigset_t * __set, sigset_t * __oset);
-#endif
-#if !HAVE_DECL_FCHMOD
-int fchmod(int fildes, mode_t mode);
-#endif
-#if !HAVE_DECL_FCHDIR
-int fchdir(int fildes);
-#endif
-#if !HAVE_DECL_UTIMES
-#include <time.h>
-#include <sys/time.h>
-int utimes(const char *filename, const struct timeval times[2]);
-#endif
-/* I took these defines from Linux, Darwin may have
- * different values! */
-#if !defined(__APPLE__)
-#ifndef S_IFSOCK
- #define S_IFSOCK 0140000
-#endif
-#ifndef S_ISUID
- #define S_ISUID  0004000
-#endif
-#ifndef S_IFLNK
- #define S_IFLNK  0120000
-#endif
-#ifndef S_IRGRP
- #define S_IRGRP 00040
-#endif
-#ifndef S_IWGRP
- #define S_IWGRP 00020
-#endif
-#ifndef S_IXGRP
- #define S_IXGRP 00010
-#endif
-#ifndef S_ISGID
- #define S_ISGID  0002000
-#endif
-#ifndef S_ISGID
- #define S_ISGID  0002000
-#endif
-#ifndef S_IROTH
- #define S_IROTH 00004
-#endif
-#ifndef S_IWOTH
- #define S_IWOTH 00002
-#endif
-#ifndef S_IXOTH
- #define S_IXOTH 00001
-#endif
-#ifndef S_ISVTX
- #define S_ISVTX  0001000
-#endif
-#endif
-#if !HAVE_DECL_DLOPEN
-#ifdef __cplusplus
-extern "C"
-#endif
-void* dlopen(const char* file, int mode);
-#endif
-#if !HAVE_DECL_DLERROR
-#ifdef __cplusplus
-extern "C"
-#endif
-const char *dlerror(void);
-#endif
-#if !HAVE_DECL_DLSYM
-#ifdef __cplusplus
-extern "C"
-#endif
-void* dlsym(void* handle, const char* name);
-#endif
-#if !HAVE_DECL_DLCLOSE
-#include <dlfcn.h>
-#ifdef __cplusplus
-extern "C"
-#endif
-int dlclose(void* handle);
-#endif
-#if !HAVE_DECL_DLADDR
-#include <dlfcn.h>
-#ifdef __cplusplus
-extern "C"
-#endif
-int dladdr(void *addr, Dl_info *info);
-#endif
-#if !HAVE_DECL_ASPRINTF
-#include <stdarg.h>
-#ifdef __cplusplus
-extern "C"
-#endif
-int vasprintf( char **sptr, const char *fmt, va_list argv );
-#ifdef __cplusplus
-extern "C"
-#endif
-int asprintf( char **sptr, char *fmt, ... );
-#endif
-#if !HAVE_DECL_BACKTRACE
-#ifdef __cplusplus
-extern "C"
-#endif
-int backtrace(void **__array, int __size);
-#endif
-#if !HAVE_DECL_PWRITE
-#ifdef __cplusplus
-extern "C"
-#endif
-ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-#endif
-#if !HAVE_QSORT_R
-#ifdef __cplusplus
-extern "C"
-#endif
-void qsort_r(void *base, size_t nmemb, size_t size, void *thunk, int (*compar)(void *, const void *, const void *));
-#endif
-
-#ifdef __MINGW32__
- #define FIO_READ_WRITE      _S_IREAD|_S_IWRITE
- #define FIO_READ_WRITE_ME   _S_IREAD|_S_IWRITE
- #define FIO_READ_WRITE_EXEC _S_IREAD|_S_IWRITE|_S_IEXEC
- #define FIO_MASK_ALL_4      _S_IREAD|_S_IWRITE|_S_IEXEC
-#else
- #define FIO_READ_WRITE      0666
- #define FIO_READ_WRITE_ME   0600
- #define FIO_READ_WRITE_EXEC 0777
- #define FIO_MASK_ALL_4      07777
-#endif
-])
+case $host_os in
+    mingw*)
+        AC_DEFINE([FIO_READ_WRITE],[_S_IREAD|_S_IWRITE],[0666])
+        AC_DEFINE([FIO_READ_WRITE_ME],[_S_IREAD|_S_IWRITE],[0600])
+        AC_DEFINE([FIO_READ_WRITE_EXEC],[_S_IREAD|_S_IWRITE|_S_IEXEC],[0777])
+        AC_DEFINE([FIO_MASK_ALL_4],[_S_IREAD|_S_IWRITE|_S_IEXEC],[07777])
+        ;;
+    *)
+        AC_DEFINE([FIO_READ_WRITE],[0666],[_S_IREAD|_S_IWRITE])
+        AC_DEFINE([FIO_READ_WRITE_ME],[0600],[_S_IREAD|_S_IWRITE])
+        AC_DEFINE([FIO_READ_WRITE_EXEC],[0777],[_S_IREAD|_S_IWRITE|_S_IEXEC])
+        AC_DEFINE([FIO_MASK_ALL_4],[07777],[_S_IREAD|_S_IWRITE|_S_IEXEC])
+        ;;
+esac
 
 case $host_os in
      darwin*)
@@ -759,6 +629,11 @@ AC_SUBST(LTO_DEFS)
 ;;
 esac
 
+# So tagged (zzz_and_finally) to ensure that this gets sorted last in config.h
+AH_VERBATIM([zzz_and_finally],[
+#include "emulated.h"
+])
+
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
 AC_CONFIG_FILES([ar/Makefile])
 AC_CONFIG_FILES([as/Makefile])
@@ -784,6 +659,7 @@ for ast in $ASTARGETS; do
     ;;
     esac
 done
+
 AC_CONFIG_FILES([ld/Makefile])
 AC_CONFIG_FILES([ld64/Makefile])
 AC_CONFIG_FILES([man/Makefile])
