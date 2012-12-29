@@ -128,7 +128,8 @@ AC_CHECK_TYPE([u_int], [],
 
 AC_CHECK_DECL([MIN], [],
             [AC_DEFINE([MIN(_a,_b)], [(((_a)<(_b))?(_a):(_b))],
-               [Define MIN(_a,_b) to `(((_a)<(_b))?(_a):(_b))'])])
+               [Define MIN(_a,_b) to `(((_a)<(_b))?(_a):(_b))'])],
+            [#include <sys/param.h>])
 
 # MinGW-w64 has sleep() but mingw doesn't.
 AC_CHECK_FUNC([sleep], [],
@@ -439,10 +440,12 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 # i.e. the following command returns an exit code of 0 and reports no error:
 #  /home/nonesuch/i686-linux-glibc2.7-4.4.3/bin/i686-linux-gcc -Wall -Wno-way-this-warning-exists conftest.c
 # whereas this command fails, reporting an error:
-#  /home/nonesuch/i686-linux-glibc2.7-4.4.3/bin/i686-linux-gcc -Wall -Wway-this-warning-exists conftest.c
-# for this reason, I form INVERSE_WARNINGS (containing -Wimport instead of -Wno-import) then transform them afterwards.
+#  /home/nonesuch/i686-linux-glibc2.7-4.4.3/bin/i686-linux-gcc -Wall -Wthis-warning-doesnt-exist conftest.c
+# for this reason, form INVERSE_WARNINGS (containing -Wimport instead of -Wno-import) then transform them afterwards.
 # A cleaner approach might be to create and use AX_ENABLE_WARNING and AX_DISABLE_WARNING where e.g. 'import', 'unused-variable' etc are the names specified.
-AX_APPEND_COMPILE_FLAGS([-Wimport -Wunused-variable -Wunused-but-set-variable -Wdeprecated-declarations -Wattributes], [INVERSE_WARNINGS], [-Wall -Werror])
+# -Wattributes (hence -Wno-attributes) used to be in this list, but I'd rather not disable warnings un-necessarily, in fact, enabling all
+# warnings (or at least not disabling any) and compiling everything with -Werror should be an explicit goal.
+AX_APPEND_COMPILE_FLAGS([-Wimport -Wunused-variable -Wunused-but-set-variable -Wdeprecated-declarations], [INVERSE_WARNINGS], [-Wall -Werror])
 WARNINGS=""
 for WARNING in $INVERSE_WARNINGS; do
     WARNINGS=$WARNINGS" ${WARNING//-W/-Wno-}"

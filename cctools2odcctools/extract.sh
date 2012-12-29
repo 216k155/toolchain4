@@ -445,6 +445,18 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
     do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 # fi
 
+## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!! (Maybe)
+# FIND OUT WHY I DIDN'T / DON'T HAVE ANY PROBLEM WITH multiple definition of `error' ON THE MASTER BRANCH, CAN'T THINK WHY NOT...
+# On Google's GCC 4.4.3, hidden visibility doesn't seem to do much at all, so use a weak function instead.
+# i686-linux-gcc -m32 -O2 -pipe -std=gnu99 -o ar append.o ar.o archive.o contents.o delete.o extract.o misc.o move.o print.o replace.o -m32 -L/tmp2/tc4/final-install/apple-osx/lib -L/tmp2/tc4/host-install/lib -I/tmp2/tc4/host-install/include -L../libstuff -lstuff
+# ../libstuff/libstuff.a(errors.o): In function `error':
+# errors.c:(.text+0x190): multiple definition of `error'
+# misc.o:misc.c:(.text+0x0): first defined here
+# collect2: ld returned 1 exit status
+# I don't expect the following do_sed to work on Mac.
+# http://stackoverflow.com/questions/1251999/sed-how-can-i-replace-a-newline-n
+do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n__attribute__\(\(weak\)\)\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+
 #if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
 #    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/stat.h>\n#include <time.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/libstuff/writeout.c
 #elif [[ "$(uname_bt)" = "Windows" ]] ; then
