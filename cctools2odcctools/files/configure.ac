@@ -22,13 +22,19 @@ AC_PROG_CXX
 
 AC_PROG_CC_C99
 
-# Append to CFLAGS early so that configure checks use them.
+# Handle host dependant matters.
+# 1. Append to CFLAGS early so that configure checks use them.
+# 2. __attribute__((visibility("hidden"))) doesn't work on MinGW.
 case $host_os in
-     mingw*)
-       AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX],CFLAGS)
-     ;;
-     *)
-     ;;
+    mingw*)
+      AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX],CFLAGS)
+      PRIVEXT=
+      PRIVEXT_DESC="private extern as nothing"
+      ;;
+    *)
+      PRIVEXT="__attribute__((visibility(\"hidden\")))"
+      PRIVEXT_DESC="private extern as hidden visibility"
+      ;;
 esac
 
 AC_CANONICAL_BUILD
@@ -474,7 +480,7 @@ AC_MSG_CHECKING([if __private_extern__ is supported])
 AC_COMPILE_IFELSE(
    [AC_LANG_SOURCE([[__private_extern__ int foo;]])],
    [AC_MSG_RESULT([yes])],
-   [AC_DEFINE([__private_extern__], [__attribute__((visibility("hidden")))], [private extern as hidden visibility])
+   [AC_DEFINE_UNQUOTED([__private_extern__], [$PRIVEXT], [$PRIVEXT_DESC])
     AC_MSG_RESULT([no])]
 )
 
