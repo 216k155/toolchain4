@@ -495,7 +495,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM()],
 
 # Again, work around the -Wno-* bug.
 AC_LANG_PUSH([C++])
-AX_APPEND_COMPILE_FLAGS([-Wtrigraphs -Wdeprecated -Wstrict-aliasing -Wenum-compare], [INVERSE_CXXWARNINGS], [-Wall -Werror])
+AX_APPEND_COMPILE_FLAGS([-Wtrigraphs -Wdeprecated -Wstrict-aliasing -Wenum-compare -Winvalid-offsetof], [INVERSE_CXXWARNINGS], [-Wall -Werror])
 CXXWARNINGS=""
 for WARNING in $INVERSE_CXXWARNINGS; do
     CXXWARNINGS=$CXXWARNINGS" ${WARNING//-W/-Wno-}"
