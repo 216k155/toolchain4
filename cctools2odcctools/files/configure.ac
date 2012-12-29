@@ -26,6 +26,9 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
+AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CFLAGS)
+AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CXXFLAGS)
+
 # Handle host dependant matters.
 # 1. Append to CFLAGS early so that configure checks use them.
 # 2. __attribute__((visibility("hidden"))) doesn't work on MinGW.
