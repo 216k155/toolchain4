@@ -573,8 +573,8 @@ case $host_os in
      *)
     AC_SUBST([HAVE_FOREIGN_HEADERS],[YES])
     AC_SUBST([EMULATED_OBJ], [emulated.c])
-    AC_C_BIGENDIAN([AC_SUBST([ENDIAN_FLAG],[-D__BIG_ENDIAN__=1])],
-            [AC_SUBST([ENDIAN_FLAG],[-D__LITTLE_ENDIAN__=1])])
+    AC_C_BIGENDIAN([AC_SUBST([ENDIAN_FLAG],[-D__BIG_ENDIAN__])],
+            [AC_SUBST([ENDIAN_FLAG],[-D__LITTLE_ENDIAN__])])
     ;;
 esac
 
