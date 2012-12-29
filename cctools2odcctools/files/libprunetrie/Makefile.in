@@ -48,11 +48,9 @@ OBJS = $(CXXFILES:.cpp=.o)
 OBJS += $(CFILES:.c=.o)
 
 .cpp.o:
-	mkdir -p `dirname $@`
 	$(CXX) $(MYCOMPILEFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 .c.o:
-	mkdir -p `dirname $@`
 	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
 
 .PHONY: default install clean
@@ -61,8 +59,7 @@ default: libprunetrie.a
 
 libprunetrie.a: $(OBJS)
 	$(AR) cru $@ $^
-
-#	$(RANLIB) $@
+	$(RANLIB) $@
 
 clean:
 	rm -r -f *.o
