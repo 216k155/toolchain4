@@ -11,6 +11,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#if (HAVE_DECL_SLEEP==0)
+unsigned int __cdecl sleep (unsigned int _Duration);
+#endif /* HAVE_DECL_SLEEP */
+
 #if (HAVE_DECL_MMAP==0)
 #include <sys/stat.h>
 #include <unistd.h>

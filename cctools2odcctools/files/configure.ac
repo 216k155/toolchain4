@@ -149,9 +149,10 @@ AC_CHECK_DECL([MIN], [],
                [Define MIN(_a,_b) to `(((_a)<(_b))?(_a):(_b))'])],
             [#include <sys/param.h>])
 
-# MinGW-w64 has sleep() but mingw doesn't.
-AC_CHECK_FUNC([sleep], [],
-            [AC_DEFINE([sleep], [_sleep], [_sleep will suffice])])
+# MinGW-w64 has sleep() but sometimes not in unistd.h.
+# Older ones and mingw don't. We don't support mingw
+# builds anymore; life's too short.
+AC_CHECK_DECL([sleep])
 
 # MinGW-w64 has SIGHUP and SIGPIPE so long as _POSIX is defined,
 # otherwise define them to the values 1 and 13 respectively.
