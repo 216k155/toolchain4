@@ -26,6 +26,15 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
+case $target_os in
+darwin*)
+    :
+    ;;
+*)
+    AC_MSG_ERROR([$PACKAGE_NAME only supports targeting Darwin])
+    ;;
+esac
+
 AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CFLAGS)
 AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CXXFLAGS)
 
@@ -193,11 +202,6 @@ AC_CHECK_FUNC([ffs], [],
 AC_CHECK_FUNC([getc_unlocked], [],
             [AC_DEFINE([getc_unlocked(_f)], [getc(_f)], [getc will suffice])])
 
-#AC_CHECK_DECL([AR_EFMT1], [],
-#            [AC_DEFINE([AR_EFMT1], ["#1"],
-#               [AR_EFMT1])],
-#            [#include <ar.h>])
-
 AC_CHECK_DECL([ULLONG_MAX], [],
             [AC_DEFINE([ULLONG_MAX], [0xffffffffffffffffULL],
                [ULLONG_MAX])],
@@ -290,15 +294,6 @@ AC_CHECK_DECL([S_ISVTX], [],
             [AC_DEFINE([S_ISVTX], [0001000], [0001000])])
 
 AC_ARG_PROGRAM
-
-case $target_os in
-darwin*)
-    :
-    ;;
-*)
-    AC_MSG_ERROR([$PACKAGE_NAME only supports targeting Darwin])
-    ;;
-esac
 
 case $target_cpu in
      powerpc)
@@ -412,38 +407,6 @@ else
    AC_MSG_RESULT([no])
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-
-#ORIGCFLAGS=$CFLAGS
-#CFLAGS="$CFLAGS -mdynamic-no-pic"
-#AC_MSG_CHECKING([if -mdynamic-no-pic is supported])
-#AC_COMPILE_IFELSE(
-#   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-#   [AC_SUBST([MDYNAMICNOPIC],[-mdynamic-no-pic])
-#    AC_MSG_RESULT([yes])],
-#   [AC_SUBST([MDYNAMICNOPIC],[])
-#    AC_MSG_RESULT([no])]
-#)
-#CFLAGS=$ORIGCFLAGS
-
-#ORIGCFLAGS=$CFLAGS
-#CFLAGS="$CFLAGS -fno-builtin-round"
-#AC_MSG_CHECKING([if -fno-builtin-round is supported])
-#AC_COMPILE_IFELSE(
-#   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-#   [AC_MSG_RESULT([yes])],
-#   [CFLAGS=$ORIGCFLAGS
-#    AC_MSG_RESULT([no])]
-#)
-
-#ORIGCFLAGS=$CFLAGS
-#CFLAGS="$CFLAGS -fno-builtin-trunc"
-#AC_MSG_CHECKING([if -fno-builtin-trunc is supported])
-#AC_COMPILE_IFELSE(
-#   [AC_LANG_SOURCE([[const char hw[] = "Hello, World\n";]])],
-#   [AC_MSG_RESULT([yes])],
-#   [CFLAGS=$ORIGCFLAGS
-#    AC_MSG_RESULT([no])]
-#)
 
 # There's a bug in Google's 4.4.3 GCC where it never reports -Wno-* as missing, unless there are other warnings present as well.
 # i.e. the following command returns an exit code of 0 and reports no error:
