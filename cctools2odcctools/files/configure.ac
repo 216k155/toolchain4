@@ -151,8 +151,10 @@ AC_CHECK_DECL([MIN], [],
 
 # MinGW-w64 has sleep() but sometimes not in unistd.h.
 # Older ones and mingw don't. We don't support mingw
-# builds anymore; life's too short.
-AC_CHECK_DECL([sleep])
+# builds anymore; life's too short. AC_CHECK_DECS is
+# used so that HAVE_DECL_SLEEP can be tested in
+# emulated.h
+AC_CHECK_DECLS([sleep])
 
 # MinGW-w64 has SIGHUP and SIGPIPE so long as _POSIX is defined,
 # otherwise define them to the values 1 and 13 respectively.
