@@ -455,7 +455,14 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 # collect2: ld returned 1 exit status
 # I don't expect the following do_sed to work on Mac.
 # http://stackoverflow.com/questions/1251999/sed-how-can-i-replace-a-newline-n
-do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n__attribute__\(\(weak\)\)\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+# Update 1 (is this groklaw?) -> doing this weak stuff causes MinGW-w64 failure!
+#lipo.o:lipo.c:(.text+0x1167): undefined reference to `error'
+#lipo.o:lipo.c:(.text+0x1468): undefined reference to `error'
+#c:/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.7.2/../../../../i686-w64-mingw32/bin/ld.exe: lipo.o: bad reloc address 0x7a8 in section `.rdata'
+#c:/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.7.2/../../../../i686-w64-mingw32/bin/ld.exe: final link failed: Invalid operation
+#collect2.exe: error: ld returned 1 exit status
+#do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n__attribute__\(\(weak\)\)\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
 
 #if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
 #    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/stat.h>\n#include <time.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/libstuff/writeout.c

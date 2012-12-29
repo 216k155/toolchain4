@@ -22,6 +22,10 @@ AC_PROG_CXX
 
 AC_PROG_CC_C99
 
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
 # Handle host dependant matters.
 # 1. Append to CFLAGS early so that configure checks use them.
 # 2. __attribute__((visibility("hidden"))) doesn't work on MinGW.
@@ -36,10 +40,6 @@ case $host_os in
       PRIVEXT_DESC="private extern as hidden visibility"
       ;;
 esac
-
-AC_CANONICAL_BUILD
-AC_CANONICAL_HOST
-AC_CANONICAL_TARGET
 
 AC_CONFIG_HEADERS([include/config.h])
 
