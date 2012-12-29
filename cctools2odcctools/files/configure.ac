@@ -1,5 +1,5 @@
-AC_INIT([odcctools], [809.ma], [mingw.android@gmail.com])
-AC_PREREQ([2.57])
+AC_INIT([ccctools], [809], [Ray Donnelly <mingw.android@gmail.com>])
+AC_PREREQ([2.68])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
 
 # Weird. Doesn't seem to do anything...
@@ -21,6 +21,15 @@ AC_PROG_CC
 AC_PROG_CXX
 
 AC_PROG_CC_C99
+
+# Append to CFLAGS early so that configure checks use them.
+case $host_os in
+     mingw*)
+       AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX],CFLAGS)
+     ;;
+     *)
+     ;;
+esac
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -117,27 +126,32 @@ AC_CHECK_TYPE([u_int], [],
                [Define to `unsigned int'])],
             [#include <sys/types.h>])
 
+AC_CHECK_DECL([MIN], [],
+            [AC_DEFINE([MIN(_a,_b)], [(((_a)<(_b))?(_a):(_b))],
+               [Define MIN(_a,_b) to `(((_a)<(_b))?(_a):(_b))'])])
+
+# MinGW-w64 has sleep() but mingw doesn't.
+AC_CHECK_FUNC([sleep], [],
+            [AC_DEFINE([sleep], [_sleep], [_sleep will suffice])])
+
+# MinGW-w64 has SIGHUP and SIGPIPE so long as _POSIX is defined,
+# otherwise define them to the values 1 and 13 respectively.
+AC_CHECK_DECL([SIGHUP], [],
+            [AC_DEFINE([SIGHUP], [1],
+               [SIGHUP])],
+            [#include <signal.h>])
+
+AC_CHECK_DECL([SIGPIPE], [],
+            [AC_DEFINE([SIGPIPE], [13],
+               [SIGPIPE])],
+            [#include <signal.h>])
+
 # Linux's dlfcn.h has the exact same structure layout for
 # Dl_info as Mac OS X, it's just missing the dl_info alias.
 AC_CHECK_TYPE([dl_info], [],
             [AC_DEFINE([dl_info], [Dl_info],
                [Define to `Dl_info'])],
             [#include <dlfcn.h>])
-
-# Windows doesn't have SIGHUP  or SIGPIPE, so define
-# them arbitrarily  to SIGTERM and SIGINT.
-AC_CHECK_DECL([SIGHUP], [],
-            [AC_DEFINE([SIGHUP], [SIGTERM],
-               [SIGHUP])],
-            [#include <sys/signal.h>])
-
-AC_CHECK_DECL([SIGPIPE], [],
-            [AC_DEFINE([SIGPIPE], [SIGINT],
-               [SIGPIPE])],
-            [#include <sys/signal.h>])
-
-AC_CHECK_FUNC([sleep], [],
-            [AC_DEFINE([sleep], [_sleep], [_sleep will suffice])])
 
 # For everything but Windows:
 AC_CHECK_DECL([O_BINARY], [],
@@ -559,11 +573,9 @@ esac
 case $host_os in
      mingw*)
        AC_DEFINE_UNQUOTED([EXEEXT],[".exe"], ["Define executable extension"])
-       CFLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO"
      ;;
      *)
        AC_DEFINE_UNQUOTED([EXEEXT],[""], ["Define executable extension"])
-#       CFLAGS="$CFLAGS -O0 -g"
        AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
        AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
        AC_SUBST([NOT_FOR_WINDOWS_PROG],["seg_addr_table checksyms redo_prebinding"])

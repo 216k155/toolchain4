@@ -638,6 +638,9 @@ do_sed $"s^O_WRONLY|O_CREAT^O_WRONLY|O_CREAT|O_BINARY^"                         
 do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/strip.c
 #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
 
+# Need unistd.h for sleep() on MinGW-w64.
+do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#include <unistd.h>^" ${DISTDIR}/ar/archive.c
+
 # I don't think these any point to these changes anymore!
 do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/rld.c
 do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/ld.c
