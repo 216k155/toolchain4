@@ -41,7 +41,9 @@ MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
 
 CFILES = arch.c
 ECFILES = @EMULATED_OBJ@
-ECFILES = @AC_LIBOBJS@
+# Arguably, EMULATED_OBJ should be dropped in favour of the more
+# standard AC_LIBOBJS and AC_FUNC_REPLACE (a .c and .o per function)
+# ECFILES = @AC_LIBOBJS@
 
 OBJS = $(CFILES:.c=.o)
 EOBJS = $(ECFILES:.c=.o)

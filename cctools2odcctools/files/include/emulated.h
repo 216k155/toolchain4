@@ -2,6 +2,12 @@
 #define EMULATED_H_INCLUDED
 
 #ifdef __cplusplus
+# include <cstddef>
+#else
+# include <stddef.h>
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
@@ -27,7 +33,6 @@ int munmap(void *start, size_t length);
 #define ESTALE 116
 #define ENOTSUP 95
 #define EHOSTUNREACH 113
-#define MIN(_a,_b) (_a)<(_b)?(_a):(_b)
 int flock (int __fd, int __operation);
 #endif /* HAVE_FLOCK */
 
