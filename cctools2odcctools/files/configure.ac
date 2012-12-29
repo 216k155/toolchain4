@@ -34,7 +34,7 @@ AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CXXFLAGS)
 # 2. __attribute__((visibility("hidden"))) doesn't work on MinGW.
 case $host_os in
     mingw*)
-      AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX],CFLAGS)
+      AX_APPEND_COMPILE_FLAGS([-D__USE_MINGW_ANSI_STDIO=1 -D_POSIX -D_POSIX_C_SOURCE],CFLAGS)
       PRIVEXT=
       PRIVEXT_DESC="private extern as nothing"
       ;;

@@ -1,10 +1,35 @@
 #if (HAVE_DECL_MMAP==0) || (HAVE_DECL_FCHMOD==0) || (HAVE_DECL_FCHDIR==0) || (HAVE_DECL_UTIMES==0)
-#define WINVER 0x0600
-#define _WIN32_WINNT 0x0600
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#define ENOTSUP 95
+
+/*
+ * WINVER of 0x0600 limits us to Windows Vista and above. There is FileExtd.lib for XP, but it appears
+ * to be broken:
+ * http://social.msdn.microsoft.com/Forums/en-US/windowssdk/thread/78de6b2f-d01f-4394-a5c5-a4253942ae9c
+ * There's also:
+ * http://tranxcoder.wordpress.com/2010/02/02/calling-getfileinformationbyhandleex-in-windows-xp/
+ * ...but there's no license details given and the first comment needs paying attention to also.
+ */
+
+#ifdef WINVER
+# undef WINVER
 #endif
+#define WINVER 0x0600
+
+#ifdef _WIN32_WINNT
+# undef _WIN32_WINNT
+#endif
+#define _WIN32_WINNT 0x0600
+
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+
+#ifndef ENOTSUP
+# define ENOTSUP 95
+#endif
+
+#endif /* (HAVE_DECL_MMAP==0) || (HAVE_DECL_FCHMOD==0) || (HAVE_DECL_FCHDIR==0) || (HAVE_DECL_UTIMES==0) */
 
 #include <mach/mach.h>
 #include <mach/mach_error.h>
