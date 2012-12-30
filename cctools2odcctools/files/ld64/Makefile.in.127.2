@@ -9,27 +9,22 @@ bindir		= @bindir@
 
 VPATH = @srcdir@:@srcdir@/src
 
-CC		= @CC@
-CXX             = @CXX@
-CFLAGS          = @CFLAGS@
-CXXFLAGS	= @CXXFLAGS@
-WARNINGS	= @WARNINGS@
-MDYNAMICNOPIC   = @MDYNAMICNOPIC@
-CPPFLAGS        = @CPPFLAGS@
-DEFS            = @DEFS@ @ENDIAN_FLAG@
-LDFLAGS         = @LDFLAGS@
-HAVE_PRIVEXT    = @HAVE_PRIVEXT@
-HAVE_LIBC_CXX_H = @HAVE_LIBC_CXX_H@
-HAVE_FOREIGN_HEADERS    = @HAVE_FOREIGN_HEADERS@
-UUID_LIBS	= @UUID_LIBS@
-SSL_LIBS	= @SSL_LIBS@
-LTO_DEFS	= @LTO_DEFS@
-LTO_LIBS	= @LTO_LIBS@
-DL_LIBS		= @DL_LIBS@
-
-ifeq ($(HAVE_PRIVEXT),NO)
-INCPRIVEXT      = -include $(top_srcdir)/include/extern.h
-endif
+CC                   = @CC@
+CXX                  = @CXX@
+CFLAGS               = @CFLAGS@
+CXXFLAGS             = @CXXFLAGS@
+WARNINGS             = @WARNINGS@
+MDYNAMICNOPIC        = @MDYNAMICNOPIC@
+CPPFLAGS             = @CPPFLAGS@
+DEFS                 = @DEFS@ @ENDIAN_FLAG@
+LDFLAGS              = @LDFLAGS@
+HAVE_LIBC_CXX_H      = @HAVE_LIBC_CXX_H@
+HAVE_FOREIGN_HEADERS = @HAVE_FOREIGN_HEADERS@
+UUID_LIBS            = @UUID_LIBS@
+SSL_LIBS             = @SSL_LIBS@
+LTO_DEFS             = @LTO_DEFS@
+LTO_LIBS             = @LTO_LIBS@
+DL_LIBS              = @DL_LIBS@
 
 ifeq ($(HAVE_LIBC_CXX_H),YES)
 INCPRIVEXT      = -include $(top_builddir)/include/libc_cxx.h

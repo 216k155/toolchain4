@@ -9,23 +9,18 @@ prefix          = @prefix@
 exec_prefix     = @exec_prefix@
 libdir          = @libdir@
 
-CC		= @CC@
-AR		= @HOST_AR@
-RANLIB		= @HOST_RANLIB@
-CFLAGS		= @CFLAGS@
-WARNINGS	= @WARNINGS@
-CPPFLAGS	= @CPPFLAGS@
-DEFS		= @DEFS@ @ENDIAN_FLAG@
-LDFLAGS		= @LDFLAGS@
-HAVE_PRIVEXT	= @HAVE_PRIVEXT@
-HAVE_FOREIGN_HEADERS	= @HAVE_FOREIGN_HEADERS@
+CC                   = @CC@
+AR                   = @HOST_AR@
+RANLIB               = @HOST_RANLIB@
+CFLAGS               = @CFLAGS@
+WARNINGS             = @WARNINGS@
+CPPFLAGS             = @CPPFLAGS@
+DEFS                 = @DEFS@ @ENDIAN_FLAG@
+LDFLAGS              = @LDFLAGS@
+HAVE_FOREIGN_HEADERS = @HAVE_FOREIGN_HEADERS@
 
 INSTALL         = @INSTALL@
 INSTALL_DATA    = @INSTALL_DATA@
-
-ifeq ($(HAVE_PRIVEXT),NO)
-INCPRIVEXT	= -include $(top_srcdir)/include/extern.h
-endif
 
 ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS		= -I$(top_srcdir)/include/foreign

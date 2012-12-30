@@ -9,20 +9,15 @@ bindir		= @bindir@
 
 VPATH = @srcdir@
 
-CC              = @CC@
-CFLAGS          = @CFLAGS@
-WARNINGS	= @WARNINGS@
-MDYNAMICNOPIC   = @MDYNAMICNOPIC@
-CPPFLAGS        = @CPPFLAGS@
-DEFS            = @DEFS@ @ENDIAN_FLAG@
-LDFLAGS         = @LDFLAGS@
-OBJC		= @OBJC@
-HAVE_PRIVEXT    = @HAVE_PRIVEXT@
-HAVE_FOREIGN_HEADERS    = @HAVE_FOREIGN_HEADERS@
-
-ifeq ($(HAVE_PRIVEXT),NO)
-INCPRIVEXT      = -include $(top_srcdir)/include/extern.h
-endif
+CC                   = @CC@
+CFLAGS               = @CFLAGS@
+WARNINGS             = @WARNINGS@
+MDYNAMICNOPIC        = @MDYNAMICNOPIC@
+CPPFLAGS             = @CPPFLAGS@
+DEFS                 = @DEFS@ @ENDIAN_FLAG@
+LDFLAGS              = @LDFLAGS@
+OBJC                 = @OBJC@
+HAVE_FOREIGN_HEADERS = @HAVE_FOREIGN_HEADERS@
 
 ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS         = -I$(top_srcdir)/include/foreign
