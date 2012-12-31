@@ -134,10 +134,8 @@ ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
 ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
 ld64/cstdio.diff"
 else
-    LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff"
+    LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff ld64/_TYPENAME_compiler_bug.diff"
 fi
-
-LD64PATCHES=""
 
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
 # Removed libstuff/cmd_with_prefix.diff as it's wrong.

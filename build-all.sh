@@ -39,14 +39,14 @@ if [ -f /etc/debian_version ] ; then
 fi
 
 if [ ! "$DEBIAN_VERSION" = "6.0.5" -a "$(uname_bt)" = "Linux" ] ; then
-    BINPREFIX=i686-linux
-    CC=$BINPREFIX-gcc
-    CXX=$BINPREFIX-g++
-    LD=$BINPREFIX-ld
-    AS=$BINPREFIX-as
-    AR=$BINPREFIX-ar
-    RANLIB=$BINPREFIX-ranlib
-    STRIP=$BINPREFIX-strip
+    BINPREFIX=i686-linux-
+    CC=${BINPREFIX}gcc
+    CXX=${BINPREFIX}g++
+    LD=${BINPREFIX}ld
+    AS=${BINPREFIX}as
+    AR=${BINPREFIX}ar
+    RANLIB=${BINPREFIX}ranlib
+    STRIP=${BINPREFIX}strip
     export CC CXX LD AS AR RANLIB STRIP
     export PATH=$HOME/i686-linux-glibc2.7-4.4.3/bin:$PATH
 fi
