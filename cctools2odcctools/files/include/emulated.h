@@ -117,9 +117,10 @@ int backtrace(void **__array, int __size);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 #endif /* HAVE_DECL_PWRITE */
 
-#ifndef HAVE_QSORT_R
+#ifdef NEED_BSD_QSORT_R
 void qsort_r(void *base, size_t nmemb, size_t size, void *thunk, int (*compar)(void *, const void *, const void *));
-#endif /* HAVE_QSORT_R */
+#define HAVE_BSD_QSORT_R
+#endif /* NEED_BSD_QSORT_R */
 
 /* if 0 because include/mach-o/dyld.h:240 also declares _NSGetExecutablePath */
 #if 0 && !defined(HAVE__NSGETEXECUTABLEPATH)

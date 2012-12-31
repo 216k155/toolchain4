@@ -484,15 +484,15 @@ fi
 AC_MSG_CHECKING([for max unsigned long long])
 AC_COMPILE_IFELSE(
    [AC_LANG_SOURCE([[#if HAVE_LIMITS_H
-             #include <limits.h>
-             #endif
-             unsigned long long a = ULLONG_MAX;]])],
+                     #include <limits.h>
+                     #endif
+                     unsigned long long a = ULLONG_MAX;]])],
    [AC_MSG_RESULT([ULLONG_MAX])],
    [AC_COMPILE_IFELSE(
     [AC_LANG_SOURCE([[#if HAVE_LIMITS_H
-                  #include <limits.h>
-             #endif
-             unsigned long long a = 18446744073709551615ULL;]])],
+                      #include <limits.h>
+                      #endif
+                      unsigned long long a = 18446744073709551615ULL;]])],
     [AC_DEFINE(ULLONG_MAX, [18446744073709551615ULL], [max unsigned long long])
      AC_MSG_RESULT([18446744073709551615ULL])],
     [AC_MSG_RESULT([none]) ]
@@ -500,7 +500,26 @@ AC_COMPILE_IFELSE(
     ]
 )
 
-AC_CHECK_FUNCS([qsort_r qsort getattrlist NSIsSymbolNameDefined strlcpy strlcat _NSGetExecutablePath])
+# The parameter order of both qsort_r and its callback are different on BSD
+# than they are on Linux.
+AC_CHECK_FUNCS([qsort_r])
+if test $ac_cv_func_qsort_r = yes; then
+    save_cflags=$CFLAGS
+    CFLAGS="$CFLAGS -Wall -Werror -D_USE_GNU_SOURCE"
+    AC_MSG_CHECKING([for BSD-style qsort_r])
+    AC_COMPILE_IFELSE(
+     [AC_LANG_SOURCE([[#include <stdlib.h>
+                       int callback(void* a, const void* b, const void* c) { return 0; }
+                       void test() { qsort_r( (void*)1, 0, 0, callback, callback ); }]])],
+     [AC_DEFINE([HAVE_BSD_QSORT_R], [1], [BSD-syle qsort_r])],
+     [AC_DEFINE([HAVE_GLIBC_QSORT_R], [1], [glibc-syle qsort_r])]
+     )
+    CFLAGS=$save_cflags
+else
+    AC_DEFINE([NEED_BSD_QSORT_R], [1], [need BSD-style qsort_r])
+fi
+
+AC_CHECK_FUNCS([qsort getattrlist NSIsSymbolNameDefined strlcpy strlcat _NSGetExecutablePath])
 AC_CHECK_DECLS([vm_msync], [], [], [[#include <mach/vm_map.h>]])
 
 # Not right for Darwin?

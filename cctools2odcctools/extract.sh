@@ -16,6 +16,27 @@
 
 # TODORMD :: with_prefix.diff needs fixing to be relocatable (/usr/bin/objcunique is completely wrong too)
 
+# qsort_r from mac os x:
+# #include <stdlib.h>
+# void qsort_r(   void *base,
+#               size_t nel,
+#               size_t width,
+#                 void *thunk,
+#                  int (*compar)(void *, const void *, const void *));
+#
+
+# qsort_r from glibc:
+# #include <stdlib.h>
+# void qsort_r(   void *base,
+#               size_t nmemb,
+#               size_t size,
+#                  int (*compar)(const void *, const void *, void *),
+#                 void *arg);
+
+# HAVE_QSORT_R or nothing
+# ...and optionally...
+# HAVE_BSD_QSORT_R
+
 set -e
 
 . ../bash-tools.sh
@@ -116,6 +137,8 @@ else
     LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff"
 fi
 
+LD64PATCHES=""
+
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
 # Removed libstuff/cmd_with_prefix.diff as it's wrong.
 
@@ -135,7 +158,7 @@ misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 include/mach/machine_armv7.diff \
-ld/ld-nomach.diff \
+ld/ld-nomach.diff ld/qsort_r.diff \
 misc/bootstrap_h.diff"
 else
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
@@ -154,7 +177,7 @@ misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
 misc/redo_prebinding.nomalloc.diff \
 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
 include/mach/machine_armv7.diff \
-ld/ld-nomach.diff \
+ld/ld-nomach.diff ld/qsort_r.diff \
 misc/bootstrap_h.diff"
 fi
 
@@ -323,6 +346,8 @@ for p in ${PATCHFILES}; do
 	message_status "Applying patch $p"
     fi
     pushd ${DISTDIR}/$dir > /dev/null
+    echo $PWD
+    echo $p
     patch $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
     if [ $? -ne 0 ]; then
         error "There was a patch failure. Please manually merge and exit the sub-shell when done"
@@ -603,19 +628,19 @@ do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include 
 # int (*)(const void*, const void*, void*)
 
 ## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
-if [[ "$(uname_bt)" = "Linux" ]] ; then
-    do_sed $"s^symbol_address_compare);^\&has_stabs);^"  ${DISTDIR}/ld/pass1.c
-    do_sed $"s^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), \&has_stabs,^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), symbol_address_compare,^" ${DISTDIR}/ld/pass1.c
-    do_sed $"s^(void \*fail_p, const void \*a_p, const void \*b_p)^(const void \*a_p, const void \*b_p, void \*fail_p)^" ${DISTDIR}/ld/pass1.c
-fi
+#if [[ "$(uname_bt)" = "Linux" ]] ; then
+#    do_sed $"s^symbol_address_compare);^\&has_stabs);^"  ${DISTDIR}/ld/pass1.c
+#    do_sed $"s^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), \&has_stabs,^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), symbol_address_compare,^" ${DISTDIR}/ld/pass1.c
+#    do_sed $"s^(void \*fail_p, const void \*a_p, const void \*b_p)^(const void \*a_p, const void \*b_p, void \*fail_p)^" ${DISTDIR}/ld/pass1.c
+#fi
 
 # GCC 4.4.3 doesn't like this (whereas 4.7.0 needs this), so making it Windows only for now, who'd have thought Windows would ever be more uptodate
 # gnu-toolchain-wise than Linux eh?
 
 ## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
-if [[ "$(uname_bt)" = "Windows" ]] ; then
-    do_sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
-fi
+#if [[ "$(uname_bt)" = "Windows" ]] ; then
+#    do_sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
+#fi
 
 #do_sed $"s^#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
 

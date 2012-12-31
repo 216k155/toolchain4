@@ -434,7 +434,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 }
 #endif /* HAVE_DECL_PWRITE */
 
-#ifndef HAVE_QSORT_R
+#ifdef NEED_BSD_QSORT_R
 __thread void *_qsort_thunk = NULL;
 int (*_qsort_saved_func)(void *, const void *, const void *) = NULL;
 
@@ -454,8 +454,7 @@ qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
 
   qsort(base, nmemb, size, _qsort_comparator);
 }
-
-#endif /* HAVE_QSORT_R */
+#endif /* NEED_BSD_QSORT_R */
 
 #ifndef HAVE__NSGETEXECUTABLEPATH
 /**

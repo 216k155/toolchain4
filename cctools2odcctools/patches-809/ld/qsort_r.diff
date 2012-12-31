@@ -1,0 +1,28 @@
+--- pass1.c.orig	2012-12-31 22:20:11.893225267 +0000
++++ pass1.c	2012-12-31 22:20:24.121071540 +0000
+@@ -5978,7 +5978,11 @@
+  * symbols and if found sets *(int *)fail_p.
+  */
+ static int
++#if defined(HAVE_BSD_QSORT_R)
+ symbol_address_compare (void *fail_p, const void *a_p, const void *b_p)
++#else /* HAVE_BSD_QSORT_R */
++symbol_address_compare (const void *a_p, const void *b_p, void *fail_p)
++#endif /* HAVE_BSD_QSORT_R */
+ {
+   const struct nlist * const * aa = a_p;
+   const struct nlist * a = *aa;
+@@ -6129,8 +6133,13 @@
+   sst = allocate (sizeof (struct nlist *) * cur_obj->symtab->nsyms);
+   for (i = 0; i < cur_obj->symtab->nsyms; i++)
+     sst[i] = st + i;
++#if defined(HAVE_BSD_QSORT_R)
+   qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist *), &has_stabs,
+ 	   symbol_address_compare);
++#else /* HAVE_BSD_QSORT_R */
++  qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist *), symbol_address_compare,
++	   &has_stabs);
++#endif /* HAVE_BSD_QSORT_R */
+   if (has_stabs) {
+     error_with_cur_obj("has both STABS and DWARF debugging info");
+     free (sst);
