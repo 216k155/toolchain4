@@ -20,6 +20,8 @@
 # include/CommonCrypto/CommonDigest.h                    ->  Darwin changed to __OSX_AVAILABLE_STARTING(__MAC_10_4, __IPHONE_5_0); from ... __IPHONE_NA);
 # include/libkern/OSTypes.h                              ->  A load of stuff has been removed from newer Darwin version: #if defined(__LP64__) && defined(KERNEL)
 
+# TODO :: Fix %8qd and %qd that appears in a few places. Must change to %8lld and %lld
+
 set -e
 
 . ../bash-tools.sh
