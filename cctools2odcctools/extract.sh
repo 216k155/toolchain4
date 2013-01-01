@@ -14,6 +14,12 @@
 # One of the originals:
 # http://code.google.com/p/iphonedevonlinux/
 
+# Significantly different files on Darwin:
+# libprunetrie/include/mach-o/compact_unwind_encoding.h  ->  More modern - Ivybridge added, APSL 2 licensed.
+# include/architecture/alignment.h                       ->  Darwin version is missing #elif defined (__arm__) #include "architecture/arm/alignment.h"
+# include/CommonCrypto/CommonDigest.h                    ->  Darwin changed to __OSX_AVAILABLE_STARTING(__MAC_10_4, __IPHONE_5_0); from ... __IPHONE_NA);
+# include/libkern/OSTypes.h                              ->  A load of stuff has been removed from newer Darwin version: #if defined(__LP64__) && defined(KERNEL)
+
 set -e
 
 . ../bash-tools.sh
@@ -33,7 +39,7 @@ OSXVER=10.7
 
 TOPSRCDIR=`pwd`
 
-MAKEDISTFILE=1
+MAKEDISTFILE=0
 UPDATEPATCH=0
 # To use MacOSX headers set USESDK to 999.
 #USESDK=999
@@ -262,9 +268,20 @@ fi
 
 # process source for mechanical substitutions
 message_status "Removing #import"
-find ${DISTDIR} -type f -name \*.[ch] | while read f; do
-    sed -e 's/^#import/#include/' < $f > $f.tmp
-    mv -f $f.tmp $f
+#find ${DISTDIR} -type f -name \*.[ch] | while read f; do
+#    sed -e 's/^#import/#include/' < $f > $f.tmp
+#    mv -f $f.tmp $f
+#done
+
+FILES=$(find ${DISTDIR})
+for FILE in $FILES; do
+    chmod +w $FILE
+done
+
+FILES=$(find ${DISTDIR} -type f -name \*.[ch])
+for FILE in $FILES; do
+    chmod +w $FILE
+    do_sed $"s/^#import/#include/" $FILE
 done
 
 set +e
@@ -478,4 +495,3 @@ if [ $MAKEDISTFILE -eq 1 ]; then
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
 
-exit 1
