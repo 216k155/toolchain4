@@ -14,29 +14,6 @@
 # One of the originals:
 # http://code.google.com/p/iphonedevonlinux/
 
-# TODORMD :: with_prefix.diff needs fixing to be relocatable (/usr/bin/objcunique is completely wrong too)
-
-# qsort_r from mac os x:
-# #include <stdlib.h>
-# void qsort_r(   void *base,
-#               size_t nel,
-#               size_t width,
-#                 void *thunk,
-#                  int (*compar)(void *, const void *, const void *));
-#
-
-# qsort_r from glibc:
-# #include <stdlib.h>
-# void qsort_r(   void *base,
-#               size_t nmemb,
-#               size_t size,
-#                  int (*compar)(const void *, const void *, void *),
-#                 void *arg);
-
-# HAVE_QSORT_R or nothing
-# ...and optionally...
-# HAVE_BSD_QSORT_R
-
 set -e
 
 . ../bash-tools.sh
@@ -125,17 +102,7 @@ if [[ ! "$(uname -s)" = "Darwin" ]] ; then
     LD64_CREATE_READER_TYPENAME_DIFF=ld64/ld_createReader_typename.diff
 fi
 
-if [[ "$LD64VERS" == "85.2.1" ]] ; then
-    LD64PATCHES="ld64/FileAbstraction-inline.diff ld64/ld_cpp_signal.diff \
-ld64/Options-config_h.diff ld64/Options-ctype.diff \
-ld64/Options-defcross.diff ld64/Options_h_includes.diff \
-ld64/Options-stdarg.diff ld64/remove_tmp_math_hack.diff \
-ld64/Thread64_MachOWriterExecutable.diff ${LD64_CREATE_READER_TYPENAME_DIFF} \
-ld64/ld_BaseAtom_def_fix.diff ld64/LTOReader-setasmpath.diff \
-ld64/cstdio.diff"
-else
-    LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff ld64/_TYPENAME_compiler_bug.diff"
-fi
+LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff ld64/_TYPENAME_compiler_bug.diff"
 
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
 # Removed libstuff/cmd_with_prefix.diff as it's wrong.
@@ -270,8 +237,8 @@ cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
 if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
     message_status "Merging content from ${SDKROOT} to ${DISTDIR}"
     if [ ! -d "$SDKROOT" ]; then
-    error "$SDKROOT must be present"
-    exit 1
+        error "$SDKROOT must be present"
+        exit 1
     fi
 
     mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new
@@ -282,30 +249,15 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
         SYSFLDR=sys/_types.h
     fi
     for i in mach architecture i386 libkern $SYSFLDR; do
-    tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
+        tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
     done
 
     if [[ "$USE_OSX_MACHINE_H" = "1" ]] ; then
-    mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
+        mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
     fi
 
-#   Although this does what it's supposed to, it's not what's needed; Linux version isn't seen until later.
-#   comment_out_rev ${DISTDIR}/include/i386/_types.h "typedef union {" "} __mbstate_t;"
     do_sed $"s/} __mbstate_t/} NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
     do_sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
-
-
-#    rm ${DISTDIR}/include/sys/cdefs.h
-#    rm ${DISTDIR}/include/sys/types.h
-#    rm ${DISTDIR}/include/sys/select.h
-
-# If this is enabled, libkern/machine/OSByteOrder.h is used instead of
-# libkern/i386/OSByteOrder.h and this causes failure on Darwin, it may
-# be needed on other OSes though?
-#    for f in ${DISTDIR}/include/libkern/OSByteOrder.h; do
-#	sed -e 's/__GNUC__/__GNUC_UNUSED__/g' < $f > $f.tmp
-#	mv -f $f.tmp $f
-#    done
 fi
 
 # process source for mechanical substitutions
@@ -362,8 +314,6 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; the
         cp -f ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
         cp -f ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
         cp -f ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
-        # causes arch.c failures (error: ?CPU_TYPE_VEO? undeclared here (not in a function)
-        # cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/include/mach/machine.h
     fi
 fi
 
@@ -402,10 +352,6 @@ cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h ${DISTDIR}/include/Comm
 cp -f ${SDKROOT}/usr/include/libunwind.h ${DISTDIR}/include/libunwind.h
 cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h ${DISTDIR}/include/AvailabilityMacros.h
 
-#    cp -f ${SDKROOT}/usr/include/dlfcn.h ${DISTDIR}/include/dlfcn.h
-#    do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/dlfcn.h
-#    do_sed $"s%#endif /\* not POSIX \*/%//#endif /\* not POSIX \*/%" ${DISTDIR}/include/dlfcn.h
-
 if [ -z $FOREIGNHEADERS ] ; then
     message_status "Removing include/foreign"
     rm -rf ${DISTDIR}/include/foreign
@@ -421,219 +367,32 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/_structs.h
 do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/_structs.h
 
-# libc.h analysis.
-# [darwin ] libc.h                                                                 [writeout.c]
-# [linux  ] stdio.h stdlib.h fcntl.h  sys/stat.h time.h sys/param.h unistd.h       [writeout.c]
-#                                                       sys/param.h
-# [windows] stdio.h stdlib.h fcntl.h sys/param.h io.h                              [writeout.c]
-
-
 # libstuff
-# Darwin has libc.h, Windows/Linux have a combination of stdio.h, stdlib.h, fcntl.h, unistd.h, io.h, sys/param.h (MAXPATHLEN)
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/execute.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c
-
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/libstuff/seg_addr_table.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c
-#do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/stat.h>\n#include <stdlib.h>\n#include <unistd.h>\n#include <sys/mman.h>\n#else\n#include <stdlib.h>\n#endif^" ${DISTDIR}/libstuff/ofile.c
-
-# if [[ "$(uname_bt)" = "Windows" ]] ; then
-#    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/libstuff/seg_addr_table.c
-#    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/libstuff/dylib_table.c
-#    do_sed $"s^u_char^uint8_t^" ${DISTDIR}/libstuff/crc32.c
-#    do_sed $"s^u_int32_t^uint32_t^" ${DISTDIR}/libstuff/crc32.c
-#    do_sed $"s^#include <sys/sysctl.h>^#ifdef __APPLE__\n#include <sys/sysctl.h>\n#endif^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-
-#    do_sed $"s^osversion_name\[0\] = CTL_KERN;^osversion_name\[0\] = 11;^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-#    do_sed $"s^osversion_name\[1\] = KERN_OSRELEASE;^osversion_name\[1\] = 0;^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-    do_sed $"s^if(sysctl(osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1)^strcpy(osversion,\"12.0\");^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-    do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-# fi
-
-## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!! (Maybe)
-# FIND OUT WHY I DIDN'T / DON'T HAVE ANY PROBLEM WITH multiple definition of `error' ON THE MASTER BRANCH, CAN'T THINK WHY NOT...
-# On Google's GCC 4.4.3, hidden visibility doesn't seem to do much at all, so use a weak function instead.
-# i686-linux-gcc -m32 -O2 -pipe -std=gnu99 -o ar append.o ar.o archive.o contents.o delete.o extract.o misc.o move.o print.o replace.o -m32 -L/tmp2/tc4/final-install/apple-osx/lib -L/tmp2/tc4/host-install/lib -I/tmp2/tc4/host-install/include -L../libstuff -lstuff
-# ../libstuff/libstuff.a(errors.o): In function `error':
-# errors.c:(.text+0x190): multiple definition of `error'
-# misc.o:misc.c:(.text+0x0): first defined here
-# collect2: ld returned 1 exit status
-# I don't expect the following do_sed to work on Mac.
-# http://stackoverflow.com/questions/1251999/sed-how-can-i-replace-a-newline-n
-# Update 1 (is this groklaw?) -> doing this weak stuff causes MinGW-w64 failure!
-#lipo.o:lipo.c:(.text+0x1167): undefined reference to `error'
-#lipo.o:lipo.c:(.text+0x1468): undefined reference to `error'
-#c:/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.7.2/../../../../i686-w64-mingw32/bin/ld.exe: lipo.o: bad reloc address 0x7a8 in section `.rdata'
-#c:/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.7.2/../../../../i686-w64-mingw32/bin/ld.exe: final link failed: Invalid operation
-#collect2.exe: error: ld returned 1 exit status
-#do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n__attribute__\(\(weak\)\)\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+do_sed $"s^if(sysctl(osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1)^strcpy(osversion,\"12.0\");^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 
 do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
 
-#if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/stat.h>\n#include <time.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/libstuff/writeout.c
-#elif [[ "$(uname_bt)" = "Windows" ]] ; then
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/libstuff/writeout.c
-#fi
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/param.h>\n#endif^" ${DISTDIR}/libstuff/SymLoc.c
-#do_sed $"s^#include <sys/sysctl.h>^#include <stdint.h>\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-#do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
-
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/ld.cpp
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/InputFiles.h
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.h
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.h
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.h
-#do_sed $"s^#include <sys/sysctl.h>^^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
-
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#include <string.h>\n#endif^" ${DISTDIR}/libstuff/lto.c
-
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <fcntl.h>\n#include <sys/param.h>\n#include <stdint.h>\n#include <string.h>\n#endif^" ${DISTDIR}/libstuff/llvm.c
-#do_sed $"s^#include <dlfcn.h>^#ifndef __MINGW32__\n#include <dlfcn.h>\n#endif^" ${DISTDIR}/libstuff/llvm.c
-
-# ar
-#do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#ifndef __APPLE__\n#include <sys/file.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ar/archive.c
-#do_sed $"s^#include <paths.h>^#ifndef __MINGW32__\n#include <paths.h>\n#endif^" ${DISTDIR}/ar/ar.c
-#do_sed $"s^#include <paths.h>\n^\n^" ${DISTDIR}/ar/ar.c
 
 do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
 
-# as
-#do_sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-file.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#endif^" ${DISTDIR}/as/input-scrub.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/stat.h>#endif\n#endif^" ${DISTDIR}/as/write_object.c
-
-##if [[ "$(uname_bt)" = "Windows" ]] ; then
-    do_sed $"s^if(realpath == NULL)^#ifndef __MINGW32__\nif(realpath == NULL)\n#else\nif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
-    # Windows doesn't have SIGHUP or SIGPIPE...
-#    do_sed $"s^static int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};^#ifdef __MINGW32__\nstatic int sig\[\] = { SIGINT, SIGTERM, 0};\n#else\nstatic int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};\n#endif^" ${DISTDIR}/as/as.c
-#    do_sed $"s^static int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};^#ifdef __MINGW32__\nstatic int sig\[\] = { SIGINT, SIGTERM, 0};\n#else\nstatic int sig\[\] = { SIGHUP, SIGINT, SIGPIPE, SIGTERM, 0};\n#endif^" ${DISTDIR}/as/as.c
-#    do_sed $"s^    const char \*AS = \"/as\";^#ifdef __MINGW32__\n    const char \*AS = \"/as.exe\";\n#else\n    const char \*AS = \"/as\";\n#endif^" ${DISTDIR}/as/driver.c
-    do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
-#    do_sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/atof-generic.c
-#    do_sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/arm.c
-#    do_sed $"s^#include <string.h>^#include <string.h>\n#ifdef __MINGW32__\n#include <malloc.h>\n#endif^" ${DISTDIR}/as/i386.c
-#fi
+do_sed $"s^if(realpath == NULL)^#ifndef __MINGW32__\nif(realpath == NULL)\n#else\nif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
+do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
 
 do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DISTDIR}/as/obstack.c
 
 do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
 
-# libprunetrie
-#do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/libprunetrie/PruneTrie.cpp
-
-# libmacho
-# do_sed $"s^#include <mach-o/arch.h>^#include <mach-o/arch.h>\n#include "config.h"\n^" ${DISTDIR}/libmacho/arch.c
-
-# ld, misc
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/misc/checksyms.c
-#do_sed $"s^#include <limits.h>^#include <limits.h>\n#if !defined(ULLONG_MAX)\n#define ULLONG_MAX (__LONG_LONG_MAX__ * 2ULL + 1ULL)\n#endif\n^" ${DISTDIR}/misc/install_name_tool.c
-
-#do_sed $"s^#include <vector>^#include <libc.h>\n#include <stdarg.h>\n#include <vector>^" ${DISTDIR}/ld64/src/ld/Options.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/Resolver.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdio.h>\n#include <sys/param.h>^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
-
-#if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/ld.c
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass1.c
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld/pass2.c
-#    do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <unistd.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\n#endif^" ${DISTDIR}/misc/lipo.c
-#elif [[ "$(uname_bt)" = "Windows" ]] ; then
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/ld.c
-
-#    do_sed $"s^if(signal(SIGBUS, SIG_IGN) != SIG_IGN)^#ifndef __MINGW32__\nif(signal(SIGBUS, SIG_IGN) != SIG_IGN)^" ${DISTDIR}/ld/ld.c
-#    do_sed $"s^signal(SIGBUS, handler);^signal(SIGBUS, handler);\n#endif^" ${DISTDIR}/ld/ld.c
-    
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass1.c
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld/pass2.c
-#    do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/ld.cpp
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-#    do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#include <string.h>\n#include <stdarg.h>\n#endif^" ${DISTDIR}/ld64/src/ld/SymbolTable.cpp
-#    do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <io.h>\n#endif^" ${DISTDIR}/misc/lipo.c
-#    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/lipo.c
-#    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/libtool.c
-#    do_sed $"s^#include <sys/mman.h>^#ifndef __MINGW32__\n#include <sys/mman.h>\n#endif^" ${DISTDIR}/misc/segedit.c
-#fi
-
 do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
-do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)\n^" ${DISTDIR}/ld64/src/ld/ld.cpp
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/libtool.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/redo_prebinding.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/indr.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/strip.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/misc/segedit.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#endif^" ${DISTDIR}/otool/main.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <sys/file.h>\n#include <sys/stat.h>\n#endif^" ${DISTDIR}/otool/ofile_print.c
-#do_sed $"s^#define __dr7 dr7^#define __dr7 dr7\n#ifndef __APPLE__\n#define FP_PREC_24B 0\n#define FP_PREC_53B 2\n#define FP_PREC_64B 3\n#define FP_RND_NEAR 0\n#define FP_RND_DOWN 1\n#define FP_RND_UP 2\n#define FP_CHOP 3\n#endif^" ${DISTDIR}/otool/ofile_print.c
-
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/branch_island.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/branch_shim.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/compact_unwind.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/dtrace_dof.cpp
-#do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/dtrace_dof.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/dylibs.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/got.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/huge.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/order_file.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/stubs/stubs.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/passes/tlvp.cpp
-#do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/opaque_section_file.cpp
-#do_sed $"s^#include <vector>^#include <vector>\n#ifndef __APPLE__\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/opaque_section_file.cpp
-#do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#include <string.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/archive_file.cpp
+do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
 do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
-
-# qsort_r on linux has the last 2 parameters swapped wrt darwin...
-# Also, the swap function is all swapped around, darwin it's:
-# int (*)(void*, const void*, const void*)
-# Linux it's
-# int (*)(const void*, const void*, void*)
-
-## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
-#if [[ "$(uname_bt)" = "Linux" ]] ; then
-#    do_sed $"s^symbol_address_compare);^\&has_stabs);^"  ${DISTDIR}/ld/pass1.c
-#    do_sed $"s^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), \&has_stabs,^qsort_r (sst, cur_obj->symtab->nsyms, sizeof (struct nlist \*), symbol_address_compare,^" ${DISTDIR}/ld/pass1.c
-#    do_sed $"s^(void \*fail_p, const void \*a_p, const void \*b_p)^(const void \*a_p, const void \*b_p, void \*fail_p)^" ${DISTDIR}/ld/pass1.c
-#fi
-
-# GCC 4.4.3 doesn't like this (whereas 4.7.0 needs this), so making it Windows only for now, who'd have thought Windows would ever be more uptodate
-# gnu-toolchain-wise than Linux eh?
-
-## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
-#if [[ "$(uname_bt)" = "Windows" ]] ; then
-#    do_sed $"s^libunwind::CFI_Atom_Info<CFISection<^typename libunwind::CFI_Atom_Info<CFISection<^" ${DISTDIR}/ld64/src/ld/parsers/macho_relocatable_file.cpp
-#fi
-
-#do_sed $"s^#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)^#ifdef __APPLE__\n#define VM_SYNC_DEACTIVATE      ((vm_sync_t) 0x10)\n#else\n#include <stdio.h>\n#endif^" ${DISTDIR}/include/mach/vm_sync.h
 
 do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass1.c
 do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass2.c
 do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/misc/libtool.c
-
-#if defined(VM_SYNC_DEACTIVATE) && (HAVE_DECL_VM_MSYNC)
-
-#do_sed $"s^#include <stdint.h>^#include <stdint.h>\n#ifndef __APPLE__\n#include <stdio.h>\n#endif^" ${DISTDIR}/ld64/src/ld/parsers/macho_dylib_file.cpp
 
 # Fix binary files being written out (and read in) as ascii on Windows. It'd be better if could just turn off ascii reads and writes.
 do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld/rld.c
@@ -699,25 +458,6 @@ AUTOHEADER=autoheader
 AUTOCONF=autoconf
 AUTORECONF=autoreconf
 
-## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
-# Fix temporary file location in tmp() in ar/misc.c
-#if [[ "$(uname_bt)" = "Windows" ]] ; then
-#    do_sed $"s^TMPDIR^TEMP^"    ${DISTDIR}/ar/misc.c
-    # Oddly, getenv("TEMP") on MinGW is returning "C:/Users/blah/LocalSettings/Temp", probably want to detect the slashes returned and play along instead of this.
-#    do_sed $"s^%s/%s^%s\\\\\\\\%s^" ${DISTDIR}/ar/misc.c
-#fi
-
-#if [[ "$(uname_bt)" = "Windows" ]] ; then
-#    if [ -d /opt/autotools/bin ]; then
-#        PATH=/opt/autotools/bin:$PATH
-#        AUTOCONF=autoconf-2.68
-#        AUTORECONF=autoreconf-2.68
-#        AUTOHEADER=autoheader-2.68
-#    fi
-#fi
-
-# Attempt fix for ar header output:
-#define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10qd%2s"
 # MinGW falls over, because pformat.c doesn't handle qd, so instead, change it lld.
 do_sed $"s^10qd^10lld^"    ${DISTDIR}/ar/archive.h
 
@@ -727,13 +467,7 @@ find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
 find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
 
 pushd ${DISTDIR} > /dev/null
-set -x
 message_status $PWD
-#$AUTOHEADER
-#echo $(which $AUTOCONF)
-#echo $($AUTOCONF --version)
-#$AUTOCONF
-#rm -rf autom4te.cache configure config.log config.status
 $AUTORECONF -vi
 popd > /dev/null
 
@@ -742,4 +476,3 @@ if [ $MAKEDISTFILE -eq 1 ]; then
     mv ${DISTDIR} ${DISTDIR}-$DATE
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
-#patch odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}/misc/Makefile.in < $PATCHFILESDIR/misc/Makefile.in.diff
