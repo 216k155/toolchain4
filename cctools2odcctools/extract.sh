@@ -33,7 +33,7 @@ OSXVER=10.7
 
 TOPSRCDIR=`pwd`
 
-MAKEDISTFILE=0
+MAKEDISTFILE=1
 UPDATEPATCH=0
 # To use MacOSX headers set USESDK to 999.
 #USESDK=999
@@ -474,5 +474,8 @@ popd > /dev/null
 if [ $MAKEDISTFILE -eq 1 ]; then
     DATE=$(date +%Y%m%d)
     mv ${DISTDIR} ${DISTDIR}-$DATE
+    message_status "Making DISTFILE $PWD/${DISTDIR}-${DATE}.tar.bz2"
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
+
+exit 1
