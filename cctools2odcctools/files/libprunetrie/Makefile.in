@@ -20,15 +20,21 @@ MDYNAMICNOPIC        = @MDYNAMICNOPIC@
 CPPFLAGS             = @CPPFLAGS@
 DEFS                 = @DEFS@ @ENDIAN_FLAG@
 LDFLAGS              = @LDFLAGS@
+HAVE_LIBC_CXX_H      = @HAVE_LIBC_CXX_H@
 HAVE_FOREIGN_HEADERS = @HAVE_FOREIGN_HEADERS@
 LTO_DEFS             = @LTO_DEFS@
 LTO_LIBS             = @LTO_LIBS@
+
+ifeq ($(HAVE_LIBC_CXX_H),YES)
+INCLIBCCXX = -include $(top_builddir)/include/libc_cxx.h
+endif
 
 ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS         = -I$(top_srcdir)/include/foreign
 endif
 
-MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
+MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include \
+                  $(INCLIBCCXX) -include $(top_builddir)/include/config.h $(FORHDRS)
 
 MYWARNINGS      =
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \

@@ -31,7 +31,7 @@ transform	= @program_transform_name@
 RANLIBPROG      = $(shell echo ranlib | sed '$(transform)')
 
 MYINCLUDES      = -I$(srcdir) -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
+			-I$(top_srcdir)/include -include $(top_builddir)/include/config.h $(FORHDRS)
 MYWARNINGS      =
 MYDEFS          = -DBINDIR="\"$(bindir)\"" -DRANLIBPROG="\"$(RANLIBPROG)\""
 MYLDFLAGS	= -L$(top_builddir)/libstuff

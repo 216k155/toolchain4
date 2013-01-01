@@ -28,7 +28,8 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 transform       = @program_transform_name@
 
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(top_builddir)/include \
-			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
+                  -I$(top_srcdir)/include -include $(top_builddir)/include/config.h $(FORHDRS)
+
 MYWARNINGS      = 
 MYDEFS          =
 MYLDFLAGS	= -L$(top_builddir)/libstuff

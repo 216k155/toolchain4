@@ -102,7 +102,8 @@ AM_CONDITIONAL([HAVE_SYS_SYSCTL_H], [test "x$ac_cv_header_sys_sysctl_h" = xyes])
 AM_COND_IF([HAVE_SYS_SYSCTL_H], [],
  AC_CONFIG_HEADERS([include/sys/sysctl.h]))
 
-AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h])
+AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
+AC_SUBST(SSL_LIBS)
 AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_commoncrypto_commondigest_h" = xyes])
 AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
  AC_CONFIG_HEADERS([include/CommonCrypto/CommonDigest.h]))
@@ -277,9 +278,6 @@ AC_CHECK_DECL([S_IWGRP], [],
 
 AC_CHECK_DECL([S_IXGRP], [],
             [AC_DEFINE([S_IXGRP], [00010], [00010])])
-
-AC_CHECK_DECL([S_ISGID], [],
-            [AC_DEFINE([S_ISGID], [0002000], [0002000])])
 
 AC_CHECK_DECL([S_ISGID], [],
             [AC_DEFINE([S_ISGID], [0002000], [0002000])])
@@ -522,10 +520,6 @@ fi
 AC_CHECK_FUNCS([qsort getattrlist NSIsSymbolNameDefined strlcpy strlcat _NSGetExecutablePath])
 AC_CHECK_DECLS([vm_msync], [], [], [[#include <mach/vm_map.h>]])
 
-# Not right for Darwin?
-AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h],[],[SSL_LIBS="-lssl -lcrypto"])
-AC_SUBST(SSL_LIBS)
-
 AC_CHECK_DECLS([backtrace], [], [], [[#include <execinfo.h>]])
 AC_CHECK_DECLS([dlopen, dlsym, dlclose, dlerror, dladdr], [], [], [[#include <dlfcn.h>]])
 AC_CHECK_DECLS([mmap], [], [], [[#include <sys/mman.h>]])
@@ -640,7 +634,7 @@ esac
 
 # So tagged (zzz_and_finally) to ensure that this gets sorted last in config.h
 AH_VERBATIM([zzz_and_finally],[
-#include "emulated.h"
+#include <emulated.h>
 ])
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])

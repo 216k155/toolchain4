@@ -501,7 +501,7 @@ do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)
 #do_sed $"s^#include <paths.h>^#ifndef __MINGW32__\n#include <paths.h>\n#endif^" ${DISTDIR}/ar/ar.c
 #do_sed $"s^#include <paths.h>\n^\n^" ${DISTDIR}/ar/ar.c
 
-###do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
+do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
 
 # as
 #do_sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
@@ -526,7 +526,7 @@ do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DI
 do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
 
 # libprunetrie
-do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/libprunetrie/PruneTrie.cpp
+#do_sed $"s^#include <vector>^#include <stdio.h>\n#include <vector>^" ${DISTDIR}/libprunetrie/PruneTrie.cpp
 
 # libmacho
 # do_sed $"s^#include <mach-o/arch.h>^#include <mach-o/arch.h>\n#include "config.h"\n^" ${DISTDIR}/libmacho/arch.c

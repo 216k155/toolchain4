@@ -26,8 +26,9 @@ ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS		= -I$(top_srcdir)/include/foreign
 endif
 
-MYINCLUDES	= -I$(top_builddir)/include -I$(top_srcdir)/include \
-			$(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
+MYINCLUDES      = -I$(top_builddir)/include -I$(top_srcdir)/include \
+                  -include $(top_builddir)/include/config.h $(FORHDRS)
+
 MYWARNINGS	= 
 MYDEFS		=
 
