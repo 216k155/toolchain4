@@ -28,6 +28,7 @@ CCTOOLSNAME=cctools
 CCTOOLSVERS=809
 LD64NAME=ld64
 LD64VERS=127.2
+GCCLLVMVERS=2336.1
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
 # For dyld.h.
 DYLDNAME=dyld
@@ -87,10 +88,21 @@ done
 CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
 DISTDIR=odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}
 
+if [[ "$(uname -s)" = "Darwin" ]] ; then
+    SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
+    if [[ ! -d $SDKROOT ]] ; then
+        # Sandboxing... OSX becomes more like iOS every day.
+        SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSXVER}.sdk
+    fi
+else
+    SDKROOT=$(cd ${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk && pwd)
+fi
+
 USE_OSX_MACHINE_H=0
 if [[ -z $FOREIGNHEADERS ]] ; then
     USE_OSX_MACHINE_H=1
 fi
+message_status "USE_OSX_MACHINE_H is $USE_OSX_MACHINE_H"
 
 if [ "`tar --help | grep -- --strip-components 2> /dev/null`" ]; then
     TARSTRIP=--strip-components
@@ -102,8 +114,6 @@ fi
 
 PATCHFILESDIR=${TOPSRCDIR}/patches-${CCTOOLSVERS}
 
-#PATCHFILES=`cd "${PATCHFILESDIR}" && find * -type f \! -path \*/.svn\* | sort`
-
 if [[ ! "$(uname -s)" = "Darwin" ]] ; then
     LD64_CREATE_READER_TYPENAME_DIFF=ld64/ld_createReader_typename.diff
 fi
@@ -114,42 +124,42 @@ LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff ld64/_TYPENAME_compiler_bug.
 # Removed libstuff/cmd_with_prefix.diff as it's wrong.
 
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
-PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
-ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
-as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
-as/messages.diff as/relax.diff as/use_PRI_macros.diff \
-include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
-${LD64PATCHES} \
-ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
-libstuff/macosx_deployment_target_default_105.diff \
-libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
-misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
-misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
-misc/redo_prebinding.nomalloc.diff \
-otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
-include/mach/machine_armv7.diff \
-ld/ld-nomach.diff ld/qsort_r.diff \
-misc/bootstrap_h.diff"
+    PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
+                ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
+                as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
+                as/messages.diff as/relax.diff as/use_PRI_macros.diff \
+                include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
+                ${LD64PATCHES} \
+                ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
+                libstuff/macosx_deployment_target_default_105.diff \
+                libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
+                libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+                misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
+                misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
+                misc/redo_prebinding.nomalloc.diff \
+                otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
+                include/mach/machine_armv7.diff \
+                ld/ld-nomach.diff ld/qsort_r.diff \
+                misc/bootstrap_h.diff"
 else
-# Removed as/driver.c.diff as we've got _NSGetExecutablePath.
-PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
-ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
-as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
-as/messages.diff as/relax.diff \
-include/stuff/bytesex-floatstate.diff \
-${LD64PATCHES} \
-ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
-libstuff/macosx_deployment_target_default_105.diff \
-libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
-libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
-misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
-misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
-misc/redo_prebinding.nomalloc.diff \
-otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
-include/mach/machine_armv7.diff \
-ld/ld-nomach.diff ld/qsort_r.diff \
-misc/bootstrap_h.diff"
+    # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
+    PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
+                ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
+                as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
+                as/messages.diff as/relax.diff \
+                include/stuff/bytesex-floatstate.diff \
+                ${LD64PATCHES} \
+                ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
+                libstuff/macosx_deployment_target_default_105.diff \
+                libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
+                libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
+                misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
+                misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
+                misc/redo_prebinding.nomalloc.diff \
+                otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
+                include/mach/machine_armv7.diff \
+                ld/ld-nomach.diff ld/qsort_r.diff \
+                misc/bootstrap_h.diff"
 fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
@@ -173,6 +183,9 @@ if [ -d "${DISTDIR}" ]; then
     exit 1
 fi
 
+#
+# cctools
+#
 rm -rf ${DISTDIR}
 mkdir -p ${DISTDIR}
 [[ ! -f "${CCTOOLSDISTFILE}" ]] && download $TARBALLS_URL/cctools/${CCTOOLSDISTFILE}
@@ -189,9 +202,13 @@ if [[ ! -f "${LD64DISTFILE}" ]] ; then
     error "Failed to download ${LD64DISTFILE}"
     exit 1
 fi
+
+#
+# ld64
+#
 mkdir -p ${DISTDIR}/ld64
 tar ${TARSTRIP}=1 -xf ${LD64DISTFILE} -C ${DISTDIR}/ld64 > /dev/null 2>&1
-rm -rf ${DISTDIR}/ld64/FireOpal
+
 find ${DISTDIR}/ld64 ! -perm +200 -exec chmod u+w {} \;
 find ${DISTDIR}/ld64/doc/ -type f -exec cp "{}" ${DISTDIR}/man \;
 
@@ -200,42 +217,39 @@ if [[ ! -f "${DYLDDISTFILE}" ]] ; then
     error "Failed to download ${DYLDDISTFILE}"
     exit 1
 fi
+
+#
+# dyld
+#
 mkdir -p ${DISTDIR}/dyld
 tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
 
+#
+# libprunetrie
+#
 mkdir ${DISTDIR}/libprunetrie
 mkdir ${DISTDIR}/libprunetrie/mach-o
-cp ${DISTDIR}/ld64/src/other/prune_trie.h ${DISTDIR}/libprunetrie/
-cp ${DISTDIR}/ld64/src/other/prune_trie.h ${DISTDIR}/libprunetrie/mach-o/
+cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/libprunetrie/
+cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/libprunetrie/mach-o/
 cp ${DISTDIR}/ld64/src/other/PruneTrie.cpp ${DISTDIR}/libprunetrie/
 
-# Clean the source a bit
-find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
-rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer}
-
-if [[ "$(uname -s)" = "Darwin" ]] ; then
-    SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
-    if [[ ! -d $SDKROOT ]] ; then
-    # Sandboxing... OSX becomes more like iOS every day.
-    SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSXVER}.sdk
-    fi
-else
-    SDKROOT=$(cd ${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk && pwd)
-fi
+#
+# sdkroot_usr_include_objc
+#
 cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
 
+#
 # llvm headers
-# Originally, in toolchain4, gcc used was Saurik's, but that doesn't contain
-# the llvm-c headers we need.
-message_status "Merging include/llvm-c from Apple's llvmgcc42-2336.1"
-GCC_DIR=${TOPSRCDIR}/../llvmgcc42-2336.1
+#
+message_status "Merging include/llvm-c from Apple's llvmgcc42-${GCCLLVMVERS}"
+GCC_DIR=${TOPSRCDIR}/../llvmgcc42-${GCCLLVMVERS}
 if [ ! -d $GCC_DIR ]; then
     pushd $(dirname ${GCC_DIR})
-    if [[ $(download $TARBALLS_URL/llvmgcc42/llvmgcc42-2336.1.tar.gz) ]] ; then
-        error "Failed to download llvmgcc42-2336.1.tar.gz"
+    if [[ $(download $TARBALLS_URL/llvmgcc42/llvmgcc42-${GCCLLVMVERS}.tar.gz) ]] ; then
+        error "Failed to download llvmgcc42-${GCCLLVMVERS}.tar.gz"
         exit 1
     fi
-    tar -zxf llvmgcc42-2336.1.tar.gz
+    tar -zxf llvmgcc42-${GCCLLVMVERS}.tar.gz
     popd
 fi
 cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
@@ -266,12 +280,36 @@ if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
     do_sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
 fi
 
+mkdir -p ${DISTDIR}/include/machine
+mkdir -p ${DISTDIR}/include/mach_debug
+mkdir -p ${DISTDIR}/include/CommonCrypto
+cp -f ${SDKROOT}/usr/include/machine/types.h               ${DISTDIR}/include/machine/types.h
+cp -f ${SDKROOT}/usr/include/machine/_types.h              ${DISTDIR}/include/machine/_types.h
+cp -f ${SDKROOT}/usr/include/machine/endian.h              ${DISTDIR}/include/machine/endian.h
+cp -f ${SDKROOT}/usr/include/mach_debug/mach_debug_types.h ${DISTDIR}/include/mach_debug/mach_debug_types.h
+cp -f ${SDKROOT}/usr/include/mach_debug/ipc_info.h         ${DISTDIR}/include/mach_debug/ipc_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/vm_info.h          ${DISTDIR}/include/mach_debug/vm_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/zone_info.h        ${DISTDIR}/include/mach_debug/zone_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/page_info.h        ${DISTDIR}/include/mach_debug/page_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/hash_info.h        ${DISTDIR}/include/mach_debug/hash_info.h
+cp -f ${SDKROOT}/usr/include/mach_debug/lockgroup_info.h   ${DISTDIR}/include/mach_debug/lockgroup_info.h
+cp -f ${SDKROOT}/usr/include/Availability.h                ${DISTDIR}/include/Availability.h
+cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h          ${DISTDIR}/include/AvailabilityMacros.h
+cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h        ${DISTDIR}/include/AvailabilityInternal.h
+cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h   ${DISTDIR}/include/CommonCrypto/CommonDigest.h
+cp -f ${SDKROOT}/usr/include/libunwind.h                   ${DISTDIR}/include/libunwind.h
+
+# Clean the sources a bit
+find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
+rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer,ld64/FireOpal}
+
+#
+# EVERYTHING ABOVE THIS COMMENT IS NOT HANDLED VIA PATCHING.
+# EVERYTHING BELOW THIS COMMENT IS HANDLED VIA PATCHING
+#
+
 # process source for mechanical substitutions
 message_status "Removing #import"
-#find ${DISTDIR} -type f -name \*.[ch] | while read f; do
-#    sed -e 's/^#import/#include/' < $f > $f.tmp
-#    mv -f $f.tmp $f
-#done
 
 FILES=$(find ${DISTDIR})
 for FILE in $FILES; do
@@ -348,27 +386,6 @@ mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
 cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
 cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/include/mach-o/
 
-# I had been localising stuff into ld64 (above), but a lot of it is
-# more generally needed?
-mkdir -p ${DISTDIR}/include/machine
-mkdir -p ${DISTDIR}/include/mach_debug
-mkdir -p ${DISTDIR}/include/CommonCrypto
-cp -f ${SDKROOT}/usr/include/machine/types.h ${DISTDIR}/include/machine/types.h
-cp -f ${SDKROOT}/usr/include/machine/_types.h ${DISTDIR}/include/machine/_types.h
-cp -f ${SDKROOT}/usr/include/machine/endian.h ${DISTDIR}/include/machine/endian.h
-cp -f ${SDKROOT}/usr/include/mach_debug/mach_debug_types.h ${DISTDIR}/include/mach_debug/mach_debug_types.h
-cp -f ${SDKROOT}/usr/include/mach_debug/ipc_info.h ${DISTDIR}/include/mach_debug/ipc_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/vm_info.h ${DISTDIR}/include/mach_debug/vm_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/zone_info.h ${DISTDIR}/include/mach_debug/zone_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/page_info.h ${DISTDIR}/include/mach_debug/page_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/hash_info.h ${DISTDIR}/include/mach_debug/hash_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/lockgroup_info.h ${DISTDIR}/include/mach_debug/lockgroup_info.h
-cp -f ${SDKROOT}/usr/include/Availability.h ${DISTDIR}/include/Availability.h
-cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h ${DISTDIR}/include/AvailabilityInternal.h
-cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h ${DISTDIR}/include/CommonCrypto/CommonDigest.h
-cp -f ${SDKROOT}/usr/include/libunwind.h ${DISTDIR}/include/libunwind.h
-cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h ${DISTDIR}/include/AvailabilityMacros.h
-
 if [ -z $FOREIGNHEADERS ] ; then
     message_status "Removing include/foreign"
     rm -rf ${DISTDIR}/include/foreign
@@ -378,27 +395,31 @@ else
 fi
 
 # ppc64 is disabled on non-darwin native builds, so let's re-enable it -> shouldn't break darwin native.
+# enable_ppc64_when_cross_compiling.patch
 do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/thread_status.h
 do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/thread_status.h
-
 do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/_structs.h
 do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/_structs.h
 
 # libstuff
+# disable_sysctl_osversion_detection.patch
 do_sed $"s^if(sysctl(osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1)^strcpy(osversion,\"12.0\");^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 
 do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
 
+# undef___unused_for_sysctl.patch
 do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+
 
 do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
 
-do_sed $"s^if(realpath == NULL)^#ifndef __MINGW32__\nif(realpath == NULL)\n#else\nif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
+# windows_as_driver_EXEEXT.patch
+do_sed $"s^\tif(realpath == NULL)^#ifndef __MINGW32__\n\tif(realpath == NULL)\n#else\n\tif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
 do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
 
+# as_misc_fixes.patch
 do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DISTDIR}/as/obstack.c
-
 do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
 
 do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
@@ -494,4 +515,3 @@ if [ $MAKEDISTFILE -eq 1 ]; then
     message_status "Making DISTFILE $PWD/${DISTDIR}-${DATE}.tar.bz2"
     tar jcf ${DISTDIR}-$DATE.tar.bz2 ${DISTDIR}-$DATE
 fi
-
