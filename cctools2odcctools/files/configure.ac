@@ -634,7 +634,7 @@ esac
 
 # So tagged (zzz_and_finally) to ensure that this gets sorted last in config.h
 AH_VERBATIM([zzz_and_finally],[
-#include <emulated.h>
+#include "emulated.h"
 ])
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])
