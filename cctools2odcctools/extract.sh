@@ -142,8 +142,8 @@ fi
 
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
-ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
-as/bignum.diff as/input-scrub.diff as/driver.c.diff \
+ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
+as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
 as/messages.diff as/relax.diff as/use_PRI_macros.diff \
 include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
 ${LD64PATCHES} \
@@ -161,8 +161,8 @@ misc/bootstrap_h.diff"
 else
 # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
 PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
-ar/contents.diff ar/declare_localtime.diff ar/errno.diff as/arm.c.diff \
-as/bignum.diff as/input-scrub.diff as/driver.c.diff \
+ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
+as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
 as/messages.diff as/relax.diff \
 include/stuff/bytesex-floatstate.diff \
 ${LD64PATCHES} \
@@ -314,23 +314,6 @@ find ${DISTDIR} -type f -name \*.[ch] | while read f; do
     sed -e 's/^#import/#include/' < $f > $f.tmp
     mv -f $f.tmp $f
 done
-
-# This shouldn't be needed as autoconf will #define it, but actually, whereas
-# autoconf (used to be extern.h) makes it default to hidden visibility, this is
-# just making it extern. This is probably wrong then...
-# The only reason it's still here (for now) is because the patches need fixing
-# without it!
-#message_status "Removing __private_extern__"
-#find ${DISTDIR} -type f -name \*.h | while read f; do
-#    sed -e 's/^__private_extern__/extern/' < $f > $f.tmp
-#    mv -f $f.tmp $f
-#done
-
-#echo "Removing static enum bool"
-#find ${DISTDIR} -type f -name \*.[ch] | while read f; do
-#    sed -e 's/static enum bool/static bool/' < $f > $f.tmp
-#    mv -f $f.tmp $f
-#done
 
 set +e
 
@@ -485,6 +468,7 @@ do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX
 #c:/mingw-w64/mingw32/bin/../lib/gcc/i686-w64-mingw32/4.7.2/../../../../i686-w64-mingw32/bin/ld.exe: final link failed: Invalid operation
 #collect2.exe: error: ld returned 1 exit status
 #do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n__attribute__\(\(weak\)\)\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+
 do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
 
 #if [[ "$(uname_bt)" = "Linux" ]] || [[ "$(uname_bt)" = "Darwin" ]] ; then
@@ -516,7 +500,8 @@ do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)
 #do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#ifndef __APPLE__\n#include <sys/file.h>\n#define AR_EFMT1 \"#1/\"\n#endif^" ${DISTDIR}/ar/archive.c
 #do_sed $"s^#include <paths.h>^#ifndef __MINGW32__\n#include <paths.h>\n#endif^" ${DISTDIR}/ar/ar.c
 #do_sed $"s^#include <paths.h>\n^\n^" ${DISTDIR}/ar/ar.c
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
+
+###do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
 
 # as
 #do_sed $"s^#include \"libc.h\"^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <sys/file.h>\n#include <sys/param.h>\n#endif^" ${DISTDIR}/as/driver.c
@@ -713,13 +698,14 @@ do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
 AUTOHEADER=autoheader
 AUTOCONF=autoconf
 AUTORECONF=autoreconf
+
 ## THIS NEEDS FIXING!!! THIS NEEDS FIXING!!!
 # Fix temporary file location in tmp() in ar/misc.c
-if [[ "$(uname_bt)" = "Windows" ]] ; then
-    do_sed $"s^TMPDIR^TEMP^"    ${DISTDIR}/ar/misc.c
+#if [[ "$(uname_bt)" = "Windows" ]] ; then
+#    do_sed $"s^TMPDIR^TEMP^"    ${DISTDIR}/ar/misc.c
     # Oddly, getenv("TEMP") on MinGW is returning "C:/Users/blah/LocalSettings/Temp", probably want to detect the slashes returned and play along instead of this.
-    do_sed $"s^%s/%s^%s\\\\\\\\%s^" ${DISTDIR}/ar/misc.c
-fi
+#    do_sed $"s^%s/%s^%s\\\\\\\\%s^" ${DISTDIR}/ar/misc.c
+#fi
 
 #if [[ "$(uname_bt)" = "Windows" ]] ; then
 #    if [ -d /opt/autotools/bin ]; then
