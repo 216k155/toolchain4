@@ -314,7 +314,7 @@ patch_clean_sources() {
 }
 
 set +e
-patch_to_from patch_clean_sources clean_sources.patch $DISTDIR
+#patch_to_from patch_clean_sources clean_sources.patch $DISTDIR
 
 patch_add_sdkroot_headers1() {
     if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
