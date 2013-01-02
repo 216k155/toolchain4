@@ -40,8 +40,8 @@ DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
 TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
 OSXVER=10.7
 
-PATCHESMAKE=0
-PATCHESUSE=1
+PATCHESMAKE=1
+PATCHESUSE=0
 
 TOPSRCDIR=`pwd`
 
@@ -93,6 +93,10 @@ while [ $# -gt 0 ]; do
 	    exit 1
     esac
 done
+
+if [ "$PATCHESMAKE" = "1" ] ; then
+    rm -rf $PWD/*.patch
+fi
 
 PATCHNUM=100
 patch_to_from() {
@@ -502,34 +506,40 @@ patch_misc_host_fixes() {
     # undef___unused_for_sysctl.patch
     do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 
-    do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
-
     # windows_as_driver_EXEEXT.patch
     do_sed $"s^\tif(realpath == NULL)^#ifndef __MINGW32__\n\tif(realpath == NULL)\n#else\n\tif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
     do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
-
-    # as_misc_fixes.patch
-    do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DISTDIR}/as/obstack.c
-    do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
 
     do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
     do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
-    do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
-
     do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass1.c
     do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass2.c
     do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/misc/libtool.c
-
-    # Need unistd.h for sleep() on MinGW-w64.
-    do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#include <unistd.h>^" ${DISTDIR}/ar/archive.c
-
-    # MinGW falls over, because pformat.c doesn't handle qd, so instead, change it lld.
-    do_sed $"s^10qd^10lld^"    ${DISTDIR}/ar/archive.h
 }
 
 patch_to_from patch_misc_host_fixes misc_host_fixes.patch $DISTDIR
+
+patch_missing_includes() {
+    # as_misc_fixes.patch
+    do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#include <unistd.h>^" ${DISTDIR}/ar/archive.c
+    do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DISTDIR}/as/obstack.c
+    do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
+    do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
+    do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
+}
+
+patch_to_from patch_missing_includes missing_includes.patch $DISTDIR
+
+patch_qd_to_lld() {
+    # MinGW falls over because mingw_pformat.c doesn't handle qd, so instead, change it lld.
+    do_sed $"s^10qd^10lld^"  ${DISTDIR}/ar/archive.h
+    do_sed $"s^8qd^8lld^"    ${DISTDIR}/ar/contents.c
+    do_sed $"s^qd^lld^"      ${DISTDIR}/as/messages.c
+}
+
+patch_to_from patch_qd_to_lld qd_to_lld.patch $DISTDIR
 
 patch_O_BINARY() {
     # Fix binary files being written out (and read in) as ascii on Windows. It'd be better if could just turn off ascii reads and writes.
