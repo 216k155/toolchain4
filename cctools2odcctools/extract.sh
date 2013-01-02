@@ -40,6 +40,9 @@ DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
 TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
 OSXVER=10.7
 
+PATCHESMAKE=0
+PATCHESUSE=1
+
 TOPSRCDIR=`pwd`
 
 MAKEDISTFILE=0
@@ -48,6 +51,10 @@ UPDATEPATCH=0
 #USESDK=999
 USESDK=1
 FOREIGNHEADERS=
+
+AUTOHEADER=autoheader
+AUTOCONF=autoconf
+AUTORECONF=autoreconf
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -86,6 +93,38 @@ while [ $# -gt 0 ]; do
 	    exit 1
     esac
 done
+
+PATCHNUM=100
+patch_to_from() {
+    local _FUNC=$1
+    local _PATCH=$2
+    local _DIR=$3
+    local _PREFIX=$(printf "%04d" $PATCHNUM)
+    local _FULLPATCH=$PWD/$_PREFIX-$_PATCH
+
+    if [ "$PATCHESUSE" = "1" ] ; then
+        message_status "Applying patch: $_FULLPATCH"
+        pushd $_DIR
+        patch -p1 < $_FULLPATCH
+        popd
+    else
+        if [ "$PATCHESMAKE" = "1" ] ; then
+            rm -rf a b
+            cp -rf $_DIR a
+        fi
+        message_status "Applying bash function: $_FUNC..."
+        "$_FUNC"
+        if [ "$PATCHESMAKE" = "1" ] ; then
+            cp -rf $_DIR b
+        fi
+    fi
+
+    if [ "$PATCHESMAKE" = "1" ] ; then
+        message_status "...and making a patch from result: $_FULLPATCH"
+        diff -urN a b > $_PREFIX-$_PATCH
+    fi
+    PATCHNUM=$(expr $PATCHNUM + 5)
+}
 
 CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
 DISTDIR=odcctools-${CCTOOLSVERS}${FOREIGNHEADERS}
@@ -256,260 +295,317 @@ if [ ! -d $GCC_DIR ]; then
 fi
 cp -rf ${GCC_DIR}/llvmCore/include/llvm-c ${DISTDIR}/include/
 
-if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
-    message_status "Merging content from ${SDKROOT} to ${DISTDIR}"
-    if [ ! -d "$SDKROOT" ]; then
-        error "$SDKROOT must be present"
-        exit 1
-    fi
-
-    mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new
-    if [[ "$(uname_bt)" = "Darwin" ]] ; then
-        SYSFLDR=sys
-    else
-        # Want to use the system's sys folder as much as possible.
-        SYSFLDR=sys/_types.h
-    fi
-    for i in mach architecture i386 libkern $SYSFLDR; do
-        tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
-    done
-
-    if [[ "$USE_OSX_MACHINE_H" = "1" ]] ; then
-        mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
-    fi
-
-    do_sed $"s/} __mbstate_t/} NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
-    do_sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
-fi
-
-mkdir -p ${DISTDIR}/include/machine
-mkdir -p ${DISTDIR}/include/mach_debug
-mkdir -p ${DISTDIR}/include/CommonCrypto
-cp -f ${SDKROOT}/usr/include/machine/types.h               ${DISTDIR}/include/machine/types.h
-cp -f ${SDKROOT}/usr/include/machine/_types.h              ${DISTDIR}/include/machine/_types.h
-cp -f ${SDKROOT}/usr/include/machine/endian.h              ${DISTDIR}/include/machine/endian.h
-cp -f ${SDKROOT}/usr/include/mach_debug/mach_debug_types.h ${DISTDIR}/include/mach_debug/mach_debug_types.h
-cp -f ${SDKROOT}/usr/include/mach_debug/ipc_info.h         ${DISTDIR}/include/mach_debug/ipc_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/vm_info.h          ${DISTDIR}/include/mach_debug/vm_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/zone_info.h        ${DISTDIR}/include/mach_debug/zone_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/page_info.h        ${DISTDIR}/include/mach_debug/page_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/hash_info.h        ${DISTDIR}/include/mach_debug/hash_info.h
-cp -f ${SDKROOT}/usr/include/mach_debug/lockgroup_info.h   ${DISTDIR}/include/mach_debug/lockgroup_info.h
-cp -f ${SDKROOT}/usr/include/Availability.h                ${DISTDIR}/include/Availability.h
-cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h          ${DISTDIR}/include/AvailabilityMacros.h
-cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h        ${DISTDIR}/include/AvailabilityInternal.h
-cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h   ${DISTDIR}/include/CommonCrypto/CommonDigest.h
-cp -f ${SDKROOT}/usr/include/libunwind.h                   ${DISTDIR}/include/libunwind.h
-
-# Clean the sources a bit
-find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
-rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer,ld64/FireOpal}
-
 #
 # EVERYTHING ABOVE THIS COMMENT IS NOT HANDLED VIA PATCHING.
 # EVERYTHING BELOW THIS COMMENT IS HANDLED VIA PATCHING
 #
 
-# process source for mechanical substitutions
-message_status "Removing #import"
-
-FILES=$(find ${DISTDIR})
-for FILE in $FILES; do
-    chmod +w $FILE
-done
-
-FILES=$(find ${DISTDIR} -type f -name \*.[ch])
-for FILE in $FILES; do
-    chmod +w $FILE
-    do_sed $"s/^#import/#include/" $FILE
-done
+patch_clean_sources() {
+    message_status "Deleting cruft"
+    find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
+    rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer,ld64/FireOpal}
+    find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
+    find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
+    find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
+}
 
 set +e
+patch_to_from patch_clean_sources clean_sources.patch $DISTDIR
 
-INTERACTIVE=0
-message_status "Applying patches"
-for p in ${PATCHFILES}; do
-    dir=`dirname $p`
-    if [ $INTERACTIVE -eq 1 ]; then
-	read -p "Apply patch $p? " REPLY
-    else
-	message_status "Applying patch $p"
+patch_add_sdkroot_headers1() {
+    if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]]; then
+        message_status "Merging content from ${SDKROOT} to ${DISTDIR}"
+        if [ ! -d "$SDKROOT" ]; then
+            error "$SDKROOT must be present"
+            exit 1
+        fi
+
+        mv ${DISTDIR}/include/mach/machine.h ${DISTDIR}/include/mach/machine.h.new
+        if [[ "$(uname_bt)" = "Darwin" ]] ; then
+            SYSFLDR=sys
+        else
+            # Want to use the system's sys folder as much as possible.
+            SYSFLDR=sys/_types.h
+        fi
+        for i in mach architecture i386 libkern $SYSFLDR; do
+            tar cf - -C "$SDKROOT/usr/include" $i | tar xf - -C ${DISTDIR}/include
+        done
+
+        if [[ "$USE_OSX_MACHINE_H" = "1" ]] ; then
+            mv ${DISTDIR}/include/mach/machine.h.new ${DISTDIR}/include/mach/machine.h
+        fi
+
+        do_sed $"s/} __mbstate_t/} NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
+        do_sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
     fi
-    pushd ${DISTDIR}/$dir > /dev/null
-    echo $PWD
-    echo $p
-    patch $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
-    if [ $? -ne 0 ]; then
-        error "There was a patch failure. Please manually merge and exit the sub-shell when done"
-        $SHELL
-        if [ $UPDATEPATCH -eq 1 ]; then
-            find . -type f | while read f; do
-            if [ -f "$f.orig" ]; then
-                diff -u -N "$f.orig" "$f"
-            fi
-            done > ${PATCHFILESDIR}/$p
+}
+
+# patch_to_from patch_add_sdkroot_headers1 add_sdkroot_headers1.patch $DISTDIR
+
+patch_add_sdkroot_headers2() {
+    mkdir -p ${DISTDIR}/include/machine
+    mkdir -p ${DISTDIR}/include/mach_debug
+    mkdir -p ${DISTDIR}/include/CommonCrypto
+    cp -f ${SDKROOT}/usr/include/machine/types.h               ${DISTDIR}/include/machine/types.h
+    cp -f ${SDKROOT}/usr/include/machine/_types.h              ${DISTDIR}/include/machine/_types.h
+    cp -f ${SDKROOT}/usr/include/machine/endian.h              ${DISTDIR}/include/machine/endian.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/mach_debug_types.h ${DISTDIR}/include/mach_debug/mach_debug_types.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/ipc_info.h         ${DISTDIR}/include/mach_debug/ipc_info.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/vm_info.h          ${DISTDIR}/include/mach_debug/vm_info.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/zone_info.h        ${DISTDIR}/include/mach_debug/zone_info.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/page_info.h        ${DISTDIR}/include/mach_debug/page_info.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/hash_info.h        ${DISTDIR}/include/mach_debug/hash_info.h
+    cp -f ${SDKROOT}/usr/include/mach_debug/lockgroup_info.h   ${DISTDIR}/include/mach_debug/lockgroup_info.h
+    cp -f ${SDKROOT}/usr/include/Availability.h                ${DISTDIR}/include/Availability.h
+    cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h          ${DISTDIR}/include/AvailabilityMacros.h
+    cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h        ${DISTDIR}/include/AvailabilityInternal.h
+    cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h   ${DISTDIR}/include/CommonCrypto/CommonDigest.h
+    cp -f ${SDKROOT}/usr/include/libunwind.h                   ${DISTDIR}/include/libunwind.h
+
+    if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; then
+        if [[ $(uname_bt) = "Darwin" ]] ; then
+            cp -f ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
+            cp -f ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
+            cp -f ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
         fi
     fi
-    # For subsequent patches to work, move orig files out of the way
-    # to a filename that includes the patch name, e.g. archive.c.orig.archive.diff
-    find . -type f -name \*.orig -exec mv "{}" "{}"$(basename $p) \;
-    popd > /dev/null
-done
 
-set -e
+    mkdir -p ${DISTDIR}/ld64/include/mach-o/
+    mkdir -p ${DISTDIR}/ld64/include/mach/
+    mkdir -p ${DISTDIR}/include/mach-o/
+    cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
+    cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
+    cp -f ${SDKROOT}/usr/include/TargetConditionals.h ${DISTDIR}/include/TargetConditionals.h
+    cp -f ${SDKROOT}/usr/include/ar.h ${DISTDIR}/include/ar.h
 
-message_status "Adding new files to $DISTDIR"
+    do_sed $"s^#if defined(__GNUC__) && ( defined(__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__MACOS_CLASSIC__) )^#if defined(__GNUC__)^" ${DISTDIR}/include/TargetConditionals.h
 
-tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
-mv ${DISTDIR}/ld64/Makefile.in.${LD64VERS} ${DISTDIR}/ld64/Makefile.in
-if [[ "${LD64VERS}" == "127.2" ]] ; then
-    echo -e "\n" > ${DISTDIR}/ld64/src/ld/configure.h
-fi
+    mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
+    cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
+    cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/include/mach-o/
+}
 
-if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; then
-    if [[ $(uname_bt) = "Darwin" ]] ; then
-        cp -f ${SDKROOT}/usr/include/sys/cdefs.h ${DISTDIR}/include/sys/cdefs.h
-        cp -f ${SDKROOT}/usr/include/sys/types.h ${DISTDIR}/include/sys/types.h
-        cp -f ${SDKROOT}/usr/include/sys/select.h ${DISTDIR}/include/sys/select.h
+# patch_to_from patch_add_sdkroot_headers2 add_sdkroot_headers2.patch $DISTDIR
+
+patch_add_sdkroot_headers() {
+    patch_add_sdkroot_headers1
+    patch_add_sdkroot_headers2
+}
+
+patch_to_from patch_add_sdkroot_headers add_sdkroot_headers.patch $DISTDIR
+
+# process source for mechanical substitutions
+patch_import_to_include() {
+    message_status "Removing #import"
+    FILES=$(find ${DISTDIR})
+    for FILE in $FILES; do
+        chmod +w $FILE
+    done
+    FILES=$(find ${DISTDIR} -type f -name \*.[ch])
+    for FILE in $FILES; do
+        chmod +w $FILE
+        do_sed $"s/^#import/#include/" $FILE
+    done
+}
+
+patch_to_from patch_import_to_include import_to_include.patch $DISTDIR
+
+patch_apply_odcctools_patches() {
+    INTERACTIVE=0
+    message_status "Applying patches"
+    for p in ${PATCHFILES}; do
+        dir=`dirname $p`
+        if [ $INTERACTIVE -eq 1 ]; then
+            read -p "Apply patch $p? " REPLY
+        else
+            message_status "Applying patch $p"
+        fi
+        pushd ${DISTDIR}/$dir > /dev/null
+        echo $PWD
+        echo $p
+        patch $PATCH_POSIX -p0 < ${PATCHFILESDIR}/$p
+        if [ $? -ne 0 ]; then
+            error "There was a patch failure. Please manually merge and exit the sub-shell when done"
+            $SHELL
+            if [ $UPDATEPATCH -eq 1 ]; then
+                find . -type f | while read f; do
+                if [ -f "$f.orig" ]; then
+                    diff -u -N "$f.orig" "$f"
+                fi
+                done > ${PATCHFILESDIR}/$p
+            fi
+        fi
+        # For subsequent patches to work, move orig files out of the way
+        # to a filename that includes the patch name, e.g. archive.c.orig.archive.diff
+        find . -type f -name \*.orig -exec mv "{}" "{}"$(basename $p) \;
+        popd > /dev/null
+    done
+}
+
+patch_to_from patch_apply_odcctools_patches odcctools.patch $DISTDIR
+
+patch_autoconfiscate() {
+
+    message_status "Adding new files to $DISTDIR"
+
+    tar cf - --exclude=CVS --exclude=.svn -C ${ADDEDFILESDIR} . | tar xvf - -C ${DISTDIR}
+    mv ${DISTDIR}/ld64/Makefile.in.${LD64VERS} ${DISTDIR}/ld64/Makefile.in
+    if [[ "${LD64VERS}" == "127.2" ]] ; then
+        echo -e "\n" > ${DISTDIR}/ld64/src/ld/configure.h
     fi
-fi
 
-mkdir -p ${DISTDIR}/ld64/include/mach-o/
-mkdir -p ${DISTDIR}/ld64/include/mach/
-mkdir -p ${DISTDIR}/include/mach-o/
-cp -f ${DISTDIR}/dyld/include/mach-o/dyld* ${DISTDIR}/ld64/include/mach-o/
-cp -f ${SDKROOT}/usr/include/mach/machine.h ${DISTDIR}/ld64/include/mach/machine.h
-cp -f ${SDKROOT}/usr/include/TargetConditionals.h ${DISTDIR}/include/TargetConditionals.h
-cp -f ${SDKROOT}/usr/include/ar.h ${DISTDIR}/include/ar.h
+    set -e
+    set -x
+    if [[ -z $FOREIGNHEADERS ]] ; then
+        message_status "Removing include/foreign"
+        if [[ -d ${DISTDIR}/include/foreign ]] ; then
+            rm -rf ${DISTDIR}/include/foreign
+        fi
+    else
+        message_status "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
+        if [[ -f ${DISTDIR}/include/foreign ]] ; then
+            rm -rf ${DISTDIR}/include/mach/ppc
+        fi
+    fi
+    pushd $DISTDIR
+    $AUTOHEADER
+    popd
+    set +x
+    set +e
+}
 
-do_sed $"s^#if defined(__GNUC__) && ( defined(__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__MACOS_CLASSIC__) )^#if defined(__GNUC__)^" ${DISTDIR}/include/TargetConditionals.h
+patch_to_from patch_autoconfiscate autoconfiscate.patch $DISTDIR
 
-mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
-cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
-cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/include/mach-o/
+patch_ppc64_reenable() {
+    # ppc64 is disabled on non-darwin native builds, so let's re-enable it -> shouldn't break darwin native.
+    # enable_ppc64_when_cross_compiling.patch
+    do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/thread_status.h
+    do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/thread_status.h
+    do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/_structs.h
+    do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/_structs.h
+}
 
-if [ -z $FOREIGNHEADERS ] ; then
-    message_status "Removing include/foreign"
-    rm -rf ${DISTDIR}/include/foreign
-else
-    message_status "Removing include/mach/ppc (so include/foreign/mach/ppc is used)"
-    rm -rf ${DISTDIR}/include/mach/ppc
-fi
+patch_to_from patch_ppc64_reenable ppc64_reenable.patch $DISTDIR
 
-# ppc64 is disabled on non-darwin native builds, so let's re-enable it -> shouldn't break darwin native.
-# enable_ppc64_when_cross_compiling.patch
-do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/thread_status.h
-do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/thread_status.h
-do_sed $"s^#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^//#if !defined(_POSIX_C_SOURCE) || defined(_DARWIN_C_SOURCE)^" ${DISTDIR}/include/mach/ppc/_structs.h
-do_sed $"s%#endif /\* (_POSIX_C_SOURCE && !_DARWIN_C_SOURCE)%//#endif /\* _POSIX_C_SOURCE && !_DARWIN_C_SOURCE%" ${DISTDIR}/include/mach/ppc/_structs.h
+patch_disable_sysctl_osversion_detection() {
+    # libstuff
+    # disable_sysctl_osversion_detection.patch
+    do_sed $"s^if(sysctl(osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1)^strcpy(osversion,\"12.0\");^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+    do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+}
 
-# libstuff
-# disable_sysctl_osversion_detection.patch
-do_sed $"s^if(sysctl(osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1)^strcpy(osversion,\"12.0\");^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+patch_to_from patch_disable_sysctl_osversion_detection disable_sysctl_osversion_detection.patch $DISTDIR
 
-do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+patch_misc_host_fixes() {
+    do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
 
-# undef___unused_for_sysctl.patch
-do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+    # undef___unused_for_sysctl.patch
+    do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 
+    do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
 
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#include <stdint.h>\n^" ${DISTDIR}/ar/contents.c
+    # windows_as_driver_EXEEXT.patch
+    do_sed $"s^\tif(realpath == NULL)^#ifndef __MINGW32__\n\tif(realpath == NULL)\n#else\n\tif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
+    do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
 
-# windows_as_driver_EXEEXT.patch
-do_sed $"s^\tif(realpath == NULL)^#ifndef __MINGW32__\n\tif(realpath == NULL)\n#else\n\tif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
-do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
+    # as_misc_fixes.patch
+    do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DISTDIR}/as/obstack.c
+    do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
 
-# as_misc_fixes.patch
-do_sed $"s^#include <stdlib.h>^#include <stdlib.h>\n#include <stdint.h>\n^" ${DISTDIR}/as/obstack.c
-do_sed $"s^#include <strings.h>^#include <strings.h>\n#include <string.h>\n^" ${DISTDIR}/as/sections.c
+    do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
-do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
+    do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^" ${DISTDIR}/ld64/src/ld/ld.cpp
 
-do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^" ${DISTDIR}/ld64/src/ld/ld.cpp
+    do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
 
-do_sed $"s^#include <unistd.h>^#include <unistd.h>\n#ifndef __APPLE__\n#include <uuid/uuid.h>\n#endif^" ${DISTDIR}/ld64/include/mach-o/dyld_images.h
+    do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass1.c
+    do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass2.c
+    do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/misc/libtool.c
 
-do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass1.c
-do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass2.c
-do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/misc/libtool.c
+    # Need unistd.h for sleep() on MinGW-w64.
+    do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#include <unistd.h>^" ${DISTDIR}/ar/archive.c
 
-# Fix binary files being written out (and read in) as ascii on Windows. It'd be better if could just turn off ascii reads and writes.
-do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld/rld.c
-do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/as/write_object.c
-do_sed $"s^O_WRONLY^O_WRONLY | O_BINARY^"                                           ${DISTDIR}/misc/libtool.c
-do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/misc/lipo.c
-do_sed $"s^O_CREAT|O_RDWR^O_CREAT|O_RDWR|O_BINARY^"                                 ${DISTDIR}/ar/append.c
-do_sed $"s^O_CREAT|O_RDWR^O_CREAT|O_RDWR|O_BINARY^"                                 ${DISTDIR}/ar/replace.c
-do_sed $"s^O_RDONLY)^O_RDONLY|O_BINARY)^"                                           ${DISTDIR}/ar/replace.c
-do_sed $"s^O_CREAT | O_EXLOCK | O_RDWR^O_CREAT | O_EXLOCK | O_RDWR | O_BINARY^"     ${DISTDIR}/dyld/launch-cache/dsc_extractor.cpp
-do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
-do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
-do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/efitools/makerelocs.c
-do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/efitools/mtoc.c
-do_sed $"s^archive, mode^archive, mode|O_BINARY^"                                   ${DISTDIR}/ar/archive.c
-do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/ar/extract.c
-do_sed $"s^O_TRUNC, 0666^O_TRUNC | O_BINARY, 0666^"                                 ${DISTDIR}/misc/segedit.c
-do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC|fsync^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY|fsync^" ${DISTDIR}/libstuff/writeout.c
-do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/libstuff/ofile.c
-do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/lto_file.hpp
-do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
-do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/ld64/src/other/rebase.cpp
-do_sed $"s^O_RDWR : O_RDONLY^O_RDWR|O_BINARY : O_RDONLY|O_BINARY^"                  ${DISTDIR}/ld64/src/other/rebase.cpp
-do_sed $"s^O_RDONLY, 0)^O_RDONLY|O_BINARY, 0)^"                                     ${DISTDIR}/ld64/src/ld/Options.cpp
-do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC ^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"  ${DISTDIR}/misc/segedit.c
-do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/segedit.c
-do_sed $"s^O_WRONLY|O_CREAT^O_WRONLY|O_CREAT|O_BINARY^"                             ${DISTDIR}/misc/strip.c
-do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/strip.c
-#do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
+    # MinGW falls over, because pformat.c doesn't handle qd, so instead, change it lld.
+    do_sed $"s^10qd^10lld^"    ${DISTDIR}/ar/archive.h
+}
 
-# Need unistd.h for sleep() on MinGW-w64.
-do_sed $"s^#include <sys/stat.h>^#include <sys/stat.h>\n#include <unistd.h>^" ${DISTDIR}/ar/archive.c
+patch_to_from patch_misc_host_fixes misc_host_fixes.patch $DISTDIR
 
-# I don't think these any point to these changes anymore!
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/rld.c
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/ld.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld/pass2.c
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/as/write_object.c
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/dyld/src/dyld.cpp
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/dyld/src/dyld.cpp
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/libtool.c
-do_sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/lipo.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/codesign_allocate.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/ctf_insert.c
-do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/dsc_extractor.cpp
-do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
-do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/makerelocs.c
-do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/mtoc.c
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/InputFiles.cpp
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/segedit.c
-do_sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/redo_prebinding.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/inout.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/install_name_tool.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/OutputFile.cpp
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/lto_file.hpp
-do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
-do_sed $"s^0600^FIO_READ_WRITE_ME^"   ${DISTDIR}/misc/strip.c
-do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
+patch_O_BINARY() {
+    # Fix binary files being written out (and read in) as ascii on Windows. It'd be better if could just turn off ascii reads and writes.
+    do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld/rld.c
+    do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/as/write_object.c
+    do_sed $"s^O_WRONLY^O_WRONLY | O_BINARY^"                                           ${DISTDIR}/misc/libtool.c
+    do_sed $"s^O_WRONLY | O_CREAT | O_TRUNC^O_WRONLY | O_CREAT | O_TRUNC | O_BINARY^"   ${DISTDIR}/misc/lipo.c
+    do_sed $"s^O_CREAT|O_RDWR^O_CREAT|O_RDWR|O_BINARY^"                                 ${DISTDIR}/ar/append.c
+    do_sed $"s^O_CREAT|O_RDWR^O_CREAT|O_RDWR|O_BINARY^"                                 ${DISTDIR}/ar/replace.c
+    do_sed $"s^O_RDONLY)^O_RDONLY|O_BINARY)^"                                           ${DISTDIR}/ar/replace.c
+    do_sed $"s^O_CREAT | O_EXLOCK | O_RDWR^O_CREAT | O_EXLOCK | O_RDWR | O_BINARY^"     ${DISTDIR}/dyld/launch-cache/dsc_extractor.cpp
+    do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
+    do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
+    do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/efitools/makerelocs.c
+    do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/efitools/mtoc.c
+    do_sed $"s^archive, mode^archive, mode|O_BINARY^"                                   ${DISTDIR}/ar/archive.c
+    do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY^"             ${DISTDIR}/ar/extract.c
+    do_sed $"s^O_TRUNC, 0666^O_TRUNC | O_BINARY, 0666^"                                 ${DISTDIR}/misc/segedit.c
+    do_sed $"s^O_WRONLY|O_CREAT|O_TRUNC|fsync^O_WRONLY|O_CREAT|O_TRUNC|O_BINARY|fsync^" ${DISTDIR}/libstuff/writeout.c
+    do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/libstuff/ofile.c
+    do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+    do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/lto_file.hpp
+    do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"   ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
+    do_sed $"s^O_CREAT | O_RDWR | O_TRUNC^O_CREAT | O_RDWR | O_TRUNC | O_BINARY^"       ${DISTDIR}/ld64/src/other/rebase.cpp
+    do_sed $"s^O_RDWR : O_RDONLY^O_RDWR|O_BINARY : O_RDONLY|O_BINARY^"                  ${DISTDIR}/ld64/src/other/rebase.cpp
+    do_sed $"s^O_RDONLY, 0)^O_RDONLY|O_BINARY, 0)^"                                     ${DISTDIR}/ld64/src/ld/Options.cpp
+    do_sed $"s^O_CREAT | O_WRONLY | O_TRUNC ^O_CREAT | O_WRONLY | O_TRUNC | O_BINARY^"  ${DISTDIR}/misc/segedit.c
+    do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/segedit.c
+    do_sed $"s^O_WRONLY|O_CREAT^O_WRONLY|O_CREAT|O_BINARY^"                             ${DISTDIR}/misc/strip.c
+    do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/strip.c
+    #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
+}
 
-AUTOHEADER=autoheader
-AUTOCONF=autoconf
-AUTORECONF=autoreconf
+patch_to_from patch_O_BINARY O_BINARY.patch $DISTDIR
 
-# MinGW falls over, because pformat.c doesn't handle qd, so instead, change it lld.
-do_sed $"s^10qd^10lld^"    ${DISTDIR}/ar/archive.h
+patch_fileio_mode() {
+    # I don't think these any point to these changes anymore!
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/rld.c
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld/ld.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld/pass2.c
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/as/write_object.c
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/dyld/src/dyld.cpp
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/dyld/src/dyld.cpp
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/libtool.c
+    do_sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/lipo.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/codesign_allocate.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/ctf_insert.c
+    do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/dsc_extractor.cpp
+    do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/dyld/launch-cache/update_dyld_shared_cache.cpp
+    do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/makerelocs.c
+    do_sed $"s^0644^FIO_READ_WRITE^"      ${DISTDIR}/efitools/mtoc.c
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/InputFiles.cpp
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/misc/segedit.c
+    do_sed $"s^07777^FIO_MASK_ALL_4^"     ${DISTDIR}/misc/redo_prebinding.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/inout.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/install_name_tool.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/OutputFile.cpp
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/lto_file.hpp
+    do_sed $"s^0666^FIO_READ_WRITE^"      ${DISTDIR}/ld64/src/ld/parsers/lto_file.cpp
+    do_sed $"s^0600^FIO_READ_WRITE_ME^"   ${DISTDIR}/misc/strip.c
+    do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
+}
 
-message_status "Deleting cruft"
-find ${DISTDIR} -name Makefile -exec rm -f "{}" \;
-find ${DISTDIR} -name \*~ -exec rm -f "{}" \;
-find ${DISTDIR} -name .\#\* -exec rm -f "{}" \;
+patch_to_from patch_fileio_mode fileio_mode.patch $DISTDIR
 
-pushd ${DISTDIR} > /dev/null
-message_status $PWD
-$AUTORECONF -vi
-popd > /dev/null
+patch_configure_regen() {
+    pushd ${DISTDIR} > /dev/null
+    message_status $PWD
+    if [ ! $($AUTORECONF -vi) ] ; then
+        $AUTORECONF -vi
+    fi
+    popd > /dev/null
+}
+
+patch_to_from patch_configure_regen configure_regen.patch $DISTDIR
 
 if [ $MAKEDISTFILE -eq 1 ]; then
     DATE=$(date +%Y%m%d)

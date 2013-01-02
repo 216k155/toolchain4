@@ -9,6 +9,7 @@ AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/ax_append_flag.m4])
 m4_include([m4/ax_check_compile_flag.m4])
 m4_include([m4/ax_append_compile_flags.m4])
+m4_include([m4/check_enum.m4])
 
 AC_CONFIG_SRCDIR([APPLE_LICENSE])
 
