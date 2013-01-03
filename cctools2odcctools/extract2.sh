@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Files I can't find in on opensource.apple.com :
+# include/mach/mach_port.h
+# ... this is because they're made from
+#     cd /usr/src/toolchain4/cctools2odcctools/sdkroot_remake/xnu-2050.18.24/osfmk/mach
+#     make SRCROOT=../..
+# ... /bin/sh: xcodebuild: command not found
+#     make: /usr/bin/xcrun: Command not found
+#     make: /usr/bin/xcrun: Command not found
+#     ... lots of that ...
+#     /bin/sh: arch: command not found
+#     ../../makedefs/MakeInc.def:211: *** Could not determine INSTALL_ARCH_DEFAULT. Stop.
+
 set +e
 
 . ../bash-tools.sh
@@ -14,8 +26,12 @@ OSXVER=10.7
 LIBCVERS=825.25
 LIBMVERS=2026
 LIBSYSTEMVERS=169.3
-# Seems XNU is a bit too old (e.g. no 64bit support)
+# XNU is weird. Some versions have arm bits in, others don't.
 XNUVERS=2050.18.24
+#XNUVERS=1699.32.7
+#XNUVERS=1228.9.59
+#includes libkern/ppc/OSByteOrder.h (and libkern/arm/OSByteOrder.h) but is missing bsd/i386/limits.h, bsd/i386/_limits.h and libkern/libkern/OSKextLib.h
+#XNUVERS=1228
 # Older architecture (e.g. http://www.opensource.apple.com/tarballs/architecture/architecture-254.0.5.tar.gz)
 #  are about 3x bigger than 262 (53k vs 18k)??
 ARCHITECTUREVERS=258
@@ -28,13 +44,13 @@ OSXSDKROOTPATCH=$PWD/0100-add_sdkroot_headers.patch
 # b/include/architecture/i386/frame.h
 # ...  find out why ...
 
-mkdir -p sdkroot_remake/sdk
-pushd sdkroot_remake
-patch -p1 < $OSXSDKROOTPATCH
-popd
-
 mkdir sdkroot_remake
 pushd sdkroot_remake
+
+mkdir sdk-orig
+pushd sdk-orig
+patch -p1 < $OSXSDKROOTPATCH
+popd
 
 download $TARBALLS_URL/Libc/Libc-$LIBCVERS.tar.gz
 download $TARBALLS_URL/Libm/Libm-$LIBMVERS.tar.gz
@@ -48,13 +64,65 @@ tar -xzf Libsystem-$LIBSYSTEMVERS.tar.gz
 tar -xzf xnu-$XNUVERS.tar.gz
 tar -xzf architecture-$ARCHITECTUREVERS.tar.gz
 
+mkdir include-new
+
+for FILE in alignment.h byte_order.h i386/alignment.h i386/asm_help.h i386/byte_order.h i386/cpu.h i386/desc.h i386/io.h i386/pio.h i386/reg_help.h i386/sel.h i386/table.h i386/tss.h; do
+    mkdir -p $(dirname sdk-new/include/architecture/$FILE)
+    cp architecture-$ARCHITECTUREVERS/$FILE sdk-new/include/architecture/$FILE
+done
+
+cp Libm-$LIBMVERS/Source/Intel/fenv.h sdk-new/include/architecture/i386/
+cp Libm-$LIBMVERS/Source/Intel/math.h sdk-new/include/architecture/i386/
+mkdir sdk-new/include/architecture/ppc/
+cp Libm-$LIBMVERS/Source/PowerPC/fenv.h sdk-new/include/architecture/ppc/
+cp Libm-$LIBMVERS/Source/PowerPC/math.h sdk-new/include/architecture/ppc/
+
+# xnu/bsd doesn't have:
+# i386/eflags.h i386/user_ldt.h
+for FILE in i386/endian.h i386/fasttrap_isa.h i386/limits.h i386/param.h i386/profile.h i386/setjmp.h i386/signal.h i386/types.h i386/vmparam.h i386/_limits.h i386/_param.h i386/_structs.h i386/_types.h; do
+    mkdir -p $(dirname sdk-new/include/$FILE)
+    cp xnu-$XNUVERS/bsd/$FILE sdk-new/include/$FILE
+done
+
+for FILE in i386/eflags.h i386/user_ldt.h; do
+    mkdir -p $(dirname sdk-new/include/$FILE)
+    cp xnu-$XNUVERS/osfmk/$FILE sdk-new/include/$FILE
+done
+
+for FILE in i386/_OSByteOrder.h i386/OSByteOrder.h machine/OSByteOrder.h _OSByteOrder.h OSAtomic.h OSByteOrder.h OSDebug.h OSKextLib.h OSReturn.h OSTypes.h; do
+    mkdir -p $(dirname sdk-new/include/libkern/$FILE)
+    cp xnu-$XNUVERS/libkern/libkern/$FILE sdk-new/include/libkern/$FILE
+done
+
+cp Libc-$LIBCVERS/include/libkern/OSCacheControl.h sdk-new/include/libkern/OSCacheControl.h
+
+# include/mach/i386/thread_state.h important looking difference.
+# #define I386_THREAD_STATE_MAX	(224)    /* Size of biggest state possible */
+# vs
+# #define I386_THREAD_STATE_MAX	(144)    /* Size of biggest state possible */
+# missing: include/mach/i386/asm.h include/mach/i386/task.h include/mach/i386/thread_act.h
+#  extras: include/mach/i386/flipc_dep.h include/mach/i386/Makefile include/mach/i386/syscall_sw.h
+#  extras: include/mach/machine/Makefile include/mach/machine/syscall_sw.h
+# missing: include/mach/x86_64/* -> task.h, thread_act.h
+# missing: include/mach/clock.h include/mach/clock_priv.h include/mach/clock_reply.h include/mach/exc.h include/mach/host_priv.h include/mach/host_sercurity.h
+#  extras: include/mach/alert.h include/mach/branch_predicates.h include/mach/events_info.h flipc_cb.h flipc_debug.h flipc_device.h flipc_locks.h flipc_types.h
+# ...I got bored at this point...
+cp -rf xnu-$XNUVERS/osfmk/mach sdk-new/include/
+cp -rf xnu-$XNUVERS/osfmk/mach_debug sdk-new/include/
+
+cp -rf xnu-$XNUVERS/bsd/machine sdk-new/include/
+
+cp -rf xnu-$XNUVERS/EXTERNAL_HEADERS/mach-o sdk-new/include/
+
+cp -rf xnu-$XNUVERS/bsd/sys sdk-new/include/
+
 popd
 
 exit 0
 
 include/ar.h
 # Can be gotten from architecture-$ARCHITECTUREVERS.tar.gz
-# except [X]
+# except [X] which can (probably be gotten from Libm)
 include/architecture/alignment.h
 include/architecture/byte_order.h          [This is more recent (2008) in the SDK... "Please note that the byte ordering functions in this file are deprecated."]
 include/architecture/i386/alignment.h
