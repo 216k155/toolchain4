@@ -16,7 +16,11 @@ LIBMVERS=2026
 LIBSYSTEMVERS=169.3
 # Seems XNU is a bit too old (e.g. no 64bit support)
 XNUVERS=2050.18.24
-ARCHITECTUREVERS=262
+# Older architecture (e.g. http://www.opensource.apple.com/tarballs/architecture/architecture-254.0.5.tar.gz)
+#  are about 3x bigger than 262 (53k vs 18k)??
+ARCHITECTUREVERS=258
+#ARCHITECTUREVERS=254.0.5
+#ARCHITECTUREVERS=262
 # The goal is to find every file in:
 OSXSDKROOTPATCH=$PWD/0100-add_sdkroot_headers.patch
 # There's some files that are patched in this patch file:
@@ -49,25 +53,25 @@ popd
 exit 0
 
 include/ar.h
-# Can maybe be gotten from xnu-2050.18.24\EXTERNAL_HEADERS\architecture ?
+# Can be gotten from architecture-$ARCHITECTUREVERS.tar.gz
 # except [X]
-[X] include/architecture/alignment.h
-include/architecture/byte_order.h
+include/architecture/alignment.h
+include/architecture/byte_order.h          [This is more recent (2008) in the SDK... "Please note that the byte ordering functions in this file are deprecated."]
 include/architecture/i386/alignment.h
-include/architecture/i386/asm_help.h        [Missing #elif defined(__x86_64__) for everything]
-[X] include/architecture/i386/byte_order.h
+include/architecture/i386/asm_help.h
+include/architecture/i386/byte_order.h
 include/architecture/i386/cpu.h
 include/architecture/i386/desc.h
 [X] include/architecture/i386/fenv.h
 include/architecture/i386/io.h
 [X] include/architecture/i386/math.h
-include/architecture/i386/pio.h             [A few differences, int (EXTERNAL_HEADERS) vs long (SDK) params]
+include/architecture/i386/pio.h]
 include/architecture/i386/reg_help.h
 include/architecture/i386/sel.h
-include/architecture/i386/table.h           [Compile guards missing, damned #import]
-include/architecture/i386/tss.h             [Compile guards missing, damned #import]
-include/architecture/ppc/fenv.h
-include/architecture/ppc/math.h
+include/architecture/i386/table.h
+include/architecture/i386/tss.h
+[X] include/architecture/ppc/fenv.h
+[X] include/architecture/ppc/math.h
 
 # Can maybe be gotten from xnu-2050.18.24\EXTERNAL_HEADERS
 include/Availability.h
