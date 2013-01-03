@@ -613,7 +613,7 @@ size_t strlcat(char *dst, const char *src, size_t siz)
 
 #endif /* HAVE_STRLCAT */
 
-#if (HAVE_DECL_GETATTRLIST==0)
+#if (HAVE_GETATTRLIST==0)
 int getattrlist(const char* a,void* b,void* c,size_t d,unsigned int e)
 {
   errno = ENOTSUP;

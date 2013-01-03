@@ -103,16 +103,16 @@ AM_CONDITIONAL([HAVE_SYS_SYSCTL_H], [test "x$ac_cv_header_sys_sysctl_h" = xyes])
 AM_COND_IF([HAVE_SYS_SYSCTL_H], [],
  AC_CONFIG_HEADERS([include/sys/sysctl.h]))
 
-AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
-AC_SUBST(SSL_LIBS)
-AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_commoncrypto_commondigest_h" = xyes])
-AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
- AC_CONFIG_HEADERS([include/CommonCrypto/CommonDigest.h]))
-
 AC_CHECK_HEADERS([paths.h])
 AM_CONDITIONAL([HAVE_PATHS_H], [test "x$ac_cv_header_paths_h" = xyes])
 AM_COND_IF([HAVE_PATHS_H], [],
  AC_CONFIG_HEADERS([include/paths.h]))
+
+AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
+AC_SUBST(SSL_LIBS)
+AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_CommonCrypto_CommonDigest_h" = xyes])
+AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
+ AC_CONFIG_HEADERS([include/CommonCrypto/CommonDigest.h]))
 
 # For Windows:
 AC_TYPE_UID_T
