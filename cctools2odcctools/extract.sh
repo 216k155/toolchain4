@@ -443,9 +443,10 @@ patch_apply_odcctools_patches() {
         fi
         # For subsequent patches to work, move orig files out of the way
         # to a filename that includes the patch name, e.g. archive.c.orig.archive.diff
-        find . -type f -name \*.orig -exec mv "{}" "{}"$(basename $p) \;
+        find . -type f -name \*.orig -exec mv "{}" "{}".$(basename $p) \;
         popd > /dev/null
     done
+    find . -type f -name "*.orig\.*" -exec rm "{}" \;
 }
 
 patch_to_from patch_apply_odcctools_patches odcctools.patch $DISTDIR
