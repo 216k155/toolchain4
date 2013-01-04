@@ -33,7 +33,7 @@ ifeq ($(HAVE_FOREIGN_HEADERS),YES)
 FORHDRS         = -I$(top_srcdir)/include/foreign
 endif
 
-MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include \
+MYINCLUDES      = -I$(srcdir)/include -I$(top_srcdir)/include/mach-o -I$(top_srcdir)/include -I$(top_srcdir)/ld64/src/abstraction -I$(top_builddir)/include \
                   $(INCLIBCCXX) -include $(top_builddir)/include/config.h $(FORHDRS)
 
 MYWARNINGS      =

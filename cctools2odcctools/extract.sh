@@ -34,7 +34,9 @@ GCCLLVMVERS=2336.1
 LD64DISTFILE=${LD64NAME}-${LD64VERS}.tar.gz
 # For dyld.h.
 DYLDNAME=dyld
-DYLDVERS=195.5
+#DYLDVERS=195.5
+DYLDVERS=210.2.3
+
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
 #TARBALLS_URL=http://www.opensource.apple.com/tarballs
 TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
@@ -273,9 +275,9 @@ tar ${TARSTRIP}=1 -xf ${DYLDDISTFILE} -C ${DISTDIR}/dyld
 # libprunetrie
 #
 mkdir ${DISTDIR}/libprunetrie
-mkdir ${DISTDIR}/libprunetrie/mach-o
-cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/libprunetrie/
-cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/libprunetrie/mach-o/
+mkdir -p ${DISTDIR}/include/mach-o
+#cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/libprunetrie/
+cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/include/mach-o/
 cp ${DISTDIR}/ld64/src/other/PruneTrie.cpp ${DISTDIR}/libprunetrie/
 
 #
@@ -349,7 +351,7 @@ patch_add_sdkroot_headers1() {
 patch_add_sdkroot_headers2() {
     mkdir -p ${DISTDIR}/include/machine
     mkdir -p ${DISTDIR}/include/mach_debug
-    mkdir -p ${DISTDIR}/include/CommonCrypto
+#    mkdir -p ${DISTDIR}/include/CommonCrypto
     cp -f ${SDKROOT}/usr/include/machine/types.h               ${DISTDIR}/include/machine/types.h
     cp -f ${SDKROOT}/usr/include/machine/_types.h              ${DISTDIR}/include/machine/_types.h
     cp -f ${SDKROOT}/usr/include/machine/endian.h              ${DISTDIR}/include/machine/endian.h
@@ -363,7 +365,7 @@ patch_add_sdkroot_headers2() {
     cp -f ${SDKROOT}/usr/include/Availability.h                ${DISTDIR}/include/Availability.h
     cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h          ${DISTDIR}/include/AvailabilityMacros.h
     cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h        ${DISTDIR}/include/AvailabilityInternal.h
-    cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h   ${DISTDIR}/include/CommonCrypto/CommonDigest.h
+#    cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h   ${DISTDIR}/include/CommonCrypto/CommonDigest.h
     cp -f ${SDKROOT}/usr/include/libunwind.h                   ${DISTDIR}/include/libunwind.h
 
     if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; then
@@ -384,8 +386,8 @@ patch_add_sdkroot_headers2() {
 
     do_sed $"s^#if defined(__GNUC__) && ( defined(__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__MACOS_CLASSIC__) )^#if defined(__GNUC__)^" ${DISTDIR}/include/TargetConditionals.h
 
-    mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
-    cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
+#    mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
+#    cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
     cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/include/mach-o/
 }
 

@@ -18,7 +18,8 @@ set +e
 
 # For dyld.h.
 DYLDNAME=dyld
-DYLDVERS=195.5
+#DYLDVERS=195.5
+DYLDVERS=210.2.3
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
 #TARBALLS_URL=http://www.opensource.apple.com/tarballs
 TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
@@ -26,6 +27,7 @@ OSXVER=10.7
 LIBCVERS=825.25
 LIBMVERS=2026
 LIBSYSTEMVERS=169.3
+LIBUNWINDVERS=30
 # XNU is weird. Some versions have arm bits in, others don't.
 XNUVERS=2050.18.24
 #XNUVERS=1699.32.7
@@ -44,6 +46,11 @@ OSXSDKROOTPATCH=$PWD/0100-add_sdkroot_headers.patch
 # b/include/architecture/i386/frame.h
 # ...  find out why ...
 
+
+# The only place I can find thread_act.h is in chameleon sources?
+# Well, it's probably an idea to determine the minimum set of headers
+# needed to build cctools at this point.
+
 mkdir sdkroot_remake
 pushd sdkroot_remake
 
@@ -57,12 +64,14 @@ download $TARBALLS_URL/Libm/Libm-$LIBMVERS.tar.gz
 download $TARBALLS_URL/Libsystem/Libsystem-$LIBSYSTEMVERS.tar.gz
 download $TARBALLS_URL/xnu/xnu-$XNUVERS.tar.gz
 download $TARBALLS_URL/architecture/architecture-$ARCHITECTUREVERS.tar.gz
+download $TARBALLS_URL/libunwind/libunwind-$LIBUNWINDVERS.tar.gz
 
 tar -xzf Libc-$LIBCVERS.tar.gz
 tar -xzf Libm-$LIBMVERS.tar.gz
 tar -xzf Libsystem-$LIBSYSTEMVERS.tar.gz
 tar -xzf xnu-$XNUVERS.tar.gz
 tar -xzf architecture-$ARCHITECTUREVERS.tar.gz
+tar -xzf libunwind-$LIBUNWINDVERS.tar.gz
 
 mkdir include-new
 
@@ -95,6 +104,8 @@ for FILE in i386/_OSByteOrder.h i386/OSByteOrder.h machine/OSByteOrder.h _OSByte
 done
 
 cp Libc-$LIBCVERS/include/libkern/OSCacheControl.h sdk-new/include/libkern/OSCacheControl.h
+cp Libc-$LIBCVERS/include/libkern/OSAtomic.h       sdk-new/include/libkern/OSAtomic.h
+
 
 # include/mach/i386/thread_state.h important looking difference.
 # #define I386_THREAD_STATE_MAX	(224)    /* Size of biggest state possible */
@@ -106,15 +117,19 @@ cp Libc-$LIBCVERS/include/libkern/OSCacheControl.h sdk-new/include/libkern/OSCac
 # missing: include/mach/x86_64/* -> task.h, thread_act.h
 # missing: include/mach/clock.h include/mach/clock_priv.h include/mach/clock_reply.h include/mach/exc.h include/mach/host_priv.h include/mach/host_sercurity.h
 #  extras: include/mach/alert.h include/mach/branch_predicates.h include/mach/events_info.h flipc_cb.h flipc_debug.h flipc_device.h flipc_locks.h flipc_types.h
-# ...I got bored at this point...
-cp -rf xnu-$XNUVERS/osfmk/mach sdk-new/include/
+cp -rf xnu-$XNUVERS/osfmk/mach       sdk-new/include/
 cp -rf xnu-$XNUVERS/osfmk/mach_debug sdk-new/include/
 
-cp -rf xnu-$XNUVERS/bsd/machine sdk-new/include/
+mkdir -p sdk-new/include/machine
+cp xnu-$XNUVERS/bsd/machine/endian.h sdk-new/include/machine/
+cp xnu-$XNUVERS/bsd/machine/_types.h sdk-new/include/machine/
+cp xnu-$XNUVERS/bsd/machine/types.h  sdk-new/include/machine/
 
-cp -rf xnu-$XNUVERS/EXTERNAL_HEADERS/mach-o sdk-new/include/
+mkdir -p sdk-new/include/mach-o
+cp libunwind-$LIBUNWINDVERS/include/mach-o/compact_unwind_encoding.h sdk-new/include/mach-o
 
-cp -rf xnu-$XNUVERS/bsd/sys sdk-new/include/
+mkdir -p sdk-new/include/sys
+cp xnu-$XNUVERS/bsd/sys/_types.h sdk-new/include/sys/
 
 popd
 
