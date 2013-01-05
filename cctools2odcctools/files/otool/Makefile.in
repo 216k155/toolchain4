@@ -16,7 +16,10 @@ MDYNAMICNOPIC        = @MDYNAMICNOPIC@
 CPPFLAGS             = @CPPFLAGS@
 DEFS                 = @DEFS@ @ENDIAN_FLAG@
 LDFLAGS              = @LDFLAGS@
-OBJC                 = @OBJC@
+# See comments in configure.ac, there's no
+# Objective-c code in cctools.
+# This used to end up with -x objective-c.
+# OBJC                 = @OBJC@
 HAVE_FOREIGN_HEADERS = @HAVE_FOREIGN_HEADERS@
 
 ifeq ($(HAVE_FOREIGN_HEADERS),YES)
@@ -45,10 +48,10 @@ CFILES = main.c ofile_print.c m68k_disasm.c i860_disasm.c \
          m88k_disasm.c i386_disasm.c ppc_disasm.c hppa_disasm.c \
          sparc_disasm.c arm_disasm.c
 
-ifneq ($(OBJC),)
+#ifneq ($(OBJC),)
 OBJCFILES = print_objc.c print_objc2_32bit.c print_objc2_64bit.c
 OBJCOBJS = $(OBJCFILES:.c=.o) 
-endif
+#endif
 OBJS = $(CFILES:.c=.o) 
 
 .PHONY: default clean distclean install
@@ -59,7 +62,8 @@ $(OBJS): %.o: %.c
 	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
 
 $(OBJCOBJS): %.o: %.c
-	$(CC) $(OBJC) $(MYCOMPILEFLAGS) -c -o $@ $<
+	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
+#	$(CC) $(OBJC) $(MYCOMPILEFLAGS) -c -o $@ $<
 
 otool: $(OBJS) $(OBJCOBJS) ofile.o
 	$(CC) -o $@ $^ $(MYLINKFLAGSO)

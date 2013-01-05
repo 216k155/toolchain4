@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # References. This work stands on the work done in these projects.
+# Mainly odcctools work done by Shantonu Sen then updated by Peter O'Gorman
 # Some people who provide ports of debian packages for MinGW!
 # http://svn.clazzes.org/svn/mingw-pkg/trunk/macosx-deb/macosx-intel64-cctools/patches/cctools-806-nondarwin.patch  <--  with Windows fixes.
 # Their home page:
@@ -52,6 +53,50 @@
 # ## All of this #define CPU_SUBTYPE_ , N_ARM_THUMB_DEF
 # ************ as/bignum.c
 # +#ifndef _BIGNUM_H_                                                                                (add_compile_guards.patch)
+# ************ as/driver.c
+# +	if(progname != NULL){                                                                        (as_driver_default_exename_to_argv0.patch)
+# +	    strcpy(p, progname);
+# +	}
+# #ifndef __MINGW32__                          <- patch_misc_host...patch if(realpath == NULL)       <NOT SURE WHAT TO DO WITH THIS?>
+#   if(realpath == NULL)
+# #else
+#   if(prefix == NULL)
+# #endif
+# ************ as/input-scrub.c
+#+      fprintf (stderr, "%s.", strerror(errno));                                                    (use_strerror.patch) <- this won't work for some of the errors configure.ac defines.
+# ************ /as/messages.c
+# #include <servers/bootstrap.h>              <- make an empty include file.
+# ************ as/relax.h
+# #ifndef _RELAX_H_                                                                                  (add_compile_guards.patch)
+# ************ include/stuff/bytesex.h
+# #ifdef _STRUCT_X86_FLOAT_STATE32           <- unneeded!
+# ************ ld/ld.c
+# #if defined(__OPENSTEP__) || defined(__GONZO_BUNSEN_BEAKER__) <- make an empty include file (bootstrap.h)
+# ************ ld/uuid.c
+# #if !(defined(KLD) && defined(__STATIC__)) <- can all vanish... ld_classic isn't even built + this isn't needed anyway.
+# ************ ld64/src/ld/parsers/macho_relocatable_file.cpp
+# #ifdef HAVE_BSD_QSORT_R                                                                            (allow_glibc_or_bsd_qsort_r.patch)
+# // Work around for an old compiler bug.                                                            (add_typename_ld64.patch)
+# _TYPENAME libunwind::CFI_Atom_Info<CFISection<x86_64>::OAS>::CFI_Atom_Info cfiArray[],             (add_typename_ld64.patch)
+# ************ libstuff/execute.c
+# #if defined(__MINGW32__)                                                                           (win__spawnvp_execute.patch)
+# strcpy(resolved_name,p);                                                                           (realpath_execute.patch)
+# ************ libstuff/get_arch_from_host.c                                                         (default_arch.patch            -   libstuff/default_arch.diff)
+# ************ libstuff/macosx_deployment_target.c                                                   (macosx_deployment_target_default_10_5.patch - macosx_deployment_target_default_105.diff)
+# ************ libstuff/ofile.c                                                                      (win_avoid_mmap_ofile.patch)
+# ************ libstuff/ofile_error.c       <- unneeded!
+# ************ libstuff/swap_headers.c      <- unneeded!
+# ************ misc/libtool.c                    <- instead make an empty <server/bootstrap.h>
+# -	/* see if this is being run as ranlib */                                                     (ranlibname.patch                - ranlibname.diff)
+# +#ifdef CROSS_SYSROOT                    <-                                                        (cross_sysroot_option.patch)     - ld-sysroot.diff + Options-defcross.diff)
+# add_execute_list(makestr(BINDIR, "/", LDPROG, NULL));
+# add_execute_list(makestr(BINDIR, "/", LIPOPROG, NULL));                                            (libtool_BINDIR_rel_paths.patch  - libtool_lipo_transform.diff + libtool-ldpath.diff)
+
+# ************ misc/redo_prebinding.c
+# -#include <malloc/malloc.h>               <- unneeded! make malloc/malloc.h file.                                                       - redo_prebinding.nomalloc.diff)
+# +#if HAVE_GETATTRLIST                                                                              (redo_prebinding_nogetattrlist.patch - redo_prebinding.nogetattrlist.patch)
+# ************ otool/main.c
+# +#ifdef HAVE_OBJC_OBJC_RUNTIME_H         <- hopefully unneeded!                                    (                                    - noobjc.diff)
 
 set -e
 
@@ -201,11 +246,13 @@ LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff ld64/_TYPENAME_compiler_bug.
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
 # Removed libstuff/cmd_with_prefix.diff as it's wrong.
 
+# Removed ar/errno.diff as it's not needed anymore.
+# Removed as/messages.diff ld/ld-nomach.diff misc/bootstrap_h.diff
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
     PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
-                ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
+                ar/contents.diff ar/declare_localtime.diff ar/TMPDIR.diff \
                 as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
-                as/messages.diff as/relax.diff as/use_PRI_macros.diff \
+                as/relax.diff as/use_PRI_macros.diff \
                 include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
                 ${LD64PATCHES} \
                 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
@@ -217,14 +264,13 @@ if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
                 misc/redo_prebinding.nomalloc.diff \
                 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
                 include/mach/machine_armv7.diff \
-                ld/ld-nomach.diff ld/qsort_r.diff \
-                misc/bootstrap_h.diff"
+                ld/qsort_r.diff"
 else
     # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
     PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
-                ar/contents.diff ar/declare_localtime.diff ar/errno.diff ar/TMPDIR.diff \
+                ar/contents.diff ar/declare_localtime.diff ar/TMPDIR.diff \
                 as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
-                as/messages.diff as/relax.diff \
+                as/relax.diff \
                 include/stuff/bytesex-floatstate.diff \
                 ${LD64PATCHES} \
                 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
@@ -236,8 +282,7 @@ else
                 misc/redo_prebinding.nomalloc.diff \
                 otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
                 include/mach/machine_armv7.diff \
-                ld/ld-nomach.diff ld/qsort_r.diff \
-                misc/bootstrap_h.diff"
+                ld/qsort_r.diff"
 fi
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
@@ -541,7 +586,7 @@ patch_misc_host_fixes() {
     do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 
     # windows_as_driver_EXEEXT.patch
-    do_sed $"s^\tif(realpath == NULL)^#ifndef __MINGW32__\n\tif(realpath == NULL)\n#else\n\tif(prefix == NULL)\n#endif^" ${DISTDIR}/as/driver.c
+    do_sed $"s^\tif(realpath == NULL)^if(prefix == NULL)^" ${DISTDIR}/as/driver.c
     do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
 
     do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp

@@ -5,7 +5,7 @@
  	     * Run objcunique on the output.
  	     */
 -	    objcunique = cmd_with_prefix("objcunique");
-+	    objcunique = "/usr/bin/objcunique";
++	    objcunique = cmd_with_prefix("objcunique" EXEEXT);
  	    if(stat(objcunique, &stat_buf) != -1){
  		reset_execute_list();
  		add_execute_list(objcunique);
@@ -16,7 +16,7 @@
  	 */
  	reset_execute_list();
 -	add_execute_list_with_prefix("ld");
-+	add_execute_list(BINDIR "/" LDPROG);
++	add_execute_list_with_prefix(LDPROG);
  	add_execute_list("-keep_private_externs");
  	add_execute_list("-r");
  	if(Sflag)
@@ -27,7 +27,7 @@
  	    if(stat("/usr/bin/objcunique", &stat_buf) != -1){
  		reset_execute_list();
 -		add_execute_list_with_prefix("objcunique");
-+		add_execute_list("/usr/bin/objcunique");
++		add_execute_list_with_prefix("objcunique" EXEEXT);
  		add_execute_list(cmd_flags.output);
  		add_execute_list("-prebind");
  		for(j = 0; j < cmd_flags.nLdirs; j++)

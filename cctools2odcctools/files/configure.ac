@@ -108,6 +108,11 @@ AM_CONDITIONAL([HAVE_PATHS_H], [test "x$ac_cv_header_paths_h" = xyes])
 AM_COND_IF([HAVE_PATHS_H], [],
  AC_CONFIG_HEADERS([include/paths.h]))
 
+AC_CHECK_HEADERS([servers/bootstrap.h])
+AM_CONDITIONAL([HAVE_SERVERS_BOOTSTRAP_H], [test "x$ac_cv_header_servers_bootstrap_h" = xyes])
+AM_COND_IF([HAVE_SERVERS_BOOTSTRAP_H], [],
+ AC_CONFIG_HEADERS([include/servers/bootstrap.h]))
+
 AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
 AC_SUBST(SSL_LIBS)
 AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_CommonCrypto_CommonDigest_h" = xyes])
@@ -456,23 +461,39 @@ for WARNING in $INVERSE_WARNINGS; do
 done
 AC_SUBST([WARNINGS], [$WARNINGS])
 
-ORIGCFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -x objective-c"
-OBJC="-x objective-c"
-AC_MSG_CHECKING([if -x objective-c is supported])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[@class foo;
-void bar(void) {
-     [foo alloc];
-}
-]])],
-   [AC_DEFINE(HAVE_OBJC, 1, [Have Objective-C support])
-    AC_MSG_RESULT([yes])],
-   [OBJC=""
-    AC_MSG_RESULT([no])]
-)
-AC_SUBST([OBJC], [$OBJC])
-CFLAGS=$ORIGCFLAGS
+# odcctools seemed to think that otool/print_objc*.c needs to be
+# compiled as Objective-c. AFAICT, this is wrong, they're purely
+# c files, I've not deleted it because I'm not 100% sure that it
+# doesn't rely on some structural layout differences between C
+# and Objective-C for these parts to work right.
+# ORIGCFLAGS=$CFLAGS
+# CFLAGS="$CFLAGS -x objective-c"
+# OBJC="-x objective-c"
+# AC_MSG_CHECKING([if -x objective-c is supported])
+# AC_COMPILE_IFELSE(
+#    [AC_LANG_SOURCE([[@class foo;
+# void bar(void) {
+#      [foo alloc];
+# }
+# ]])],
+#    [AC_DEFINE(HAVE_OBJC, 1, [Have Objective-C support])
+#     AC_MSG_RESULT([yes])],
+#    [OBJC=""
+#     AC_MSG_RESULT([no])]
+# )
+# AC_SUBST([OBJC], [$OBJC])
+# CFLAGS=$ORIGCFLAGS
+
+# Again, Objective-C likely not needed.
+# AC_HEADER_STDC
+# AC_CHECK_HEADERS([stdio.h errno.h limits.h])
+# if [[ "x$OBJC" != "x" ]]; then
+#    ORIGCFLAGS=$CFLAGS
+#    CFLAGS="$CFLAGS $OBJC"
+#    AC_CHECK_HEADERS([objc/objc-runtime.h])
+#    CFLAGS="$ORIGCFLAGS"
+# fi
+
 
 AC_MSG_CHECKING([if __private_extern__ is supported])
 AC_COMPILE_IFELSE(
@@ -500,15 +521,6 @@ for WARNING in $INVERSE_CXXWARNINGS; do
 done
 CXXFLAGS=$CXXFLAGS" $CXXWARNINGS"
 AC_LANG_POP
-
-AC_HEADER_STDC
-AC_CHECK_HEADERS([stdio.h errno.h limits.h])
-if [[ "x$OBJC" != "x" ]]; then
-   ORIGCFLAGS=$CFLAGS
-   CFLAGS="$CFLAGS $OBJC"
-   AC_CHECK_HEADERS([objc/objc-runtime.h])
-   CFLAGS="$ORIGCFLAGS"
-fi
 
 AC_MSG_CHECKING([for max unsigned long long])
 AC_COMPILE_IFELSE(
