@@ -20,7 +20,38 @@
 # include/CommonCrypto/CommonDigest.h                    ->  Darwin changed to __OSX_AVAILABLE_STARTING(__MAC_10_4, __IPHONE_5_0); from ... __IPHONE_NA);
 # include/libkern/OSTypes.h                              ->  A load of stuff has been removed from newer Darwin version: #if defined(__LP64__) && defined(KERNEL)
 
-# TODO :: Fix %8qd and %qd that appears in a few places. Must change to %8lld and %lld
+# Analysis of odcctools patches
+# *********** ar/ar.c
+# XX  +#include "stuff/allocate.h"
+# XX ..is not needed on either Linux or Windows
+# +	    add_execute_list_with_prefix(RANLIBPROG);
+# ..is still needed.
+# *********** ar/archive.c
+# XX  /*		case EBADRPC: */ ...is no longer needed, definition moved to configure.ac
+# #if defined(__APPLE__)
+# tv_sec = (long int)sb->st_mtimespec.tv_sec;
+# +#else
+# +			tv_sec = (long int)sb->st_mtime;
+# +#endif
+# ..is still needed                                                                                  (time_fixes.patch)
+# +			    sb->st_mode, (int64_t)sb->st_size, ARFMAG);
+# ..is still needed (warning fix)                                                                    (printf_warnings.patch)
+# *********** ar/contents.c
+# #include <time.h>
+# ..is still needed                                                                                  (time_fixes.patch)
+# (int64_t)chdr.size);
+# ..is still needed (warning fix)                                                                    (printf_warnings.patch)
+# Make an include file called:
+# <servers/bootstrap.h>
+# Make an include file called:
+# <tzfile.h>
+# *********** ar/misc.c
+# + #define TMPDIR "TEMP" etc etc                                                                    (win_TMPDIR_as_TEMP.patch)
+# XX -	errno = EFTYPE; -> added for configure.ac
+# ************ as/arm.c
+# ## All of this #define CPU_SUBTYPE_ , N_ARM_THUMB_DEF
+# ************ as/bignum.c
+# +#ifndef _BIGNUM_H_                                                                                (add_compile_guards.patch)
 
 set -e
 

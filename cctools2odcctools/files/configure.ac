@@ -295,6 +295,36 @@ AC_CHECK_DECL([S_IXOTH], [],
 AC_CHECK_DECL([S_ISVTX], [],
             [AC_DEFINE([S_ISVTX], [0001000], [0001000])])
 
+AC_CHECK_DECL([EBADRPC], [],
+            [AC_DEFINE([EBADRPC], [72],
+               [EBADRPC])],
+            [#include <sys/errno.h>])
+
+AC_CHECK_DECL([EFTYPE], [],
+            [AC_DEFINE([EFTYPE], [79],
+               [EFTYPE])],
+            [#include <sys/errno.h>])
+
+AC_CHECK_DECL([CPU_SUBTYPE_ARM_V5TEJ], [],
+            [AC_DEFINE([CPU_SUBTYPE_ARM_V5TEJ], [((cpu_subtype_t) 7)],
+               [CPU_SUBTYPE_ARM_V5TEJ])],
+            [#include <mach/machine.h>])
+
+AC_CHECK_DECL([CPU_SUBTYPE_ARM_XSCALE], [],
+            [AC_DEFINE([CPU_SUBTYPE_ARM_XSCALE], [((cpu_subtype_t) 8)],
+               [CPU_SUBTYPE_ARM_XSCALE])],
+            [#include <mach/machine.h>])
+
+AC_CHECK_DECL([CPU_SUBTYPE_ARM_V7], [],
+            [AC_DEFINE([CPU_SUBTYPE_ARM_V7], [((cpu_subtype_t) 9)],
+               [CPU_SUBTYPE_ARM_V7])],
+            [#include <mach/machine.h>])
+
+AC_CHECK_DECL([N_ARM_THUMB_DEF], [],
+            [AC_DEFINE([N_ARM_THUMB_DEF], [0x0008],
+               [CPU_SUBTYPE_ARM_V7])],
+            [#include <mach-o/nlist.h>])
+
 AC_ARG_PROGRAM
 
 case $target_cpu in
