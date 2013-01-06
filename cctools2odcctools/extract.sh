@@ -242,7 +242,6 @@ if [[ ! "$(uname -s)" = "Darwin" ]] ; then
 fi
 
 # Removed as/getc_unlocked.diff as all it did was re-include config.h
-# Removed libstuff/cmd_with_prefix.diff as it's wrong.
 
 # Removed ar/errno.diff as it's not needed anymore.
 # Removed as/messages.diff ld/ld-nomach.diff misc/bootstrap_h.diff
@@ -261,39 +260,38 @@ fi
 #   Moved otool/dontTypedefNXConstantString.diff
 #   Moved libstuff/ofile_map_unmap_mingw.diff
 # Removed otool/nolibmstub.diff
+#   Moved ar/ar-ranlibpath.diff misc/libtool_lipo_transform.diff
+# Removed libstuff/cmd_with_prefix.diff misc/libtool-ldpath.diff
+#   Moved as/input-scrub.diff
+#   Moved misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff
 
-if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
-    PATCHFILES="ar/ar-ranlibpath.diff \
-                as/input-scrub.diff as/driver.c.diff \
-                as/use_PRI_macros.diff \
-                include/mach/machine.diff \
-                libstuff/default_arch.diff \
-                libstuff/realpath_execute.diff \
-                misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
-                misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
-                include/mach/machine_armv7.diff"
-else
-    # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
-    PATCHFILES="ar/ar-ranlibpath.diff \
-                as/input-scrub.diff as/driver.c.diff \
-                libstuff/default_arch.diff \
-                libstuff/realpath_execute.diff \
-                misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
-                misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
-                include/mach/machine_armv7.diff"
-fi
+#if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
+#    PATCHFILES="as/input-scrub.diff \
+#                as/use_PRI_macros.diff \
+#                include/mach/machine.diff \
+#                libstuff/default_arch.diff \
+#                include/mach/machine_armv7.diff"
+#else
+#    PATCHFILES="libstuff/default_arch.diff \
+#                include/mach/machine_armv7.diff"
+#fi
 
 PATCHFILES_TIME="ar/archive.diff ar/declare_localtime.diff"
 PATCHFILES_QSORT_R="ld/qsort_r.diff ld64/QSORT_macho_relocatable_file.diff"
 PATCHFILES_ADD_COMPILEGUARDS="as/bignum.diff as/relax.diff"
 PATCHFILES_PRINTF_FORMAT_BUG="ar/ar-printf.diff"    # The patch formed from this also includes some sedding for qd->lld.
 PATCHFILES_CROSS_SYSROOT="ld-sysroot.diff ld64/Options-defcross.diff"
+PATCHFILES_DEFAULT_ARCH="libstuff/default_arch.diff"
 PATCHFILES_ADD_TYPENAME_LD64="ld64/_TYPENAME_compiler_bug.diff"
 PATCHFILES_MACOSX_DEPLOYMENT_TARGET="libstuff/macosx_deployment_target_default_105.diff"
-PATCHFILES_WIN_TMPDIR="ar/TMPDIR.diff"
-PATCHFILES_WIN_EXECUTE="libstuff/mingw_execute.diff"
 PATCHFILES_MAP_64BIT_ARCHES="libstuff/map_64bit_arches.diff"
 PATCHFILES_DONT_TYPEDEF_NXCONSTANTSTRING="otool/dontTypedefNXConstantString.diff"
+PATCHFILES_CROSS_PREFIXES="ar/ar-ranlibpath.diff misc/libtool_lipo_transform.diff misc/libtool-ldpath.diff"
+PATCHFILES_PROGNAME_FIXES="as/driver.c.diff libstuff/realpath_execute.diff"
+PATCHFILES_STRERROR="as/input-scrub.diff"
+PATCHFILES_DONT_ASSUME_GETATTRLIST="misc/redo_prebinding.nogetattrlist.diff"
+PATCHFILES_WIN_TMPDIR="ar/TMPDIR.diff"
+PATCHFILES_WIN_EXECUTE="libstuff/mingw_execute.diff"
 PATCHFILES_WIN_AVOID_MMAP_OFILE="libstuff/ofile_map_unmap_mingw.diff"
 
 ADDEDFILESDIR=${TOPSRCDIR}/files
@@ -438,7 +436,6 @@ patch_add_sdkroot_headers1() {
 patch_add_sdkroot_headers2() {
     mkdir -p ${DISTDIR}/include/machine
     mkdir -p ${DISTDIR}/include/mach_debug
-#    mkdir -p ${DISTDIR}/include/CommonCrypto
     cp -f ${SDKROOT}/usr/include/machine/types.h               ${DISTDIR}/include/machine/types.h
     cp -f ${SDKROOT}/usr/include/machine/_types.h              ${DISTDIR}/include/machine/_types.h
     cp -f ${SDKROOT}/usr/include/machine/endian.h              ${DISTDIR}/include/machine/endian.h
@@ -452,7 +449,6 @@ patch_add_sdkroot_headers2() {
     cp -f ${SDKROOT}/usr/include/Availability.h                ${DISTDIR}/include/Availability.h
     cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h          ${DISTDIR}/include/AvailabilityMacros.h
     cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h        ${DISTDIR}/include/AvailabilityInternal.h
-#    cp -f ${SDKROOT}/usr/include/CommonCrypto/CommonDigest.h   ${DISTDIR}/include/CommonCrypto/CommonDigest.h
     cp -f ${SDKROOT}/usr/include/libunwind.h                   ${DISTDIR}/include/libunwind.h
 
     if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; then
@@ -473,8 +469,6 @@ patch_add_sdkroot_headers2() {
 
     do_sed $"s^#if defined(__GNUC__) && ( defined(__APPLE_CPP__) || defined(__APPLE_CC__) || defined(__MACOS_CLASSIC__) )^#if defined(__GNUC__)^" ${DISTDIR}/include/TargetConditionals.h
 
-#    mkdir -p ${DISTDIR}/libprunetrie/include/mach-o
-#    cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/libprunetrie/include/mach-o/
     cp -f ${SDKROOT}/usr/include/mach-o/compact_unwind_encoding.h ${DISTDIR}/include/mach-o/
 }
 
@@ -552,17 +546,18 @@ patch_apply_odcctools_patches_add_compileguards() {
 patch_apply_odcctools_patches_CROSS_SYSROOT() {
     patch_apply_odcctools_patches "$PATCHFILES_CROSS_SYSROOT"
 }
+patch_apply_odcctools_patches_default_arch() {
+    patch_apply_odcctools_patches "$PATCHFILES_DEFAULT_ARCH"
+}
 patch_apply_odcctools_patches_add_typename_ld64() {
     patch_apply_odcctools_patches "$PATCHFILES_ADD_TYPENAME_LD64"
 }
-
 patch_qd_to_lld() {
     # MinGW falls over because mingw_pformat.c doesn't handle qd, so instead, change it lld.
     do_sed $"s^10qd^10lld^"  ${DISTDIR}/ar/archive.h
     do_sed $"s^8qd^8lld^"    ${DISTDIR}/ar/contents.c
     do_sed $"s^qd^lld^"      ${DISTDIR}/as/messages.c
 }
-
 patch_apply_odcctools_patches_remove_sysctl_osversion_detection() {
     patch_apply_odcctools_patches "$PATCHFILES_MACOSX_DEPLOYMENT_TARGET"
     # libstuff
@@ -570,45 +565,53 @@ patch_apply_odcctools_patches_remove_sysctl_osversion_detection() {
     do_sed $"s^if(sysctl(osversion_name, 2, osversion, &osversion_len, NULL, 0) == -1)^strcpy(osversion,\"12.0\");^" ${DISTDIR}/libstuff/macosx_deployment_target.c
     do_sed $"s^system_error(\"sysctl for kern.osversion failed\");^^" ${DISTDIR}/libstuff/macosx_deployment_target.c
 }
-
 patch_apply_odcctools_patches_map_64bit_arches() {
     patch_apply_odcctools_patches "$PATCHFILES_MAP_64BIT_ARCHES"
 }
-
 patch_apply_odcctools_patches_printf_format_bugs() {
     patch_apply_odcctools_patches "$PATCHFILES_PRINTF_FORMAT_BUG"
     patch_qd_to_lld
 }
-
 patch_apply_odcctools_patches_dont_typedef_NxConstantString() {
     patch_apply_odcctools_patches "$PATCHFILES_DONT_TYPEDEF_NXCONSTANTSTRING"
 }
-
+patch_apply_odcctools_patches_cross_prefixes_EXEEXT() {
+    patch_apply_odcctools_patches "$PATCHFILES_CROSS_PREFIXES"
+    do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
+}
+patch_apply_odcctools_patches_progname_fixes() {
+    patch_apply_odcctools_patches "$PATCHFILES_PROGNAME_FIXES"
+}
+patch_apply_odcctools_patches_use_strerror() {
+    patch_apply_odcctools_patches "$PATCHFILES_STRERROR"
+}
+patch_apply_odcctools_patches_dont_assume_getattrlist() {
+    patch_apply_odcctools_patches "$PATCHFILES_DONT_ASSUME_GETATTRLIST"
+}
 patch_apply_odcctools_patches_win_TMPDIR_to_TEMP() {
     patch_apply_odcctools_patches "$PATCHFILES_WIN_TMPDIR"
 }
-
 patch_apply_odcctools_patches_win_execute() {
     patch_apply_odcctools_patches "$PATCHFILES_WIN_EXECUTE"
 }
-
 patch_apply_odcctools_patches_win_avoid_mmap_ofile() {
     patch_apply_odcctools_patches "$PATCHFILES_WIN_AVOID_MMAP_OFILE"
 }
 
 patch_to_from patch_apply_odcctools_patches_time_fixes                        fix_time_bugs.patch                     $DISTDIR
 patch_to_from patch_apply_odcctools_patches_add_compileguards                 add_compileguards.patch                 $DISTDIR
-patch_to_from patch_apply_odcctools_patches_unsorted                          odcctools.patch                         $DISTDIR
 patch_to_from patch_apply_odcctools_patches_remove_sysctl_osversion_detection remove_sysctl_osversion_detection.patch $DISTDIR
 patch_to_from patch_apply_odcctools_patches_qsort_r                           allow_glibc_or_bsd_qsort_r.patch        $DISTDIR
 patch_to_from patch_apply_odcctools_patches_map_64bit_arches                  map_64bit_arches.patch                  $DISTDIR
 patch_to_from patch_apply_odcctools_patches_printf_format_bugs                fix_printf_format_bugs.patch            $DISTDIR
 patch_to_from patch_apply_odcctools_patches_CROSS_SYSROOT                     add_CROSS_SYSROOT.patch                 $DISTDIR
+patch_to_from patch_apply_odcctools_patches_default_arch                      default_arch.patch                      $DISTDIR
 patch_to_from patch_apply_odcctools_patches_add_typename_ld64                 add_typename_ld64.patch                 $DISTDIR
 patch_to_from patch_apply_odcctools_patches_dont_typedef_NxConstantString     dont_typedef_NxConstantString.patch     $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                win_TMPDIR_to_TEMP.patch                $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_execute                       win_execute.patch                       $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile              win_avoid_mmap_ofile.patch              $DISTDIR
+patch_to_from patch_apply_odcctools_patches_cross_prefixes_EXEEXT             cross_prefixes_and_EXEEXT.patch         $DISTDIR
+patch_to_from patch_apply_odcctools_patches_progname_fixes                    progname_fixes.patch                    $DISTDIR
+patch_to_from patch_apply_odcctools_patches_use_strerror                      use_strerror.patch                      $DISTDIR
+patch_to_from patch_apply_odcctools_patches_dont_assume_getattrlist           dont_assume_getattrlist                 $DISTDIR
 
 patch_autoconfiscate() {
 
@@ -640,8 +643,6 @@ patch_autoconfiscate() {
     set +e
 }
 
-patch_to_from patch_autoconfiscate autoconfiscate.patch $DISTDIR
-
 patch_ppc64_reenable() {
     # ppc64 is disabled on non-darwin native builds, so let's re-enable it -> shouldn't break darwin native.
     # enable_ppc64_when_cross_compiling.patch
@@ -653,26 +654,13 @@ patch_ppc64_reenable() {
 
 patch_to_from patch_ppc64_reenable ppc64_reenable.patch $DISTDIR
 
-patch_misc_host_fixes() {
-    do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
-
-    # undef___unused_for_sysctl.patch
-    do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
-
-    # windows_as_driver_EXEEXT.patch
-    do_sed $"s^\tif(realpath == NULL)^if(prefix == NULL)^" ${DISTDIR}/as/driver.c
-    do_sed $"s^    const char \*AS = \"/as\";^    const char \*AS = \"/as\" EXEEXT;\n^" ${DISTDIR}/as/driver.c
-
-    do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
-
-    do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^" ${DISTDIR}/ld64/src/ld/ld.cpp
-
+patch_dont_assume_vm_sync() {
     do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass1.c
     do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/ld/pass2.c
     do_sed $"s^#ifdef VM_SYNC_DEACTIVATE^#if defined(VM_SYNC_DEACTIVATE) \&\& (HAVE_DECL_VM_MSYNC)^"  ${DISTDIR}/misc/libtool.c
 }
 
-patch_to_from patch_misc_host_fixes misc_host_fixes.patch $DISTDIR
+patch_to_from patch_dont_assume_vm_sync dont_assume_vm_sync.patch $DISTDIR
 
 patch_missing_includes() {
     # as_misc_fixes.patch
@@ -685,7 +673,35 @@ patch_missing_includes() {
 
 patch_to_from patch_missing_includes missing_includes.patch $DISTDIR
 
-#patch_to_from patch_qd_to_lld qd_to_lld.patch $DISTDIR
+patch_error_as_weak_symbol() {
+    do_sed $":a;N;\$!ba;s^__private_extern__\nvoid\nerror^__private_extern__\n#ifndef __MINGW32__\n__attribute__\(\(weak\)\)\n#endif\nvoid\nerror^" ${DISTDIR}/libstuff/errors.c
+}
+
+patch_to_from patch_error_as_weak_symbol error_as_weak_symbol.patch $DISTDIR
+
+patch_undef___unused_for_sysctl() {
+    do_sed $"s^#include <sys/sysctl.h>^#if defined(__unused) \&\& defined(__linux__)\n#undef __unused\n#endif\n#include <sys/sysctl.h>^" ${DISTDIR}/libstuff/macosx_deployment_target.c
+}
+
+patch_to_from patch_undef___unused_for_sysctl undef___unused_for_sysctl.patch $DISTDIR
+
+patch_fix_realpath_result_check() {
+    do_sed $"s^\tif(realpath == NULL)^if(prefix == NULL)^" ${DISTDIR}/as/driver.c
+}
+
+patch_to_from patch_fix_realpath_result_check fix_realpath_result_check.patch $DISTDIR
+
+patch_extern_C_log2_only_if___APPLE__() {
+    do_sed $"s^extern \"C\" double log2 ( double );^#ifdef __APPLE__\nextern \"C\" double log2 ( double );\n#endif\n#include <libc.h>^" ${DISTDIR}/ld64/src/ld/ld.cpp
+}
+
+patch_to_from patch_extern_C_log2_only_if___APPLE__ extern_C_log2_only_if___APPLE__.patch $DISTDIR
+
+patch_extern_C___assert_rtn() {
+    do_sed $"s^void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^extern \"C\" void __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr);\nvoid __assert_rtn(const char\* func, const char\* file, int line, const char\* failedexpr)^" ${DISTDIR}/ld64/src/ld/ld.cpp
+}
+
+patch_to_from patch_extern_C___assert_rtn extern_C___assert_rtn.patch $DISTDIR
 
 patch_O_BINARY() {
     # Fix binary files being written out (and read in) as ascii on Windows. It'd be better if could just turn off ascii reads and writes.
@@ -716,10 +732,9 @@ patch_O_BINARY() {
     do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/segedit.c
     do_sed $"s^O_WRONLY|O_CREAT^O_WRONLY|O_CREAT|O_BINARY^"                             ${DISTDIR}/misc/strip.c
     do_sed $"s^O_RDONLY^O_RDONLY|O_BINARY^"                                             ${DISTDIR}/misc/strip.c
-    #do_sed $"s^#include <libc.h>^#ifdef __APPLE__\n#include <libc.h>\n#else\n#include <stdio.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/param.h>\n#include <io.h>\n#endif^" ${DISTDIR}/ld64/src/ld/Options.cpp
 }
 
-patch_to_from patch_O_BINARY O_BINARY.patch $DISTDIR
+patch_to_from patch_O_BINARY win_O_BINARY.patch $DISTDIR
 
 patch_fileio_mode() {
     # I don't think these any point to these changes anymore!
@@ -750,7 +765,7 @@ patch_fileio_mode() {
     do_sed $"s^0777^FIO_READ_WRITE_EXEC^" ${DISTDIR}/misc/strip.c
 }
 
-patch_to_from patch_fileio_mode fileio_mode.patch $DISTDIR
+patch_to_from patch_fileio_mode win_fileio_mode.patch $DISTDIR
 
 patch_configure_regen() {
     pushd ${DISTDIR} > /dev/null
@@ -760,6 +775,12 @@ patch_configure_regen() {
     fi
     popd > /dev/null
 }
+
+patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                win_TMPDIR_to_TEMP.patch                $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_execute                       win_execute.patch                       $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile              win_avoid_mmap_ofile.patch              $DISTDIR
+
+patch_to_from patch_autoconfiscate autoconfiscate.patch $DISTDIR
 
 patch_to_from patch_configure_regen configure_regen.patch $DISTDIR
 
