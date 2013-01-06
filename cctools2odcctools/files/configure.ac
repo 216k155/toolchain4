@@ -522,25 +522,6 @@ done
 CXXFLAGS=$CXXFLAGS" $CXXWARNINGS"
 AC_LANG_POP
 
-AC_MSG_CHECKING([for max unsigned long long])
-AC_COMPILE_IFELSE(
-   [AC_LANG_SOURCE([[#if HAVE_LIMITS_H
-                     #include <limits.h>
-                     #endif
-                     unsigned long long a = ULLONG_MAX;]])],
-   [AC_MSG_RESULT([ULLONG_MAX])],
-   [AC_COMPILE_IFELSE(
-    [AC_LANG_SOURCE([[#if HAVE_LIMITS_H
-                      #include <limits.h>
-                      #endif
-                      unsigned long long a = 18446744073709551615ULL;]])],
-    [AC_DEFINE(ULLONG_MAX, [18446744073709551615ULL], [max unsigned long long])
-     AC_MSG_RESULT([18446744073709551615ULL])],
-    [AC_MSG_RESULT([none]) ]
-    )
-    ]
-)
-
 # The parameter order of both qsort_r and its callback are different on BSD
 # than they are on Linux.
 AC_CHECK_FUNCS([qsort_r])
