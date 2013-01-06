@@ -123,6 +123,11 @@ AM_CONDITIONAL([HAVE_CONFIGURE_H], [test "x$ac_cv_header_configure_h" = xyes])
 AM_COND_IF([HAVE_CONFIGURE_H], [],
  AC_CONFIG_HEADERS([include/configure.h]))
 
+AC_CHECK_HEADERS([tzfile.h])
+AM_CONDITIONAL([HAVE_TZFILE_H], [test "x$ac_cv_header_tzfile_h" = xyes])
+AM_COND_IF([HAVE_TZFILE_H], [],
+ AC_CONFIG_HEADERS([include/tzfile.h]))
+
 AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
 AC_SUBST(SSL_LIBS)
 AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_CommonCrypto_CommonDigest_h" = xyes])

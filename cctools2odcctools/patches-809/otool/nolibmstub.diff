@@ -5,7 +5,7 @@
  }
  
 -#ifndef __DYNAMIC__
-+#if 0
++#if defined(__APPLE__)
  /*
   * To avoid linking in libm.  These variables are defined as they are used in
   * pthread_init() to put in place a fast sqrt().

@@ -1,16 +1,13 @@
---- ./src/Options.cpp.orig	2006-06-01 13:13:03.000000000 -0700
-+++ ./src/Options.cpp	2006-06-04 09:16:05.000000000 -0700
-@@ -1358,6 +1358,13 @@
- 			fSDKPaths.push_back(path);
- 		}
+--- ./src/ld/Options.cpp.orig	2011-08-15 23:56:20.000000000 +0100
++++ ./src/ld/Options.cpp	2013-01-06 17:38:06.412512876 +0000
+@@ -2790,6 +2790,10 @@
  	}
-+
-+	if(fSDKPaths.size() == 0) {
+ 	int standardLibraryPathsStartIndex = libraryPaths.size();
+ 	int standardFrameworkPathsStartIndex = frameworkPaths.size();
 +#ifdef CROSS_SYSROOT
++	if(fSDKPaths.size() == 0) {
 +		fSDKPaths.push_back(CROSS_SYSROOT);
 +#endif
-+	}
-+
  	if ( addStandardLibraryDirectories ) {
  		libraryPaths.push_back("/usr/lib");
  		libraryPaths.push_back("/usr/local/lib");
