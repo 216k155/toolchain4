@@ -113,6 +113,16 @@ AM_CONDITIONAL([HAVE_SERVERS_BOOTSTRAP_H], [test "x$ac_cv_header_servers_bootstr
 AM_COND_IF([HAVE_SERVERS_BOOTSTRAP_H], [],
  AC_CONFIG_HEADERS([include/servers/bootstrap.h]))
 
+AC_CHECK_HEADERS([malloc/malloc.h])
+AM_CONDITIONAL([HAVE_MALLOC_MALLOC_H], [test "x$ac_cv_header_malloc_malloc_h" = xyes])
+AM_COND_IF([HAVE_MALLOC_MALLOC_H], [],
+ AC_CONFIG_HEADERS([include/malloc/malloc.h]))
+
+AC_CHECK_HEADERS([configure.h])
+AM_CONDITIONAL([HAVE_CONFIGURE_H], [test "x$ac_cv_header_configure_h" = xyes])
+AM_COND_IF([HAVE_CONFIGURE_H], [],
+ AC_CONFIG_HEADERS([include/configure.h]))
+
 AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
 AC_SUBST(SSL_LIBS)
 AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_CommonCrypto_CommonDigest_h" = xyes])

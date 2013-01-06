@@ -248,39 +248,41 @@ LD64PATCHES="ld64/QSORT_macho_relocatable_file.diff ld64/_TYPENAME_compiler_bug.
 
 # Removed ar/errno.diff as it's not needed anymore.
 # Removed as/messages.diff ld/ld-nomach.diff misc/bootstrap_h.diff
+# Removed include/stuff/bytesex-floatstate.diff
+# Removed as/arm.c.diff
+# Removed libstuff/sys_types.diff
+# Removed misc/redo_prebinding.nomalloc.diff
+# Removed otool/noobjc.diff
 if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
     PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
                 ar/contents.diff ar/declare_localtime.diff ar/TMPDIR.diff \
-                as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
+                as/bignum.diff as/input-scrub.diff as/driver.c.diff \
                 as/relax.diff as/use_PRI_macros.diff \
-                include/mach/machine.diff include/stuff/bytesex-floatstate.diff \
+                include/mach/machine.diff \
                 ${LD64PATCHES} \
                 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
                 libstuff/macosx_deployment_target_default_105.diff \
-                libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
+                libstuff/map_64bit_arches.diff \
                 libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
                 misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
                 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
-                misc/redo_prebinding.nomalloc.diff \
-                otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
+                otool/nolibmstub.diff otool/dontTypedefNXConstantString.diff \
                 include/mach/machine_armv7.diff \
                 ld/qsort_r.diff"
 else
     # Removed as/driver.c.diff as we've got _NSGetExecutablePath.
     PATCHFILES="ar/archive.diff ar/ar-printf.diff ar/ar-ranlibpath.diff \
                 ar/contents.diff ar/declare_localtime.diff ar/TMPDIR.diff \
-                as/arm.c.diff as/bignum.diff as/input-scrub.diff as/driver.c.diff \
+                as/bignum.diff as/input-scrub.diff as/driver.c.diff \
                 as/relax.diff \
-                include/stuff/bytesex-floatstate.diff \
                 ${LD64PATCHES} \
                 ld-sysroot.diff ld/uuid-nonsmodule.diff libstuff/default_arch.diff \
                 libstuff/macosx_deployment_target_default_105.diff \
-                libstuff/map_64bit_arches.diff libstuff/sys_types.diff \
+                libstuff/map_64bit_arches.diff \
                 libstuff/mingw_execute.diff libstuff/realpath_execute.diff libstuff/ofile_map_unmap_mingw.diff \
                 misc/libtool-ldpath.diff misc/libtool_lipo_transform.diff \
                 misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff \
-                misc/redo_prebinding.nomalloc.diff \
-                otool/nolibmstub.diff otool/noobjc.diff otool/dontTypedefNXConstantString.diff \
+                otool/nolibmstub.diff otool/dontTypedefNXConstantString.diff \
                 include/mach/machine_armv7.diff \
                 ld/qsort_r.diff"
 fi
