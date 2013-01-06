@@ -606,9 +606,9 @@ patch_to_from patch_apply_odcctools_patches_printf_format_bugs                fi
 patch_to_from patch_apply_odcctools_patches_CROSS_SYSROOT                     add_CROSS_SYSROOT.patch                 $DISTDIR
 patch_to_from patch_apply_odcctools_patches_add_typename_ld64                 add_typename_ld64.patch                 $DISTDIR
 patch_to_from patch_apply_odcctools_patches_dont_typedef_NxConstantString     dont_typedef_NxConstantString.patch     $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                win_TMPDIR_to_TEMP                      $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_execute                       win_execute                             $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile              win_avoid_mmap_ofile                    $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                win_TMPDIR_to_TEMP.patch                $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_execute                       win_execute.patch                       $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile              win_avoid_mmap_ofile.patch              $DISTDIR
 
 patch_autoconfiscate() {
 
