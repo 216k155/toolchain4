@@ -611,7 +611,7 @@ patch_to_from patch_apply_odcctools_patches_dont_typedef_NxConstantString     do
 patch_to_from patch_apply_odcctools_patches_cross_prefixes_EXEEXT             cross_prefixes_and_EXEEXT.patch         $DISTDIR
 patch_to_from patch_apply_odcctools_patches_progname_fixes                    progname_fixes.patch                    $DISTDIR
 patch_to_from patch_apply_odcctools_patches_use_strerror                      use_strerror.patch                      $DISTDIR
-patch_to_from patch_apply_odcctools_patches_dont_assume_getattrlist           dont_assume_getattrlist                 $DISTDIR
+patch_to_from patch_apply_odcctools_patches_dont_assume_getattrlist           dont_assume_getattrlist.patch           $DISTDIR
 
 patch_autoconfiscate() {
 
