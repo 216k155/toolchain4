@@ -195,9 +195,9 @@ cp ${BASE_TMP}/src-${PREFIX}-osx/llvmgcc42-2336.1/llvmCore/LICENSE.TXT $DST/${PR
 
 DATESUFFIX=$(date +%y%m%d)
 if [ $MAKING_DEBUG = yes ] ; then
-    OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg-$DATESUFFIX
+    OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-dbg-${DATESUFFIX}.hackin2
 else
-    OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-$DATESUFFIX
+    OUTFILEPREFIX=$PWD/multiarch-darwin11-cctools127.2-gcc42-5666.3-llvmgcc42-2336.1-$UNAME-${DATESUFFIX}.hackin2
 fi
 OUTFILE=$(compress_folders "$DST/." $OUTFILEPREFIX)
 cp $OUTFILE ~/Dropbox/darwin-compilers-work

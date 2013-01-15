@@ -977,6 +977,7 @@ toolchain_cctools() {
 			pushd openssl-1.0.1c
 			# OpenSSL doesn't compile right with -jn where n>1
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
+			make depend &>depend.log
 			make CC="$CC $BUILD_ARCH_CFLAGS" &>make.log
 			make install CC="$CC $BUILD_ARCH_CFLAGS" &>make-install.log
 			popd
@@ -1034,6 +1035,9 @@ toolchain_cctools() {
 			if ! ( make -j$JOBS -k &>make.log && make install -j$JOBS  &>install.log ); then
 				error "Build & install failed. Check make.log and install.log"
 				exit 1
+			fi
+			if [[ "$(uname_bt)" = "Darwin" ]] ; then
+				cp ${HOST_DIR}/lib/libLTO.dylib ${PREFIX}/lib/
 			fi
 		fi
 	fi
