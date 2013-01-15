@@ -1,5 +1,5 @@
 AC_INIT([ccctools], [809], [Ray Donnelly <mingw.android@gmail.com>])
-AC_PREREQ([2.68])
+AC_PREREQ([2.62])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
 
 # Weird. Doesn't seem to do anything...

@@ -286,10 +286,12 @@ BASE_TMP=/tmp2/tc4
 # recent autotools. 2.59 should work though.
 AUTOHEADER=autoheader
 AUTOCONF=autoconf
+PKG_CONFIG=pkg-config
 # 2.62 needed for automake 1.11
-AUTOCONF_VER=2.69
+AUTOCONF_VER=2.62
 # 1.11 is needed for AM_COND_IF
-AUTOMAKE_VER=1.12.6
+AUTOMAKE_VER=1.11
+PKG_CONFIG_VER=0.27.1
 
 check_install_autoconf_automake ()
 {
@@ -311,15 +313,12 @@ check_install_autoconf_automake ()
 
 	# Needed versions (for Windows, but may as well target them globally).
 	# The only Automake that's known to work on Windows with the existing
-	local _AUTOCONF_VER=$1
-	local _AUTOMAKE_VER=$2
+	local _PREFIX=$1
+	local _AUTOCONF_VER=$2
+	local _AUTOMAKE_VER=$3
 
-	if [ -d $HOME/autoconf-$AUTOCONF_VER/bin ] ; then
-	  export PATH=$HOME/autoconf-$AUTOCONF_VER/bin:$PATH
-	fi
-
-	if [ -d $HOME/automake-$AUTOMAKE_VER/bin ] ; then
-	  export PATH=$HOME/automake-$AUTOMAKE_VER/bin:$PATH
+	if [ -d $_PREFIX/bin ] ; then
+	  export PATH=$_PREFIX/bin:$PATH
 	fi
 
 	AUTOCONF_VER_OK=
@@ -327,11 +326,11 @@ check_install_autoconf_automake ()
 	  AUTOCONF_VER_OK=$($AUTOCONF --version | head -1 | grep ".* $_AUTOCONF_VER")
 	fi
 	if [ -z "$AUTOCONF_VER_OK" ] ; then
-	  export PATH=$HOME/autoconf-$_AUTOCONF_VER/bin:$PATH
-	  wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-$_AUTOCONF_VER.tar.gz
+	  export PATH=$HOME/bin:$PATH
+	  download http://ftp.gnu.org/gnu/autoconf/autoconf-$_AUTOCONF_VER.tar.gz
 	  tar -xzf autoconf-$_AUTOCONF_VER.tar.gz -C /tmp
 	  pushd /tmp/autoconf-$_AUTOCONF_VER
-	  ./configure --prefix=$HOME/autoconf-$_AUTOCONF_VER
+	  ./configure --prefix=$_PREFIX
 	  make
 	  make install
 	  popd
@@ -342,15 +341,31 @@ check_install_autoconf_automake ()
 	  AUTOMAKE_VER_OK=$($ACLOCAL --version | head -1 | grep ".* $_AUTOMAKE_VER")
 	fi
 	if [ -z "$AUTOMAKE_VER_OK" ] ; then
-	  export PATH=$HOME/automake-$_AUTOMAKE_VER/bin:$PATH
-	  wget -c http://ftp.gnu.org/gnu/automake/automake-$_AUTOMAKE_VER.tar.gz
+	  export PATH=$_PREFIX/bin:$PATH
+	  download http://ftp.gnu.org/gnu/automake/automake-$_AUTOMAKE_VER.tar.gz
 	  tar -xvf automake-$_AUTOMAKE_VER.tar.gz -C /tmp
 	  pushd /tmp/automake-$_AUTOMAKE_VER
-	  ./configure --prefix=$HOME/automake-$_AUTOMAKE_VER
+	  ./configure --prefix=$_PREFIX
 	  make
 	  make install
 	  popd
 	fi
+
+	PKG_CONFIG_VER_OK=
+	if [ ! -z "$(which $PKG_CONFIG)" ] ; then
+	  PKG_CONFIG_VER_OK=$($PKG_CONFIG --version | head -1 | grep "$PKG_CONFIG_VER")
+	fi
+	if [ -z "$PKG_CONFIG_VER_OK" ] ; then
+	  export PATH=$_PREFIX/bin:$PATH
+	  download http://pkgconfig.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz
+	  tar -xvf pkg-config-$PKG_CONFIG_VER.tar.gz -C /tmp
+	  pushd /tmp/pkg-config-$PKG_CONFIG_VER
+	  ./configure --prefix=$_PREFIX
+	  make
+	  make install
+	  popd
+	fi
+
 }
 
 
@@ -364,7 +379,7 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
     # Autoconf 2.68 on Windows emits (when configuring libiberty) a configure script script that emits:
     # | #define HAVE_ATEXIT 1
     # | #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-	check_install_autoconf_automake $AUTOCONF_VER $AUTOMAKE_VER
+    check_install_autoconf_automake $HOME $AUTOCONF_VER $AUTOMAKE_VER
     WARN_SUPPRESS_CXX=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Linux" ]] ; then
     # Ubuntu has autoconf2.59 package.
@@ -376,22 +391,23 @@ elif [[ "$(uname_bt)" == "Darwin" ]] ; then
     GAWK=awk
     URLDL=curl
     WARN_SUPPRESS=
+    check_install_autoconf_automake $HOME $AUTOCONF_VER $AUTOMAKE_VER
 fi
 
-if [ -z "$(which $AUTOCONF)" ] ; then
-    AUTOCONF=autoconf
-    AUTOHEADER=autoconf
-    export PATH=$HOME/autoconf-2.59/bin:$PATH
-    if [ -z "$(which $AUTOCONF)" ] ; then
-        download http://ftp.gnu.org/gnu/autoconf/autoconf-2.59.tar.gz
-        tar -xzf autoconf-2.59.tar.gz
-        pushd autoconf-2.59
-        ./configure --prefix=$HOME/autoconf-2.59
-        make
-        make install
-        popd
-    fi
-fi
+#if [ -z "$(which $AUTOCONF)" ] ; then
+#    AUTOCONF=autoconf
+#    AUTOHEADER=autoconf
+#    export PATH=$HOME/autoconf-2.59/bin:$PATH
+#    if [ -z "$(which $AUTOCONF)" ] ; then
+#        download http://ftp.gnu.org/gnu/autoconf/autoconf-2.59.tar.gz
+#        tar -xzf autoconf-2.59.tar.gz
+#        pushd autoconf-2.59
+#        ./configure --prefix=$HOME/autoconf-2.59
+#        make
+#        make install
+#        popd
+#    fi
+#fi
 
 if [ -z "$(which $AUTOCONF)" ] ; then
     error "Failed to find $AUTOCONF in PATH"
@@ -1095,9 +1111,12 @@ toolchain_cctools() {
 			fi
 			cp ${HOST_DIR}/lib/libLTO.dll ${PREFIX}/bin/
 		else
-			if ! ( make -j$JOBS -k &>make.log && make install -j$JOBS  &>install.log ); then
+            if ! ( make -j$JOBS -k &>make.log && make install -j$JOBS  &>install.log ); then
 				error "Build & install failed. Check make.log and install.log"
 				exit 1
+			fi
+			if [[ "$(uname_bt)" = "Darwin" ]] ; then
+				cp ${HOST_DIR}/lib/libLTO.dylib ${PREFIX}/lib/
 			fi
 		fi
 	fi
