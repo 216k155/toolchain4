@@ -384,8 +384,8 @@ if [[ "$(uname_bt)" == "Windows" ]] ; then
 elif [[ "$(uname_bt)" == "Linux" ]] ; then
     # Ubuntu has autoconf2.59 package.
     GAWK=awk
-    AUTOCONF=autoconf2.59
-    AUTOHEADER=autoheader2.59
+    AUTOCONF=autoconf
+    AUTOHEADER=autoheader
     WARN_SUPPRESS_CXX=-Wno-enum-compare
 elif [[ "$(uname_bt)" == "Darwin" ]] ; then
     GAWK=awk
@@ -1056,6 +1056,7 @@ toolchain_cctools() {
 			pushd openssl-1.0.1c
 			# OpenSSL doesn't compile right with -jn where n>1
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
+			make depend
 			make CC="$CC $BUILD_ARCH_CFLAGS" &>make.log
 			make install CC="$CC $BUILD_ARCH_CFLAGS" &>make-install.log
 			popd
