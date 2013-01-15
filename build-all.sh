@@ -126,7 +126,6 @@ INTEL_BUILD=1
 if [ "$INTEL_BUILD" = "1" ] ; then
     # Make i686 build.
     full_build_for_arch $PREFIX intel
-    exit 1
     # Since I moved to mingw64, the libgcc_s*.dylib aren't being copied to the right place. In fact, I'm
     # not sure if it's the gcc or the llvmgcc install that's meant to write them. llvmgcc and gcc libgccs are
     # Probably best kept separate.

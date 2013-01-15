@@ -360,7 +360,7 @@ check_install_autoconf_automake ()
 	  download http://pkgconfig.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz
 	  tar -xvf pkg-config-$PKG_CONFIG_VER.tar.gz -C /tmp
 	  pushd /tmp/pkg-config-$PKG_CONFIG_VER
-	  ./configure --prefix=$_PREFIX
+	  ./configure --prefix=$_PREFIX --with-internal-glib
 	  make
 	  make install
 	  popd
