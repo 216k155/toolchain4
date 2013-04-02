@@ -241,41 +241,6 @@ if [[ ! "$(uname -s)" = "Darwin" ]] ; then
     LD64_CREATE_READER_TYPENAME_DIFF=ld64/ld_createReader_typename.diff
 fi
 
-# Removed as/getc_unlocked.diff as all it did was re-include config.h
-
-# Removed ar/errno.diff as it's not needed anymore.
-# Removed as/messages.diff ld/ld-nomach.diff misc/bootstrap_h.diff
-# Removed include/stuff/bytesex-floatstate.diff
-# Removed as/arm.c.diff
-# Removed libstuff/sys_types.diff
-# Removed misc/redo_prebinding.nomalloc.diff
-# Removed otool/noobjc.diff
-#   Moved ar/archive.diff ar/declare_localtime.diff to PATCHFILES_TIME
-#   Moved libstuff/macosx_deployment_target_default_105.diff to
-# Removed ar/contents.diff
-# Removed ld/uuid-nonsmodule.diff
-#   Moved ar/TMPDIR.diff
-#   Moved libstuff/mingw_execute.diff
-#   Moved libstuff/map_64bit_arches.diff
-#   Moved otool/dontTypedefNXConstantString.diff
-#   Moved libstuff/ofile_map_unmap_mingw.diff
-# Removed otool/nolibmstub.diff
-#   Moved ar/ar-ranlibpath.diff misc/libtool_lipo_transform.diff
-# Removed libstuff/cmd_with_prefix.diff misc/libtool-ldpath.diff
-#   Moved as/input-scrub.diff
-#   Moved misc/ranlibname.diff misc/redo_prebinding.nogetattrlist.diff
-
-#if [[ "$USE_OSX_MACHINE_H" = "0" ]] ; then
-#    PATCHFILES="as/input-scrub.diff \
-#                as/use_PRI_macros.diff \
-#                include/mach/machine.diff \
-#                libstuff/default_arch.diff \
-#                include/mach/machine_armv7.diff"
-#else
-#    PATCHFILES="libstuff/default_arch.diff \
-#                include/mach/machine_armv7.diff"
-#fi
-
 PATCHFILES_TIME="ar/archive.diff ar/declare_localtime.diff"
 PATCHFILES_QSORT_R="ld/qsort_r.diff ld64/QSORT_macho_relocatable_file.diff"
 PATCHFILES_ADD_COMPILEGUARDS="as/bignum.diff as/relax.diff"
@@ -366,11 +331,6 @@ cp ${DISTDIR}/ld64/src/other/prune_trie.h  ${DISTDIR}/include/mach-o/
 cp ${DISTDIR}/ld64/src/other/PruneTrie.cpp ${DISTDIR}/libprunetrie/
 
 #
-# sdkroot_usr_include_objc
-#
-cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
-
-#
 # llvm headers
 #
 message_status "Merging include/llvm-c from Apple's llvmgcc42-${GCCLLVMVERS}"
@@ -450,6 +410,7 @@ patch_add_sdkroot_headers2() {
     cp -f ${SDKROOT}/usr/include/AvailabilityMacros.h          ${DISTDIR}/include/AvailabilityMacros.h
     cp -f ${SDKROOT}/usr/include/AvailabilityInternal.h        ${DISTDIR}/include/AvailabilityInternal.h
     cp -f ${SDKROOT}/usr/include/libunwind.h                   ${DISTDIR}/include/libunwind.h
+    cp -Rf ${SDKROOT}/usr/include/objc                         ${DISTDIR}/include/
 
     if [[ $USESDK -eq 999 ]] || [[ ! "$FOREIGNHEADERS" = "-foreign-headers" ]] ; then
         if [[ $(uname_bt) = "Darwin" ]] ; then
