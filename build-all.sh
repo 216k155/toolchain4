@@ -39,6 +39,23 @@ if [ -f /etc/debian_version ] ; then
   DEBIAN_VERSION=$(head -n 1 /etc/debian_version)
 fi
 
+# $1 is path
+# $2 is string to find
+# $3 is string to replace with
+# (always looks for .la files and any with ldscripts in the path.
+rebase_absolute_paths ()
+{
+    local _PATH=$1
+    local _FIND=$2
+    local _REPL=$3
+
+    FILES="$(find $_PATH \( -name '*.la' -or -path '*/ldscripts/*' -or -name '*.conf' -or -name 'mkheaders' -or -name '*.py' -or -name '*.h' \))"
+    for FILE in $FILES; do
+        sed -i "s#${_FIND}#${_REPL}#g" $FILE
+    done
+}
+
+HOST_COMPILERS_ROOT_HOST=$PWD/sdks
 if [ ! "$DEBIAN_VERSION" = "6.0.5" -a "$(uname_bt)" = "Linux" ] ; then
     BINPREFIX=i686-linux
     CC=$BINPREFIX-gcc
@@ -49,7 +66,30 @@ if [ ! "$DEBIAN_VERSION" = "6.0.5" -a "$(uname_bt)" = "Linux" ] ; then
     RANLIB=$BINPREFIX-ranlib
     STRIP=$BINPREFIX-strip
     export CC CXX LD AS AR RANLIB STRIP
-    export PATH=$HOME/i686-linux-glibc2.7-4.4.3/bin:$PATH
+
+    # Get Google's glibc2.7 GCC 4.6 compilers; the same ones that are used to build the Android NDK.
+    LINUX32_CC_URL=https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/host/i686-linux-glibc2.7-4.6
+    LINUX64_CC_URL=https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.7-4.6
+    if [ ! -d $HOST_COMPILERS_ROOT_HOST/$(basename $LINUX32_CC_URL) ]; then
+        (
+         [ -d $HOST_COMPILERS_ROOT_HOST ] || mkdir -p $HOST_COMPILERS_ROOT_HOST
+         cd $HOST_COMPILERS_ROOT_HOST
+         git clone $LINUX32_CC_URL $(basename $LINUX32_CC_URL)
+         find . \( -name "*.la" -or -path "*ldscripts*" \)
+        )
+        rebase_absolute_paths "$HOST_COMPILERS_ROOT_HOST/$(basename $LINUX32_CC_URL)" "/tmp/ahsieh-gcc-32-x19222/2/i686-linux-glibc2.7-4.6" "$PWD/prebuilts/gcc/linux-x86/host/prebuilts-gcc-linux-x86-host-i686-linux-glibc2.7-4.6"
+        # This is just to catch one file ;-)
+        rebase_absolute_paths "$HOST_COMPILERS_ROOT_HOST/$(basename $LINUX32_CC_URL)" "/tmp/ahsieh-gcc-32-x19222/1/i686-linux-glibc2.7-4.6" "$PWD/prebuilts/gcc/linux-x86/host/prebuilts-gcc-linux-x86-host-i686-linux-glibc2.7-4.6"
+    fi
+    if [ ! -d $HOST_COMPILERS_ROOT_HOST/$(basename $LINUX64_CC_URL) ]; then
+        (
+        [ -d $HOST_COMPILERS_ROOT_HOST ] || mkdir -p $HOST_COMPILERS_ROOT_HOST
+         cd $HOST_COMPILERS_ROOT_HOST
+         git clone $LINUX64_CC_URL $(basename $LINUX64_CC_URL)
+        )
+        rebase_absolute_paths "$HOST_COMPILERS_ROOT_HOST/$(basename $LINUX64_CC_URL)" "/tmp/ahsieh-gcc-64-X27190/2"                         "$PWD/prebuilts/gcc/linux-x86/host"
+    fi
+    export PATH=$HOST_COMPILERS_ROOT_HOST/$(basename $LINUX32_CC_URL)/bin:$PATH
 fi
 
 DST=${BASE_TMP}/final-install
