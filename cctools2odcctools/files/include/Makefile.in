@@ -18,7 +18,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 
 default:
 
-install: 
+install:
 	mkdir -p $(DESTDIR)/$(includedir)
 	mkdir -p $(DESTDIR)/$(includedir)/mach-o
 	for h in loader.h fat.h; do		\

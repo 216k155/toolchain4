@@ -10,6 +10,7 @@ bindir		= @bindir@
 VPATH = @srcdir@
 
 CC                   = @CC@
+CXX                  = @CXX@
 CFLAGS               = @CFLAGS@ -DLTO_SUPPORT -DTRIE_SUPPORT
 WARNINGS             = @WARNINGS@
 MDYNAMICNOPIC        = @MDYNAMICNOPIC@

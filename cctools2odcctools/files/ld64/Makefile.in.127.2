@@ -46,7 +46,7 @@ MYINCLUDES      = -I$(srcdir)/include -I$(srcdir)/Readers \
                   -I$(top_srcdir)/ld64/src/abstraction -I$(top_srcdir)/ld64/src/ld/parsers \
                   $(INCLIBCCXX) -include $(top_builddir)/include/config.h $(FORHDRS)
 
-MYWARNINGS      = 
+MYWARNINGS      =
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DASPROG="\"$(ASPROG)\"" $(LTO_DEFS)
 

@@ -599,6 +599,8 @@ patch_autoconfiscate() {
     fi
     pushd $DISTDIR
     $AUTOHEADER
+    rm -rf autom4te.cache
+    rm include/config.h.in~
     popd
     set +x
     set +e

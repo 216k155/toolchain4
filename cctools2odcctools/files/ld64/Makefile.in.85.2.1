@@ -37,7 +37,7 @@ ASPROG          = $(shell echo as | sed '$(transform)')
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(srcdir) -I$(srcdir)/Readers \
 			-I$(srcdir)/Writers -I$(top_builddir)/include \
 			-I$(top_srcdir)/include -include $(top_builddir)/include/config.h $(FORHDRS)
-MYWARNINGS      = 
+MYWARNINGS      =
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DASPROG="\"$(ASPROG)\"" $(LTO_DEFS)
 
@@ -45,7 +45,7 @@ MYLDFLAGS	= -L$(top_builddir)/libstuff
 MYLIBS		= -lstuff $(SSL_LIBS) $(UUID_LIBS) $(LTO_LIBS)
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
-	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
+	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 
@@ -53,7 +53,7 @@ CXXFILES = ld.cpp Options.cpp
 CFILES = debugline.c
 
 OBJS = $(CXXFILES:.cpp=.o)
-OBJS += $(CFILES:.c=.o) 
+OBJS += $(CFILES:.c=.o)
 
 .cpp.o:
 	$(CXX) $(MYCOMPILEFLAGS) $(CXXFLAGS) -c -o $@ $<
