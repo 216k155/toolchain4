@@ -36,13 +36,13 @@ transform	= @program_transform_name@
 MYINCLUDES      = -I$(srcdir) -I$(top_builddir)/include \
 			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h \
 			$(FORHDRS)
-MYWARNINGS      = 
+MYWARNINGS      =
 MYDEFS          = -DNeXT_MOD -DASLIBEXECDIR="\"$(ASLIBEXECDIR)/\""
 MYLDFLAGS	= -L$(top_builddir)/libstuff
 MYLIBS		= -lstuff
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
-	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
+	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 

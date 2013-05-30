@@ -36,13 +36,13 @@ LD64PROG	= $(shell echo ld64 | sed '$(transform)')
 
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(top_builddir)/include \
 			-I$(top_srcdir)/include $(INCPRIVEXT) -include $(top_builddir)/include/config.h $(FORHDRS)
-MYWARNINGS      = 
+MYWARNINGS      =
 MYDEFS          = -DDEBUG -DBINDIR="\"$(bindir)\"" -DLD64PROG="\"$(LD64PROG)\""
 MYLDFLAGS	= -L$(top_builddir)/libstuff
 MYLIBS		= -lstuff
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
-	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
+	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS) $(SSL_LIBS) $(UUID_LIBS)
 
@@ -53,7 +53,7 @@ CFILES = ld.c pass1.c objects.c sections.c cstring_literals.c symbols.c \
          m88k_reloc.c hppa_reloc.c sparc_reloc.c coalesced_sections.c uuid.c \
          debugcompunit.c debugline.c arm_reloc.c
 
-OBJS = $(CFILES:.c=.o) 
+OBJS = $(CFILES:.c=.o)
 
 .c.o:
 	$(CC) $(MYCOMPILEFLAGS) -c -o $@ $<
