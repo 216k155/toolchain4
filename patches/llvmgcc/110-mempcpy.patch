@@ -1,5 +1,6 @@
---- gcc/config/darwin.c.orig	2011-09-06 02:27:38.000000000 -0500
-+++ gcc/config/darwin.c	2011-09-06 02:27:13.000000000 -0500
+diff -urN a/gcc/config/darwin.c b/gcc/config/darwin.c
+--- a/gcc/config/darwin.c	2013-05-31 00:32:07.936739337 +0100
++++ b/gcc/config/darwin.c	2013-05-31 00:32:08.874746775 +0100
 @@ -1576,7 +1576,7 @@
  }
  

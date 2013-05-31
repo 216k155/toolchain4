@@ -1,7 +1,7 @@
-diff -burN gcc/c-incpath.c.orig gcc/c-incpath.c
---- gcc/c-incpath.c.orig	2012-04-21 10:20:28.674779530 +0100
-+++ gcc/c-incpath.c	2012-04-21 10:23:25.860552324 +0100
-@@ -56,6 +56,7 @@
+diff -urN a/gcc/c-incpath.c b/gcc/c-incpath.c
+--- a/gcc/c-incpath.c	2013-05-31 00:54:26.158284026 +0100
++++ b/gcc/c-incpath.c	2013-05-31 00:54:26.408285996 +0100
+@@ -51,6 +51,7 @@
  static const char dir_separator_str[] = { DIR_SEPARATOR, 0 };
  
  static void add_env_var_paths (const char *, int);
@@ -9,9 +9,9 @@ diff -burN gcc/c-incpath.c.orig gcc/c-incpath.c
  static void add_standard_paths (const char *, const char *, const char *, int);
  static void free_path (struct cpp_dir *, int);
  static void merge_include_chains (cpp_reader *, int);
-@@ -139,6 +140,26 @@
- #endif
- /* LLVM LOCAL end sysroot */
+@@ -124,6 +125,26 @@
+     }
+ }
  
 +extern char original_prefix[MAXPATHLEN];
 +extern char relocated_prefix[MAXPATHLEN];
@@ -36,7 +36,7 @@ diff -burN gcc/c-incpath.c.orig gcc/c-incpath.c
  /* Append the standard include chain defined in cppdefault.c.  */
  static void
  add_standard_paths (const char *sysroot, const char *iprefix,
-@@ -147,6 +168,7 @@
+@@ -132,6 +153,7 @@
    const struct default_include *p;
    size_t len;
  
@@ -44,21 +44,21 @@ diff -burN gcc/c-incpath.c.orig gcc/c-incpath.c
    if (iprefix && (len = cpp_GCC_INCLUDE_DIR_len) != 0)
      {
        /* Look for directories that start with the standard prefix.
-diff -burN gcc/cppdefault.c.orig gcc/cppdefault.c
---- gcc/cppdefault.c.orig	2012-04-21 10:20:45.566567173 +0100
-+++ gcc/cppdefault.c	2012-04-21 10:23:57.308156633 +0100
-@@ -52,7 +52,7 @@
- #else
- #define ADD_SYSROOT 0
- #endif
+diff -urN a/gcc/cppdefault.c b/gcc/cppdefault.c
+--- a/gcc/cppdefault.c	2013-05-31 00:54:26.167284096 +0100
++++ b/gcc/cppdefault.c	2013-05-31 00:54:26.408285996 +0100
+@@ -46,7 +46,7 @@
+ /* APPLE LOCAL begin SDK 3886137.  */
+ /* Allow -isysroot to override ALL  include patchs. This is done by
+    setting add_sysroot for all default inclue paths.  */
 -const struct default_include cpp_include_defaults[]
 +struct default_include cpp_include_defaults[]
  #ifdef INCLUDE_DEFAULTS
  = INCLUDE_DEFAULTS;
  #else
-diff -burN gcc/cppdefault.h.orig gcc/cppdefault.h
---- gcc/cppdefault.h.orig	2012-04-21 10:20:46.674553242 +0100
-+++ gcc/cppdefault.h	2012-04-21 10:23:25.864552202 +0100
+diff -urN a/gcc/cppdefault.h b/gcc/cppdefault.h
+--- a/gcc/cppdefault.h	2013-05-31 00:54:26.156284010 +0100
++++ b/gcc/cppdefault.h	2013-05-31 00:54:26.408285996 +0100
 @@ -34,21 +34,21 @@
  
  struct default_include
@@ -84,9 +84,9 @@ diff -burN gcc/cppdefault.h.orig gcc/cppdefault.h
  extern const char cpp_GCC_INCLUDE_DIR[];
  extern const size_t cpp_GCC_INCLUDE_DIR_len;
  
-diff -burN gcc/toplev.c.orig gcc/toplev.c
---- gcc/toplev.c.orig	2012-04-21 10:20:20.642880505 +0100
-+++ gcc/toplev.c	2012-04-21 10:23:25.860552324 +0100
+diff -urN a/gcc/toplev.c b/gcc/toplev.c
+--- a/gcc/toplev.c	2013-05-31 00:54:26.135283844 +0100
++++ b/gcc/toplev.c	2013-05-31 00:54:26.409286004 +0100
 @@ -82,6 +82,7 @@
  #include "value-prof.h"
  #include "alloc-pool.h"

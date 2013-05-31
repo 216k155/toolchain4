@@ -1,5 +1,6 @@
---- gcc/llvm-linker-hack.cpp.orig	2010-03-31 16:50:51.000000000 -0500
-+++ gcc/llvm-linker-hack.cpp	2011-09-06 02:26:36.000000000 -0500
+diff -urN a/gcc/llvm-linker-hack.cpp b/gcc/llvm-linker-hack.cpp
+--- a/gcc/llvm-linker-hack.cpp	2010-03-31 22:50:51.000000000 +0100
++++ b/gcc/llvm-linker-hack.cpp	2013-05-31 00:32:07.268734040 +0100
 @@ -94,8 +94,8 @@
    
    llvm::Type::getInt8Ty(llvm::getGlobalContext());

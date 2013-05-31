@@ -1,5 +1,6 @@
---- gcc/llvm-types.cpp.orig	2012-05-10 16:30:17.032026754 +0100
-+++ gcc/llvm-types.cpp	2012-05-10 16:30:57.916285118 +0100
+diff -urN a/gcc/llvm-types.cpp b/gcc/llvm-types.cpp
+--- a/gcc/llvm-types.cpp	2013-05-31 00:32:19.049827462 +0100
++++ b/gcc/llvm-types.cpp	2013-05-31 00:32:19.730832863 +0100
 @@ -828,15 +828,15 @@
        const_cast<OpaqueType*>(OT)->refineAbstractTypeTo(Actual);
        return GET_TYPE_LLVM(type);
