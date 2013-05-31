@@ -1,5 +1,6 @@
---- llvmCore/lib/System/Errno.cpp.orig	Mon Jul  6 17:50:27 2009
-+++ llvmCore/lib/System/Errno.cpp	Fri Jun  8 11:58:49 2012
+diff -urN a/llvmCore/lib/System/Errno.cpp b/llvmCore/lib/System/Errno.cpp
+--- a/llvmCore/lib/System/Errno.cpp	2013-05-31 00:32:20.542839302 +0100
++++ b/llvmCore/lib/System/Errno.cpp	2013-05-31 00:32:21.039843243 +0100
 @@ -52,7 +52,7 @@
  # endif
  #elif defined(HAVE_STRERROR_S)  // Windows.
@@ -9,8 +10,9 @@
  #elif defined(HAVE_STRERROR)
    // Copy the thread un-safe result of strerror into
    // the buffer as fast as possible to minimize impact
---- llvmCore/lib/System/Win32/Win32.h.orig	Sat Dec 29 20:36:04 2007
-+++ llvmCore/lib/System/Win32/Win32.h	Fri Jun  8 12:02:57 2012
+diff -urN a/llvmCore/lib/System/Win32/Win32.h b/llvmCore/lib/System/Win32/Win32.h
+--- a/llvmCore/lib/System/Win32/Win32.h	2013-05-31 00:32:20.543839310 +0100
++++ b/llvmCore/lib/System/Win32/Win32.h	2013-05-31 00:32:21.041843259 +0100
 @@ -17,7 +17,13 @@
  //===----------------------------------------------------------------------===//
  

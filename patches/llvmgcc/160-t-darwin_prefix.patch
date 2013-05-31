@@ -1,5 +1,6 @@
---- gcc/config/i386/t-darwin.orig	2008-03-18 19:53:10 +0000
-+++ gcc/config/i386/t-darwin	2012-04-09 14:13:11 +0100
+diff -urN a/gcc/config/i386/t-darwin b/gcc/config/i386/t-darwin
+--- a/gcc/config/i386/t-darwin	2013-05-31 00:32:14.922794736 +0100
++++ b/gcc/config/i386/t-darwin	2013-05-31 00:32:15.729801135 +0100
 @@ -4,7 +4,7 @@
  LIB1ASMFUNCS = _get_pc_thunk_ax _get_pc_thunk_dx _get_pc_thunk_cx _get_pc_thunk_bx _get_pc_thunk_si _get_pc_thunk_di _get_pc_thunk_bp
  # APPLE LOCAL end 4099000

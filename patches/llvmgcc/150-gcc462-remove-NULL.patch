@@ -1,5 +1,6 @@
---- llvmCore/lib/Target/ARM/ARMConstantPoolValue.h.orig	2012-03-24 17:15:04 +0000
-+++ llvmCore/lib/Target/ARM/ARMConstantPoolValue.h	2012-03-24 17:15:39 +0000
+diff -urN a/llvmCore/lib/Target/ARM/ARMConstantPoolValue.h b/llvmCore/lib/Target/ARM/ARMConstantPoolValue.h
+--- a/llvmCore/lib/Target/ARM/ARMConstantPoolValue.h	2013-05-31 00:32:13.776785648 +0100
++++ b/llvmCore/lib/Target/ARM/ARMConstantPoolValue.h	2013-05-31 00:32:14.271789573 +0100
 @@ -48,10 +48,10 @@
  public:
    ARMConstantPoolValue(Constant *cval, unsigned id,

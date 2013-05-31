@@ -204,31 +204,93 @@
 
 # Mingw-w64 4.7.2 removed link and unlink, need to use _link and _unlink instead.
 
-#PATCHES=/usr/src/toolchain4/patches
-#mkdir -p /tmp2/tc4/patching
-#pushd /tmp2/tc4/patching
-#rm -rf a b
-#SRC_DIR=$PWD
-#rm -rf $SRC_DIR/gcc-5666.3
-#mkdir $SRC_DIR/gcc-5666.3
-#tar --strip-components=1 -xf ~/Dropbox/darwin-compilers-work/SourceTarballs/gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
-#pushd $SRC_DIR/gcc-5666.3
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-cflags.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-t-darwin_prefix.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-strip_for_target.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable-cpp.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-lib-system.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-host-mingw32.patch
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
-#cd ..
-#mv gcc-5666.3 a
-#cp -rf a b
-#cd b
-#patch -p1 < ${PATCHES}/gcc/gcc-5666.3-libiberty-mingw64.patch
+tidy_patches ()
+{
+    PATCHNUM=100
 
+    SRCTARBALL=$1; shift
+    PATCHESDIR=$1; shift
+    BASEFOLDER=$1; shift
+    PATCHES="$1"; shift
+    ROOT=$PWD
+    PATCHESDIRNEW=${PATCHESDIR}.new
+    mkdir -p $PATCHESDIRNEW
+    tar -xzf $SRCTARBALL
+    rm -rf ${PATCHESDIR}.backup
+    cp -rf ${PATCHESDIR} ${PATCHESDIR}.backup
+    [ -d a ] && rm -rf a
+    mv $BASEFOLDER a
+    for PATCH in $PATCHES; do
+        if [ -d b ]; then
+            rm -rf b
+        fi
+        cp -rf a b
+        pushd b
+        patch -p1 < ${PATCHESDIR}/$PATCH
+        if [ $(find . -name "*.rej") ]; then
+            popd
+            echo "ERROR: Failed to apply $PATCH"
+            return 1
+        fi
+        find . -name "*.orig" -exec rm {} \;
+        popd
+        local _PREFIX=$(printf "%03d" $PATCHNUM)
+        diff -urN a b > ${PATCHESDIRNEW}/${_PREFIX}-$PATCH
+        rm -rf a
+        cp -rf b a
+        PATCHNUM=$(expr $PATCHNUM + 10)
+    done
+    rm -rf a
+    cp -rf b a
+    pushd b
+    /usr/local/bin/autoconf; autoheader;
+    rm config.h.in~
+    rm -rf autom4te.cache
+    popd
+    diff -urN a b > ${PATCHESDIRNEW}/9999-re-configure-d.patch
+    return 0
+}
 
+if [ "0" = "1" ]; then
+LLVMGCC42PATCHES="100-redundant.patch 110-mempcpy.patch 120-relocatable-libexec-llvmgcc.patch 130-lib-system.patch \
+                  140-gcc462-ptrdiff_t.patch 150-gcc462-remove-NULL.patch 160-t-darwin_prefix.patch 170-relocatable-cpp.patch \
+                  180-Makefile-rules-remove-ld-option--modules.patch 190-gcc470-scoping-fixes.patch 200-t-mingw64.patch \
+                  210-libiberty-mingw64.patch 220-t-slibgcc-darwin-ln-order.patch 230-use-ll-when-__USE_MINGW_ANSI_STDIO.patch"
+tidy_patches $HOME/Dropbox/darwin-compilers-work/tarballs/llvmgcc42/llvmgcc42-2336.1.tar.gz $HOME/toolchain4/patches/llvmgcc llvmgcc42-2336.1 "$LLVMGCC42PATCHES"
+
+# 130-relocatable.patch
+# .. is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
+# but there's 3 patches on the bug report and this only includes one of
+# them. The other two can be dealt with once I get the first one working
+# as I need it to. I also modified it a bit to make sure out bin folder
+# (and executable filename prefix) is searched when looking for tools.
+# The patch to collect2.c could've been avoided by putting a link to ld
+# into the libexec tree. The target_system_root (-syslibroot bit)
+# is also needed for ld to operate correctly.
+
+# 180-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
+# .. fixes:
+# 1. getcwd is now in mingw headers (unistd.h)
+# 2. uid_t  is now in mingw headers (basetypes.h) but gid_t is not so they need testing for separately.
+# 3. AS_TRADITIONAL_FORMAT was being used if the host as is buggy. Made this not happen when cross compiling.
+# 4. Stack smash protection was being checked for in the host C libraries, this isn't wanted when
+#    cross compiling so instead we assume libc has ssp (darwin's libc has this feature)
+
+# 190-libiberty-mingw64.patch
+# .. don't work around asprintf already existing. Results in a compile failure.
+# (requires autoconf'ing in libiberty)
+
+# 200-t-slibgcc-darwin-ln-order.patch
+# .. in t-slibgcc-darwin, ln -s is used before the target file exists (which is of course fine), but on mingw
+# ln -s is cp, and that doesn't work.
+
+GCC42PATCHES="100-cflags.patch 110-darwin_prefix.patch 120-strip_for_target.patch \
+              130-relocatable.patch 140-relocatable-cpp.patch 150-lib-system.patch \
+              160-fix-fixincludes-to-build-on-WIN32.patch 170-host-mingw32.patch \
+              180-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch \
+              190-libiberty-mingw64.patch 200-t-slibgcc-darwin-ln-order.patch"
+tidy_patches $HOME/Dropbox/darwin-compilers-work/tarballs/gcc/gcc-5666.3.tar.gz $HOME/toolchain4/patches/gcc gcc-5666.3 "$GCC42PATCHES"
+fi
 
 # Error reporting, coloured printing, downloading.
 . bash-tools.sh
@@ -1137,27 +1199,10 @@ toolchain_llvmgcc_core() {
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-redundant.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
-		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
-		# but there's 3 patches on the bug report and this only includes one of
-		# them. The other two can be dealt with once I get the first one working
-		# as I need it to. I also modified it a bit to make sure out bin folder
-		# (and executable filename prefix) is searched when looking for tools.
-		# The patch to collect2.c could've been avoided by putting a link to ld
-		# into the libexec tree.
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-lib-system.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-mingw64.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-libiberty-mingw64.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-slibgcc-darwin-ln-order.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-use-ll-when-__USE_MINGW_ANSI_STDIO.patch
+	PATCHES=$(find -type f ${PATCHES}/llvmgcc/ | sort)
+	for PATCH in $PATCHES; do
+		patch -b -p1 < $PATCH
+	done
 	popd
         set +x
 	if [[ "$ONLY_PATCH" = "1" ]] ; then
@@ -1313,36 +1358,10 @@ toolchain_gcc()
 		mkdir $SRC_DIR/gcc-5666.3
 		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
 		pushd $SRC_DIR/gcc-5666.3
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-cflags.patch
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-t-darwin_prefix.patch
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-strip_for_target.patch
-		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
-		# but there's 3 patches on the bug report and this only includes one of
-		# them. The other two can be dealt with once I get the first one working
-		# as I need it to. I also modified it a bit to make sure out bin folder
-		# (and executable filename prefix) is searched when looking for tools.
-		# The patch to collect2.c could've been avoided by putting a link to ld
-		# into the libexec tree. The target_system_root (-syslibroot bit)
-		# is also needed for ld to operate correctly.
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable.patch
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-relocatable-cpp.patch
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-lib-system.patch
-#		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-tooldir-without-target-noncanonical.patch
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-Fix-fixincludes-to-build-on-WIN32.patch
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-host-mingw32.patch
-		# The following patch fixes:
-		# 1. getcwd is now in mingw headers (unistd.h)
-		# 2. uid_t  is now in mingw headers (basetypes.h) but gid_t is not so they need testing for separately.
-		# 3. AS_TRADITIONAL_FORMAT was being used if the host as is buggy. Made this not happen when cross compiling.
-		# 4. Stack smash protection was being checked for in the host C libraries, this isn't wanted when
-		#    cross compiling so instead we assume libc has ssp (darwin's libc has this feature)
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-getcwd-gid_t-AS_TRADITIONAL_FORMAT-ssp-mingw32.patch
-		# Don't work around asprintf already existing. Results in a compile failure.
-		# Requires autoconf'ing in libiberty.
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-libiberty-mingw64.patch
-		# In t-slibgcc-darwin, ln -s is used before the target file exists (which is of course fine), but on mingw
-		# ln -s is cp, and that doesn't work.
-		patch -b -p1 < ${PATCHES}/gcc/gcc-5666.3-t-slibgcc-darwin-ln-order.patch
+		PATCHES=$(find -type f ${PATCHES}/gcc/ | sort)
+		for PATCH in $PATCHES; do
+			patch -b -p1 < $PATCH
+		done
 		pushd libiberty
 		$AUTOCONF
 		$AUTOHEADER
@@ -1621,27 +1640,10 @@ toolchain_llvmgcc() {
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-redundant.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-mempcpy.patch
-		# The next patch is from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=17621
-		# but there's 3 patches on the bug report and this only includes one of
-		# them. The other two can be dealt with once I get the first one working
-		# as I need it to. I also modified it a bit to make sure out bin folder
-		# (and executable filename prefix) is searched when looking for tools.
-		# The patch to collect2.c could've been avoided by putting a link to ld
-		# into the libexec tree.
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-libexec-llvmgcc.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-lib-system.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-ptrdiff_t.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc462-remove-NULL.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-darwin_prefix.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-relocatable-cpp.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-Makefile-rules-remove-ld-option--modules.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-gcc470-scoping-fixes.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-mingw64.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-libiberty-mingw64.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-t-slibgcc-darwin-ln-order.patch
-		patch -b -p0 < ${PATCHES}/llvmgcc/llvmgcc42-2336.1-use-ll-when-__USE_MINGW_ANSI_STDIO.patch
+		PATCHES=$(find -type f ${PATCHES}/llvmgcc/ | sort)
+		for PATCH in $PATCHES; do
+			patch -b -p1 < $PATCH
+		done
 		pushd libiberty
 		$AUTOCONF
 		$AUTOHEADER
