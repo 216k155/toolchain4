@@ -5,7 +5,7 @@
  	int standardLibraryPathsStartIndex = libraryPaths.size();
  	int standardFrameworkPathsStartIndex = frameworkPaths.size();
 +#ifdef CROSS_SYSROOT
-+	if(fSDKPaths.size() == 0) {
++	if(fSDKPaths.size() == 0)
 +		fSDKPaths.push_back(CROSS_SYSROOT);
 +#endif
  	if ( addStandardLibraryDirectories ) {

@@ -181,7 +181,7 @@ patch_to_from() {
     local _FUNC=$1
     local _PATCH=$2
     local _DIR=$3
-    local _PREFIX=$(printf "%04d" $PATCHNUM)
+    local _PREFIX=$(printf "%03d" $PATCHNUM)
     local _FULLPATCH=$PWD/$_PREFIX-$_PATCH
 
     if [ "$PATCHESUSE" = "1" ] ; then
@@ -205,7 +205,7 @@ patch_to_from() {
         message_status "...and making a patch from result: $_FULLPATCH"
         diff -urN a b > $_PREFIX-$_PATCH
     fi
-    PATCHNUM=$(expr $PATCHNUM + 5)
+    PATCHNUM=$(expr $PATCHNUM + 10)
 }
 
 CCTOOLSDISTFILE=${CCTOOLSNAME}-${CCTOOLSVERS}.tar.gz
