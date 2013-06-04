@@ -1,6 +1,7 @@
---- driver.c.orig	2013-05-30 22:22:18.735484099 +0100
-+++ driver.c	2013-05-30 22:27:27.789880856 +0100
-@@ -53,17 +53,22 @@
+diff -urN a/as/driver.c b/as/driver.c
+--- a/as/driver.c	2013-06-04 21:37:19.336903817 +0100
++++ b/as/driver.c	2013-06-04 21:40:24.742394946 +0100
+@@ -53,17 +53,25 @@
  	 */
  	bufsize = MAXPATHLEN;
  	p = buf;
@@ -12,17 +13,22 @@
  	    p = allocate(bufsize);
  	    _NSGetExecutablePath(p, &bufsize);
  	}
+-	prefix = realpath(p, resolved_name);
+-	if(realpath == NULL)
 +	if(p != NULL){
 +	    p = rindex(p, '/');
 +	    if(p != NULL)
 +		    p[1] = '\0';
 +	}
- 	prefix = realpath(p, resolved_name);
- 	if(realpath == NULL)
++	prefix = realpath(buf, resolved_name);
++	if(prefix == NULL)
  	    system_fatal("realpath(3) for %s failed", p);
 -	p = rindex(prefix, '/');
 -	if(p != NULL)
 -	    p[1] = '\0';
++    if(strlen(prefix)<(MAXPATHLEN-1) && prefix[strlen(prefix)-1] != '/'){
++        prefix[strlen(prefix)] = '/';
++    }
  	/*
  	 * Process the assembler flags exactly like the assembler would (except
  	 * let the assembler complain about multiple flags, bad combinations of
