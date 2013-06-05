@@ -1118,7 +1118,7 @@ toolchain_llvmgcc_core() {
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}-core
-	PATCHES=$(find -type f ${PATCHES}/llvmgcc/ | sort)
+	PATCHES=$(find ${PATCHES}/llvmgcc/ -type f | sort)
 	for PATCH in $PATCHES; do
 		patch -b -p1 < $PATCH
 	done
@@ -1276,7 +1276,7 @@ toolchain_gcc()
 		mkdir $SRC_DIR/gcc-5666.3
 		tar ${TARSTRIP}=1 -xf gcc-5666.3.tar.gz -C $SRC_DIR/gcc-5666.3
 		pushd $SRC_DIR/gcc-5666.3
-		PATCHES=$(find -type f ${PATCHES}/gcc/ | sort)
+		PATCHES=$(find ${PATCHES}/gcc/ -type f | sort)
 		for PATCH in $PATCHES; do
 			patch -b -p1 < $PATCH
 		done
@@ -1558,7 +1558,7 @@ toolchain_llvmgcc() {
 	mkdir -p $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	tar ${TARSTRIP}=1 -xf ${GCCLLVMDISTFILE} -C $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
 	pushd $SRC_DIR/llvmgcc42-${GCCLLVMVERS}
-		PATCHES=$(find -type f ${PATCHES}/llvmgcc/ | sort)
+		PATCHES=$(find ${PATCHES}/llvmgcc/ -type f | sort)
 		for PATCH in $PATCHES; do
 			patch -b -p1 < $PATCH
 		done
