@@ -1030,13 +1030,14 @@ toolchain_cctools() {
 		fi
 
 		if [[ ! -f $HOST_DIR/lib/libcrypto.a ]] && [[ "$(uname_bt)" != "Darwin" ]] ; then
-			if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.1c.tar.gz); then
-				error "Failed to get and extract openssl-1.0.1c Check errors."
+                        if ! $(downloadUntar http://www.openssl.org/source/openssl-1.0.1e.tar.gz); then
+                                error "Failed to get and extract openssl-1.0.1e Check errors."
 				popd
 				exit 1
 			fi
 
-			pushd openssl-1.0.1c
+                        pushd openssl-1.0.1e
+                        patch -p1 < ${PATCHES}/openssl/1.0.1e/100-Fix-POD-errors-with-pod2man-from-Perl-5_18.patch
 			# OpenSSL doesn't compile right with -jn where n>1
 			./Configure --prefix=$HOST_DIR -no-shared -no-zlib-dynamic -no-test $OPENSSLPF
 			make depend &>depend.log
