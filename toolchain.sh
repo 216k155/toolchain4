@@ -1389,7 +1389,7 @@ toolchain_gccdriver_dsymutil() {
 	fi
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
-	gcc -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
+	$CC -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
 		-DPDN="\"-apple-darwin$DARWINVER-llvm-$LANG$EXEEXT\"" \
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
@@ -1407,7 +1407,7 @@ toolchain_gccdriver_dsymutil() {
 	ORIG_BLD_DIR=$BUILD_DIR/gcc-5666.3-${TARGET_ARCH}
 	pushd $ORIG_BLD_DIR
 	for LANG in gcc g++ ; do
-		gcc -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
+		$CC -m32 -g -O0 $ORIG_SRC_DIR/driverdriver.c \
 		-DPDN="\"-apple-darwin$DARWINVER-$LANG$EXEEXT\"" \
 		-DIL="\"$PREFIX/bin/\"" -I $ORIG_SRC_DIR/include \
 		-I $SRC_DIR/cctools-${CCTOOLSVER}/include \
@@ -1421,7 +1421,7 @@ toolchain_gccdriver_dsymutil() {
 	done
 	popd
 
-	gcc -m32 -O2 $TOOLCHAIN/dsymutil.c \
+	$CC -m32 -O2 $TOOLCHAIN/dsymutil.c \
 		-o $PREFIX/bin/${TARGET}-dsymutil${EXEEXT}
 
 	#if [[ "$(uname_bt)" = "Darwin" ]] ; then
