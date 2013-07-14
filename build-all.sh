@@ -120,7 +120,7 @@ full_build_for_arch() {
 }
 
 # Clean everything.
-ARM_BUILD=1
+ARM_BUILD=0
 if [ "$ARM_BUILD" = "1" ] ; then
     # Make arm build.
     full_build_for_arch $PREFIX arm
@@ -157,9 +157,11 @@ fi
 if [[ "$UNAME" = "Windows" ]] ; then
     for _DLL in libintl-8.dll libiconv-2.dll libgcc_s_dw2-1.dll libgcc_s_sjlj-1.dll libwinpthread-1.dll libstdc++-6.dll pthreadGC2.dll
     do
-        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/bin
-        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
-        cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
+        if [ -f /mingw/bin/$_DLL ]; then
+            cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/bin
+            cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/gcc/arm-apple-darwin11/4.2.1
+            cp -rf /mingw/bin/$_DLL $DST/${PREFIX}-ios/libexec/llvmgcc/arm-apple-darwin11/4.2.1
+        fi
     done
 fi
 
