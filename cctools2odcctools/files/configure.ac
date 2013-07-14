@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 AC_INIT([ccctools], [809], [Ray Donnelly <mingw.android@gmail.com>])
 AC_PREREQ([2.62])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
+=======
+fAC_INIT([odcctools], [809.1od1], [peter@pogma.com])
+AC_PREREQ([2.57])
+AC_REVISION([$Revision: 1.37 $])
+>>>>>>> 68f39a5... Remove dodgy ldclassic test and disable it always.
 
 # Weird. Doesn't seem to do anything...
 AC_CONFIG_MACRO_DIR([m4])
@@ -613,12 +619,12 @@ case $host_os in
      ;;
 esac
 
-AC_CHECK_SIZEOF([long])
-if test $ac_cv_sizeof_long >=8; then
-    LD_CLASSIC=
-else
-    LD_CLASSIC=ld
-fi
+# ldclassic has been deprecated by ld64.
+# If you want to enable it you can do so
+# here, but be warned; this has not been
+# tested for an unsigned long long time.
+LD_CLASSIC=
+# LD_CLASSIC=ld
 COMPONENTS="libstuff ar as include libprunetrie libmacho ${LD_CLASSIC} misc otool man ld64"
 AC_SUBST([COMPONENTS], [$COMPONENTS])
 
