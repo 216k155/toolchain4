@@ -473,13 +473,17 @@ int _NSGetExecutablePath(char* buf, unsigned long* bufsize)
             *winslash = '/';
             winslash = strchr(winslash,'\\');
         }
-		return strlen(buf);
-	}
-	return -1;
+        return strlen(buf);
+    }
+    return -1;
 #elif (HAVE_DECL_READLINK) /* Linux */
-    return readlink("/proc/self/exe", buf, (size_t)(*bufsize));
+    int ret = readlink("/proc/self/exe", buf, (size_t)(*bufsize));
+    if(ret != -1) {
+        buf[ret] = '\0';
+    }
+    return ret;
 #else
-	return -1; /* Fail on all other systems for now */
+    return -1; /* Fail on all other systems for now */
 #endif /* _MSC_VER */
 }
 #endif/* HAVE__NSGETEXECUTABLEPATH */
