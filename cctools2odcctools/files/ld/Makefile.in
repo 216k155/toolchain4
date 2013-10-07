@@ -63,9 +63,9 @@ ld_classic: $(OBJS)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 
 install: ld_classic
-	mkdir -p $(DESTDIR)/$(bindir)
+	mkdir -p $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) ld_classic \
-		$(DESTDIR)/$(bindir)/`echo ld_classic | sed '$(transform)'`
+		$(DESTDIR)$(bindir)/`echo ld_classic | sed '$(transform)'`
 
 clean:
 	rm -r -f *.o

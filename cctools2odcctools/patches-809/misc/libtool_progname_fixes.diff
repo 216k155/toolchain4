@@ -1,0 +1,11 @@
+--- libtool.c.orig	2010-04-18 16:49:05.000000000 -0500
++++ libtool.c	2010-04-18 16:49:33.000000000 -0500
+@@ -374,7 +374,7 @@
+ 	    p++;
+ 	else
+ 	    p = argv[0];
+-	if(strncmp(p, "ranlib", sizeof("ranlib") - 1) == 0)
++	if(strstr(p, "ranlib") != NULL)
+ 	    cmd_flags.ranlib = TRUE;
+
+ 	/* The default is to used long names */

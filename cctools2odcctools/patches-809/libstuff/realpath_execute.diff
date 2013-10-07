@@ -1,22 +1,30 @@
 --- execute.c.orig	2013-05-30 22:22:18.729484053 +0100
 +++ execute.c	2013-05-30 22:32:56.000000000 +0100
-@@ -161,10 +161,16 @@
+@@ -161,10 +161,23 @@
  	    p = allocate(bufsize);
  	    _NSGetExecutablePath(p, &bufsize);
  	}
+-	prefix = realpath(p, resolved_name);
+-	p = rindex(prefix, '/');
+-	if(p != NULL)
+-	    p[1] = '\0';
 +	if(p != NULL){
 +	    p = rindex(p, '/');
 +	    if(p != NULL)
 +		    p[1] = '\0';
 +	}
-+	strcpy(resolved_name,p);
- 	prefix = realpath(p, resolved_name);
--	p = rindex(prefix, '/');
--	if(p != NULL)
--	    p[1] = '\0';
++	strcpy(resolved_name, buf);
++	prefix = realpath(buf, resolved_name);
 +	if(prefix == NULL){
-+        prefix = resolved_name;
++	    prefix = resolved_name;
 +	}
- 
++
++	/* Append slash at the end if not exist */
++	p = prefix + strlen(prefix);
++	if((p-prefix)<(MAXPATHLEN-1) && prefix[p-prefix-1] != '/'){
++	   *(p++) = '/';
++	   *(p++) = '\0';
++	}
+
  	return(makestr(prefix, str, NULL));
  }

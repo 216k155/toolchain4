@@ -29,7 +29,7 @@ endif
 MYINCLUDES      = -I$(top_builddir)/include -I$(top_srcdir)/include \
                   -include $(top_builddir)/include/config.h $(FORHDRS)
 
-MYWARNINGS	= 
+MYWARNINGS	=
 MYDEFS		=
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
@@ -63,6 +63,6 @@ clean:
 	rm -f libmacho.a
 
 install: libmacho.a
-	mkdir -p $(DESTDIR)/$(libdir)
-	$(INSTALL_DATA) $< $(DESTDIR)/$(libdir)/$<
-	$(RANLIB) $(DESTDIR)/$(libdir)/$<
+	mkdir -p $(DESTDIR)$(libdir)
+	$(INSTALL_DATA) $< $(DESTDIR)$(libdir)/$<
+	$(RANLIB) $(DESTDIR)$(libdir)/$<

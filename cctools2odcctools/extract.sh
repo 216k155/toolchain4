@@ -218,7 +218,7 @@ if [[ "$(uname -s)" = "Darwin" ]] ; then
         SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSXVER}.sdk
     fi
 else
-    SDKROOT=$(cd ${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk && pwd)
+    SDKROOT=$(cd ${HOME}/MacOSX${OSXVER}.sdk && pwd)
 fi
 
 USE_OSX_MACHINE_H=0
@@ -252,7 +252,7 @@ PATCHFILES_MACOSX_DEPLOYMENT_TARGET="libstuff/macosx_deployment_target_default_1
 PATCHFILES_MAP_64BIT_ARCHES="libstuff/map_64bit_arches.diff"
 PATCHFILES_DONT_TYPEDEF_NXCONSTANTSTRING="otool/dontTypedefNXConstantString.diff"
 PATCHFILES_CROSS_PREFIXES="ar/ar-ranlibpath.diff misc/libtool_lipo_transform.diff misc/libtool-ldpath.diff"
-PATCHFILES_PROGNAME_FIXES="as/driver.c.diff libstuff/realpath_execute.diff"
+PATCHFILES_PROGNAME_FIXES="as/driver.c.diff libstuff/realpath_execute.diff misc/libtool_progname_fixes.diff"
 PATCHFILES_STRERROR="as/input-scrub.diff"
 PATCHFILES_DONT_ASSUME_GETATTRLIST="misc/redo_prebinding.nogetattrlist.diff"
 PATCHFILES_WIN_TMPDIR="ar/TMPDIR.diff"
@@ -584,8 +584,6 @@ patch_autoconfiscate() {
         echo -e "\n" > ${DISTDIR}/ld64/src/ld/configure.h
     fi
 
-    set -e
-    set -x
     if [[ -z $FOREIGNHEADERS ]] ; then
         message_status "Removing include/foreign"
         if [[ -d ${DISTDIR}/include/foreign ]] ; then
@@ -602,8 +600,6 @@ patch_autoconfiscate() {
     rm -rf autom4te.cache
     rm include/config.h.in~
     popd
-    set +x
-    set +e
 }
 
 patch_ppc64_reenable() {

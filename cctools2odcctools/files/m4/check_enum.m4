@@ -8,7 +8,7 @@ m4_define([CHECK_ENUM],
 AC_CACHE_CHECK([for $1 in $2], check_Enum,
 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT([$5])
 @%:@include <$2>],
-[ if( $1 == 0 ) 
+[ if( $1 == 0 )
 	return 0;
 ])],
 		[AS_VAR_SET(check_Enum, yes)],

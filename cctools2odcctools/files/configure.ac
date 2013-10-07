@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 AC_INIT([ccctools], [809], [Ray Donnelly <mingw.android@gmail.com>])
 AC_PREREQ([2.62])
 AC_REVISION([m4_esyscmd_s([git describe --always])])
-=======
-fAC_INIT([odcctools], [809.1od1], [peter@pogma.com])
-AC_PREREQ([2.57])
-AC_REVISION([$Revision: 1.37 $])
->>>>>>> 68f39a5... Remove dodgy ldclassic test and disable it always.
 
 # Weird. Doesn't seem to do anything...
 AC_CONFIG_MACRO_DIR([m4])
@@ -42,8 +36,23 @@ darwin*)
     ;;
 esac
 
-AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CFLAGS)
-AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03],CXXFLAGS)
+case $host_os in
+    darwin*)
+      LD_DYNAMIC=
+      LD_STATIC=
+      LD_STATIC_GROUP_START=
+      LD_STATIC_GROUP_END=
+    ;;
+    *)
+      LD_DYNAMIC="-Wl,-Bdynamic"
+      LD_STATIC="-Wl,-Bstatic"
+      LD_STATIC_GROUP_START="-Wl,-Bstatic -Wl,--start-group"
+      LD_STATIC_GROUP_END="-Wl,--end-group -Wl,-Bdynamic"
+    ;;
+esac
+
+AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03 -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS],CFLAGS)
+AX_APPEND_COMPILE_FLAGS([-D__DARWIN_UNIX03 -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS],CXXFLAGS)
 
 # Handle host dependant matters.
 # 1. Append to CFLAGS early so that configure checks use them.
@@ -135,7 +144,7 @@ AM_CONDITIONAL([HAVE_TZFILE_H], [test "x$ac_cv_header_tzfile_h" = xyes])
 AM_COND_IF([HAVE_TZFILE_H], [],
  AC_CONFIG_HEADERS([include/tzfile.h]))
 
-AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="-lssl -lcrypto"])
+AC_CHECK_HEADERS([CommonCrypto/CommonDigest.h], [], [SSL_LIBS="$LD_STATIC -lssl -lcrypto $LD_DYNAMIC"])
 AC_SUBST(SSL_LIBS)
 AM_CONDITIONAL([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [test "x$ac_cv_header_CommonCrypto_CommonDigest_h" = xyes])
 AM_COND_IF([HAVE_COMMONCRYPTO_COMMONDIGEST_H], [],
@@ -354,6 +363,22 @@ AC_CHECK_DECL([N_ARM_THUMB_DEF], [],
 
 AC_ARG_PROGRAM
 
+AC_ARG_ENABLE([shared],
+  AS_HELP_STRING([--disable-shared], [Disable shared build]))
+
+AC_ARG_ENABLE([static],
+  AS_HELP_STRING([--enable-static], [Enable static build]))
+
+#AS_IF([test "x$enable_shared" != "xno"], [
+#  AS_IF([test "x$enable_static" = "xyes"], [
+#        AC_MSG_ERROR([Can't configure cctools as both static and shared])
+#  ])
+#])
+
+AS_IF([test "$enable_shared" = "$enable_static"], [
+    AC_MSG_ERROR([Please configure as static or shared, not both])
+])
+
 case $target_cpu in
      powerpc)
         AC_DEFINE(EMULATED_HOST_CPU_TYPE, 18, [Emulated CPU type])
@@ -433,6 +458,23 @@ AC_ARG_WITH([sysroot],
                 [filesystem root of cross build environment]),
         [AC_DEFINE_UNQUOTED([CROSS_SYSROOT],["$withval"],[filesystem root of cross build environment])])
 
+AC_ARG_WITH([llvm],
+        AC_HELP_STRING([--with-llvm],
+                [prefix of llvm to use (final prefix, not builddir)]),
+        llvm="$withval")
+
+if test "x${llvm}" != x; then
+    AC_MSG_NOTICE(["Using llvm in prefix ${llvm}"])
+    AX_APPEND_COMPILE_FLAGS([-I${llvm}/include],CFLAGS)
+    AX_APPEND_COMPILE_FLAGS([-L${llvm}/lib],LDFLAGS)
+    llvm_config=${llvm}/bin/${target}-llvm-config$EXEEXT
+    if ! test -x "${llvm_config}"; then
+        llvm_config=
+        AC_MSG_WARN([llvm-config (${llvm_config}) not found, will use LLVM 2.7 defaults])
+    fi
+else
+    AC_MSG_ERROR(["Please specify --with-llvm=<path>"])
+fi
 
 # Not sure why MDYNAMICNOPIC is used instead of just WARNINGS
 MDYNAMICNOPIC=""
@@ -578,29 +620,29 @@ AC_CHECK_DECLS([readlink], [], [], [[#include <unistd.h>]])
 
 case $host_os in
     mingw*)
-        AC_DEFINE([FIO_READ_WRITE],[_S_IREAD|_S_IWRITE],[0666])
-        AC_DEFINE([FIO_READ_WRITE_ME],[_S_IREAD|_S_IWRITE],[0600])
-        AC_DEFINE([FIO_READ_WRITE_EXEC],[_S_IREAD|_S_IWRITE|_S_IEXEC],[0777])
-        AC_DEFINE([FIO_MASK_ALL_4],[_S_IREAD|_S_IWRITE|_S_IEXEC],[07777])
-        ;;
+      AC_DEFINE([FIO_READ_WRITE],[_S_IREAD|_S_IWRITE],[0666])
+      AC_DEFINE([FIO_READ_WRITE_ME],[_S_IREAD|_S_IWRITE],[0600])
+      AC_DEFINE([FIO_READ_WRITE_EXEC],[_S_IREAD|_S_IWRITE|_S_IEXEC],[0777])
+      AC_DEFINE([FIO_MASK_ALL_4],[_S_IREAD|_S_IWRITE|_S_IEXEC],[07777])
+      ;;
     *)
-        AC_DEFINE([FIO_READ_WRITE],[0666],[_S_IREAD|_S_IWRITE])
-        AC_DEFINE([FIO_READ_WRITE_ME],[0600],[_S_IREAD|_S_IWRITE])
-        AC_DEFINE([FIO_READ_WRITE_EXEC],[0777],[_S_IREAD|_S_IWRITE|_S_IEXEC])
-        AC_DEFINE([FIO_MASK_ALL_4],[07777],[_S_IREAD|_S_IWRITE|_S_IEXEC])
-        ;;
+      AC_DEFINE([FIO_READ_WRITE],[0666],[_S_IREAD|_S_IWRITE])
+      AC_DEFINE([FIO_READ_WRITE_ME],[0600],[_S_IREAD|_S_IWRITE])
+      AC_DEFINE([FIO_READ_WRITE_EXEC],[0777],[_S_IREAD|_S_IWRITE|_S_IEXEC])
+      AC_DEFINE([FIO_MASK_ALL_4],[07777],[_S_IREAD|_S_IWRITE|_S_IEXEC])
+      ;;
 esac
 
 case $host_os in
-     darwin*)
-    AC_SUBST([HAVE_FOREIGN_HEADERS],[NO])
-    ;;
-     *)
-    AC_SUBST([HAVE_FOREIGN_HEADERS],[YES])
-    AC_SUBST([EMULATED_OBJ], [emulated.c])
-    AC_C_BIGENDIAN([AC_SUBST([ENDIAN_FLAG],[-D__BIG_ENDIAN__])],
-            [AC_SUBST([ENDIAN_FLAG],[-D__LITTLE_ENDIAN__])])
-    ;;
+    darwin*)
+      AC_SUBST([HAVE_FOREIGN_HEADERS],[NO])
+      ;;
+    *)
+      AC_SUBST([HAVE_FOREIGN_HEADERS],[YES])
+      AC_SUBST([EMULATED_OBJ], [emulated.c])
+      AC_C_BIGENDIAN([AC_SUBST([ENDIAN_FLAG],[-D__BIG_ENDIAN__])],
+          [AC_SUBST([ENDIAN_FLAG],[-D__LITTLE_ENDIAN__])])
+      ;;
 esac
 
 # There's no fts.h (included from dylib_roots.c) with MinGW. There is however,
@@ -610,13 +652,13 @@ esac
 case $host_os in
      mingw*)
        AC_DEFINE_UNQUOTED([EXEEXT],[".exe"], ["Define executable extension"])
-     ;;
+       ;;
      *)
        AC_DEFINE_UNQUOTED([EXEEXT],[""], ["Define executable extension"])
        AC_SUBST([NOT_FOR_WINDOWS_C],["dylib_roots.c seg_addr_table.c dylib_table.c SymLoc.c"])
        AC_SUBST([NOT_FOR_WINDOWS_MISC_C],["checksyms.c redo_prebinding.c"])
        AC_SUBST([NOT_FOR_WINDOWS_PROG],["seg_addr_table checksyms redo_prebinding"])
-     ;;
+       ;;
 esac
 
 # ldclassic has been deprecated by ld64.
@@ -630,7 +672,7 @@ AC_SUBST([COMPONENTS], [$COMPONENTS])
 
 AC_CHECK_FUNC([uuid_generate_random],[],
           [AC_CHECK_LIB([uuid],[uuid_generate_random],
-                [UUID_LIBS="-luuid"],
+                [UUID_LIBS="$LD_STATIC -luuid $LD_DYNAMIC"],
                 [AC_MSG_ERROR(
                  [No uuid_generate_random function found])])])
 AC_SUBST([UUID_LIBS])
@@ -642,41 +684,54 @@ AC_CHECK_FUNC([dlopen],[],
                  [No dlopen function found in dl])])])
 AC_SUBST([DL_LIBS])
 
+
+# This chunk may not be needed, could just use -l$SHARED_LTO_SEARCH instead probably.
 case $host_os in
-     darwin*)
-# Dynamically linked LTO
-AC_LANG_PUSH([C++])
-AC_CHECK_LIB([LTO],[lto_get_version],[
-         LTO_LIBS=-lLTO
-         LTO_DEFS="-DLTO_SUPPORT"
-         ])
-AC_LANG_POP([C++])
-AC_SUBST(LTO_LIBS)
-AC_SUBST(LTO_DEFS)
-;;
-     mingw*)
-# -lEnhancedDisassembly.dll needed, there is a .a but various syms are missing
-# (_imp__SymSetOptions@4,_imp__SymInitialize@12,_imp__SymGetModuleBase@8,_imp__SymFunctionTableAccess@8,_imp__StackWalk@36,_imp__SymGetModuleBase@8,_imp__SymGetSymFromAddr@16,_imp__SymGetLineFromAddr@16,GetProcessMemoryInfo@12)
-# even after there, there's
-# (_imp__SymSetOptions@4,_imp__SymInitialize@12,_imp__SymGetModuleBase@8,_imp__SymFunctionTableAccess@8,_imp__StackWalk@36,_imp__SymGetModuleBase@8,_imp__SymGetSymFromAddr@16,_imp__SymGetLineFromAddr@16,GetProcessMemoryInfo@12)
-LTO_LIBS="-Wl,-Bstatic -Wl,--start-group -lpthread -lssl -lcrypto -Wl,--end-group -Wl,-Bdynamic -llibLTO"
-LTO_DEFS="-DLTO_SUPPORT"
-AC_SUBST(LTO_LIBS)
-AC_SUBST(LTO_DEFS)
-;;
-     *)
-# Statically linked LTO (though static llvmgcc itself isn't yet done)
-# ...requires a large list of libraries. Using gnumake's $(wildcard) might be a better plan.
-AC_LANG_PUSH([C++])
-AC_CHECK_LIB([LTO],[lto_get_version],[
-         LTO_LIBS="-lpthread -Wl,-Bstatic -Wl,--start-group -lCompilerDriver -lEnhancedDisassembly -lLLVMAlphaAsmPrinter -lLLVMAlphaCodeGen -lLLVMAlphaInfo -lLLVMAnalysis -lLLVMArchive -lLLVMARMAsmParser -lLLVMARMAsmPrinter -lLLVMARMCodeGen -lLLVMARMInfo -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBitReader -lLLVMBitWriter -lLLVMBlackfinAsmPrinter -lLLVMBlackfinCodeGen -lLLVMBlackfinInfo -lLLVMCBackend -lLLVMCBackendInfo -lLLVMCellSPUAsmPrinter -lLLVMCellSPUCodeGen -lLLVMCellSPUInfo -lLLVMCodeGen -lLLVMCore -lLLVMCppBackend -lLLVMCppBackendInfo -lLLVMExecutionEngine -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterpreter -lLLVMipa -lLLVMipo -lLLVMJIT -lLLVMLinker -lLLVMMBlazeAsmPrinter -lLLVMMBlazeCodeGen -lLLVMMBlazeInfo -lLLVMMC -lLLVMMCParser -lLLVMMipsAsmPrinter -lLLVMMipsCodeGen -lLLVMMipsInfo -lLLVMMSIL -lLLVMMSILInfo -lLLVMMSP430AsmPrinter -lLLVMMSP430CodeGen -lLLVMMSP430Info -lLLVMPIC16AsmPrinter -lLLVMPIC16CodeGen -lLLVMPIC16Info -lLLVMpic16passes -lLLVMPowerPCAsmPrinter -lLLVMPowerPCCodeGen -lLLVMPowerPCInfo -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSparcAsmPrinter -lLLVMSparcCodeGen -lLLVMSparcInfo -lLLVMSupport -lLLVMSystem -lLLVMSystemZAsmPrinter -lLLVMSystemZCodeGen -lLLVMSystemZInfo -lLLVMTarget -lLLVMTransformUtils -lLLVMX86AsmParser -lLLVMX86AsmPrinter -lLLVMX86CodeGen -lLLVMX86Disassembler -lLLVMX86Info -lLLVMXCoreAsmPrinter -lLLVMXCoreCodeGen -lLLVMXCoreInfo -lLTO -lplugin_llvmc_Base -lplugin_llvmc_Clang -lUnitTestMain -Wl,--end-group -Wl,-Bdynamic"
-         LTO_DEFS="-DLTO_SUPPORT"
-         ])
-AC_LANG_POP([C++])
-AC_SUBST(LTO_LIBS)
-AC_SUBST(LTO_DEFS)
-;;
+    darwin*|linux*)
+      SHARED_LTO_LIBS="$LD_DYNAMIC -lpthread -lLTO"
+    ;;
+    *)
+      SHARED_LTO_LIBS="$LD_DYNAMIC -lpthread -lLTO"
+    ;;
 esac
+
+# Windows is behaving weirdly, need to specify -llibLTO for it to pick up the dll variant
+# when using AC_CHECK_LIB, if specify -lLTO then libLTO.a used (even after -Wl,-Bdynamic)
+SHARED_LTO_SEARCH="LTO"
+case $host_os in
+    mingw*)
+      STATIC_LTO_EXTRA_LIBS="-ldbghelp -lpsapi"
+      SHARED_LTO_SEARCH="LTO"
+      AS_IF([test "x$enable_shared" = "xno"],
+            [AX_APPEND_COMPILE_FLAGS([--static-libgcc --static-libstdc++], LDFLAGS)])
+      ;;
+    linux*)
+      AS_IF([test "x$enable_shared" != "xno"],
+            [AX_APPEND_COMPILE_FLAGS([-Wl,--rpath,\\\$\$ORIGIN/../lib], LDFLAGS)])
+      ;;
+esac
+
+if test "x${llvm_config}" != x; then
+    STATIC_LTO_LIBS="$(${llvm_config} --libs) -lLTO"
+else
+    STATIC_LTO_LIBS="-lCompilerDriver -lEnhancedDisassembly -lLLVMAlphaAsmPrinter -lLLVMAlphaCodeGen -lLLVMAlphaInfo -lLLVMAnalysis -lLLVMArchive -lLLVMARMAsmParser -lLLVMARMAsmPrinter -lLLVMARMCodeGen -lLLVMARMInfo -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBitReader -lLLVMBitWriter -lLLVMBlackfinAsmPrinter -lLLVMBlackfinCodeGen -lLLVMBlackfinInfo -lLLVMCBackend -lLLVMCBackendInfo -lLLVMCellSPUAsmPrinter -lLLVMCellSPUCodeGen -lLLVMCellSPUInfo -lLLVMCodeGen -lLLVMCore -lLLVMCppBackend -lLLVMCppBackendInfo -lLLVMExecutionEngine -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterpreter -lLLVMipa -lLLVMipo -lLLVMJIT -lLLVMLinker -lLLVMMBlazeAsmPrinter -lLLVMMBlazeCodeGen -lLLVMMBlazeInfo -lLLVMMC -lLLVMMCParser -lLLVMMipsAsmPrinter -lLLVMMipsCodeGen -lLLVMMipsInfo -lLLVMMSIL -lLLVMMSILInfo -lLLVMMSP430AsmPrinter -lLLVMMSP430CodeGen -lLLVMMSP430Info -lLLVMPIC16AsmPrinter -lLLVMPIC16CodeGen -lLLVMPIC16Info -lLLVMpic16passes -lLLVMPowerPCAsmPrinter -lLLVMPowerPCCodeGen -lLLVMPowerPCInfo -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSparcAsmPrinter -lLLVMSparcCodeGen -lLLVMSparcInfo -lLLVMSupport -lLLVMSystem -lLLVMSystemZAsmPrinter -lLLVMSystemZCodeGen -lLLVMSystemZInfo -lLLVMTarget -lLLVMTransformUtils -lLLVMX86AsmParser -lLLVMX86AsmPrinter -lLLVMX86CodeGen -lLLVMX86Disassembler -lLLVMX86Info -lLLVMXCoreAsmPrinter -lLLVMXCoreCodeGen -lLLVMXCoreInfo -lLTO -lplugin_llvmc_Base -lplugin_llvmc_Clang -lUnitTestMain"
+fi
+
+AC_LANG_PUSH([C++])
+AS_IF([test "x$enable_shared" != "xno"],
+  [AC_CHECK_LIB([$SHARED_LTO_SEARCH],[lto_get_version],
+        [LTO_LIBS="$SHARED_LTO_LIBS"
+         LTO_DEFS="-DLTO_SUPPORT"]
+  )],
+  [AC_CHECK_LIB([$SHARED_LTO_SEARCH],[lto_get_version],
+        [LTO_LIBS="$LD_STATIC_GROUP_START $STATIC_LTO_LIBS $STATIC_LTO_EXTRA_LIBS $LD_STATIC_GROUP_END -lpthread"
+         LTO_DEFS="-DLTO_SUPPORT"]
+  )]
+)
+AC_LANG_POP([C++])
+
+AC_SUBST(LTO_LIBS)
+AC_SUBST(LTO_DEFS)
 
 # So tagged (zzz_and_finally) to ensure that this gets sorted last in config.h
 AH_VERBATIM([zzz_and_finally],[

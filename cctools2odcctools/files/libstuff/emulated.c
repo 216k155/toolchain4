@@ -67,7 +67,7 @@ void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset
     off_t PageDelta = offset%(off_t)SysInfo.dwAllocationGranularity;
 	uint64_t o = offset-(uint64_t)PageDelta;
 
-	DWORD Protect = PAGE_READONLY; 
+	DWORD Protect = PAGE_READONLY;
 	DWORD DesiredAccess = FILE_MAP_COPY;
 	if (prot != PROT_READ)
 	{
@@ -326,7 +326,7 @@ static void UnixTimeToFileTime(struct timeval t, LPFILETIME pft)
 {
     /* Note that LONGLONG is a 64-bit value */
     LONGLONG ll;
-   
+
     ll = Int32x32To64(t.tv_sec, 10000000LL) + t.tv_usec*10 + 116444736000000000;
     pft->dwLowDateTime = (DWORD)ll;
     pft->dwHighDateTime = ll >> 32;
@@ -430,7 +430,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
     res = write(fd, buf, count);
     lseek(fd, old_pos, SEEK_SET);
 
-    return res;    
+    return res;
 }
 #endif /* HAVE_DECL_PWRITE */
 
@@ -473,9 +473,9 @@ int _NSGetExecutablePath(char* buf, unsigned long* bufsize)
             *winslash = '/';
             winslash = strchr(winslash,'\\');
         }
-        return strlen(buf);
-    }
-    return -1;
+		return strlen(buf);
+	}
+	return -1;
 #elif (HAVE_DECL_READLINK) /* Linux */
     int ret = readlink("/proc/self/exe", buf, (size_t)(*bufsize));
     if(ret != -1) {
@@ -483,7 +483,7 @@ int _NSGetExecutablePath(char* buf, unsigned long* bufsize)
     }
     return ret;
 #else
-    return -1; /* Fail on all other systems for now */
+	return -1; /* Fail on all other systems for now */
 #endif /* _MSC_VER */
 }
 #endif/* HAVE__NSGETEXECUTABLEPATH */

@@ -6,8 +6,8 @@ top_srcdir = @top_srcdir@
 prefix	= @prefix@
 exec_prefix	= @exec_prefix@
 bindir		= @bindir@
+datarootdir	= @datarootdir@
 mandir		= @mandir@
-datarootdir     = @datarootdir@
 
 VPATH = @srcdir@
 
@@ -38,12 +38,12 @@ MYLDFLAGS	= -L$(top_builddir)/libstuff
 MYLIBS		= -lstuff
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
-	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
-	
+	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
+
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 
 CFILES = append.c ar.c archive.c contents.c delete.c extract.c misc.c \
-	move.c print.c replace.c 
+	move.c print.c replace.c
 OBJS = $(CFILES:.c=.o)
 
 .c.o:
@@ -57,11 +57,11 @@ ar: $(OBJS)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 
 install: ar
-	mkdir -p $(DESTDIR)/$(bindir)
+	mkdir -p $(DESTDIR)$(bindir)
 	mkdir -p $(DESTDIR)$(mandir)/man1
 	mkdir -p $(DESTDIR)$(mandir)/man5
 	$(INSTALL_PROGRAM) ar \
-		$(DESTDIR)/$(bindir)/`echo ar | sed '$(transform)'`
+		$(DESTDIR)$(bindir)/`echo ar | sed '$(transform)'`
 	$(INSTALL_DATA) $(srcdir)/ar.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL_DATA) $(srcdir)/ar.5 $(DESTDIR)$(mandir)/man5
 

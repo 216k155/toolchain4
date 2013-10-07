@@ -34,14 +34,14 @@ LIPOPROG	= $(shell echo lipo | sed '$(transform)')
 MYINCLUDES      = -I$(builddir) -I$(srcdir) -I$(top_builddir)/include \
                   -I$(top_srcdir)/include -I$(top_srcdir)/libprunetrie -include $(top_builddir)/include/config.h $(FORHDRS)
 
-MYWARNINGS      = 
+MYWARNINGS      =
 MYDEFS          = -DBINDIR="\"$(bindir)\"" -DLDPROG="\"$(LDPROG)\"" \
 		  -DLIPOPROG="\"$(LIPOPROG)\"" $(LTO_DEFS)
 MYLDFLAGS	= -L$(top_builddir)/libstuff
 MYLIBS		= -lstuff @DL_LIBS@
 
 MYCOMPILEFLAGS	= $(WARNINGS) $(MYWARNINGS) $(DEFS) $(MYDEFS) \
-	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC) 
+	$(CPPFLAGS) $(MYINCLUDES) $(CFLAGS) $(MDYNAMICNOPIC)
 
 MYLINKFLAGS	= $(LDFLAGS) $(MYLDFLAGS) $(MYLIBS)
 
@@ -152,10 +152,10 @@ ranlib: $(OBJS_ranlib)
 	$(CC) -o $@ $^ $(MYLINKFLAGS)
 
 install: $(PROGRAMS)
-	mkdir -p $(DESTDIR)/$(bindir)
+	mkdir -p $(DESTDIR)$(bindir)
 	for p in $(PROGRAMS); do					\
 		$(INSTALL_PROGRAM) $$p 					\
-			$(DESTDIR)/$(bindir)/`echo $$p | sed '$(transform)'`;	\
+			$(DESTDIR)$(bindir)/`echo $$p | sed '$(transform)'`;	\
 	done
 clean:
 	rm -r -f *.o

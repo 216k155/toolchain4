@@ -1,6 +1,6 @@
---- driver.c.orig	2013-06-04 21:37:19.336903817 +0100
-+++ driver.c	2013-06-04 21:40:24.742394946 +0100
-@@ -53,17 +53,25 @@
+--- driver.c	2013-06-17 18:36:41.368674337 +0200
++++ driver.c	2013-06-17 19:31:25.789650383 +0200
+@@ -53,17 +53,30 @@
  	 */
  	bufsize = MAXPATHLEN;
  	p = buf;
@@ -25,9 +25,14 @@
 -	p = rindex(prefix, '/');
 -	if(p != NULL)
 -	    p[1] = '\0';
-+    if(strlen(prefix)<(MAXPATHLEN-1) && prefix[strlen(prefix)-1] != '/'){
-+        prefix[strlen(prefix)] = '/';
-+    }
++
++	/* Append slash at the end if not exist */
++	p = prefix + strlen(prefix);
++	if((p-prefix)<(MAXPATHLEN-1) && prefix[p-prefix-1] != '/'){
++	   *(p++) = '/';
++	   *(p++) = '\0';
++	}
++
  	/*
  	 * Process the assembler flags exactly like the assembler would (except
  	 * let the assembler complain about multiple flags, bad combinations of
