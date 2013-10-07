@@ -465,12 +465,22 @@ AC_ARG_WITH([llvm],
 
 if test "x${llvm}" != x; then
     AC_MSG_NOTICE(["Using llvm in prefix ${llvm}"])
+    # LTO.dll exists in ${llvm}/bin folder and even though
+    # there is libLTO.a in ${llvm}/lib, it isn't an import
+    # library for this dll; rather a static lib. To ensure
+    # the dll is found first -L${llvm}/bin appears infront
+    # of -L${llvm}/lib in LDFLAGS.
+    case $host_os in
+        mingw*)
+            AX_APPEND_COMPILE_FLAGS([-L${llvm}/bin],LDFLAGS)
+        ;;
+    esac
     AX_APPEND_COMPILE_FLAGS([-I${llvm}/include],CFLAGS)
     AX_APPEND_COMPILE_FLAGS([-L${llvm}/lib],LDFLAGS)
     llvm_config=${llvm}/bin/${target}-llvm-config$EXEEXT
     if ! test -x "${llvm_config}"; then
-        llvm_config=
         AC_MSG_WARN([llvm-config (${llvm_config}) not found, will use LLVM 2.7 defaults])
+        llvm_config=
     fi
 else
     AC_MSG_ERROR(["Please specify --with-llvm=<path>"])
