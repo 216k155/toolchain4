@@ -529,10 +529,7 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 # -Wattributes (hence -Wno-attributes) used to be in this list, but I'd rather not disable warnings un-necessarily, in fact, enabling all
 # warnings (or at least not disabling any) and compiling everything with -Werror should be an explicit goal.
 AX_APPEND_COMPILE_FLAGS([-Wimport -Wunused-variable -Wunused-but-set-variable -Wdeprecated-declarations], [INVERSE_WARNINGS], [-Wall -Werror])
-WARNINGS=""
-for WARNING in $INVERSE_WARNINGS; do
-    WARNINGS=$WARNINGS" ${WARNING//-W/-Wno-}"
-done
+WARNINGS=$(echo ${INVERSE_WARNINGS} | sed -e s/-W/-Wno-/g)
 AC_SUBST([WARNINGS], [$WARNINGS])
 
 # odcctools seemed to think that otool/print_objc*.c needs to be
@@ -589,10 +586,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM()],
 # Again, work around the -Wno-* bug.
 AC_LANG_PUSH([C++])
 AX_APPEND_COMPILE_FLAGS([-Wtrigraphs -Wdeprecated -Wstrict-aliasing -Wenum-compare -Winvalid-offsetof], [INVERSE_CXXWARNINGS], [-Wall -Werror])
-CXXWARNINGS=""
-for WARNING in $INVERSE_CXXWARNINGS; do
-    CXXWARNINGS=$CXXWARNINGS" ${WARNING//-W/-Wno-}"
-done
+CXXWARNINGS=$(echo ${INVERSE_CXXWARNINGS} | sed -e s/-W/-Wno-/g)
 CXXFLAGS=$CXXFLAGS" $CXXWARNINGS"
 AC_LANG_POP
 
