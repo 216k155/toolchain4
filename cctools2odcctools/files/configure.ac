@@ -259,7 +259,7 @@ CHECK_ENUM(KERN_OSRELEASE, [sys/sysctl.h],
 # This must be checked for after CTL_KERN amd KERN_OSRELEASE because
 # on Linux, sysctl.h contains "unsigned long __unused[4];"
 AC_CHECK_DECL([__unused], [],
-            [AC_DEFINE([__unused], [__attribute__((__unused__))],
+            [AC_DEFINE([__UNUSED_NOT_DEFINED], [1],
                [__unused macro to save some typing])],
             [#include <sys/cdefs.h>])
 
@@ -619,8 +619,8 @@ AC_CHECK_DECLS([flock], [], [], [[#include <sys/file.h>]])
 AC_CHECK_DECLS([sigfillset, sigprocmask], [], [], [[#include <signal.h>]])
 AC_CHECK_DECLS([utimes], [], [], [[#include <sys/time.h>]])
 AC_CHECK_DECLS([asprintf], [], [], [[#include <stdio.h>]])
-AC_CHECK_DECLS([strlcpy, strlcat, getuid, getgid, rindex, index, strmode, mkstemp, fchmod, fchdir, pwrite, realpath])
-AC_CHECK_DECLS([readlink], [], [], [[#include <unistd.h>]])
+AC_CHECK_DECLS([strlcpy, strlcat, rindex, index, strmode, mkstemp, fchmod, fchdir, pwrite, realpath])
+AC_CHECK_DECLS([readlink, getuid, getgid], [], [], [[#include <unistd.h>]])
 
 case $host_os in
     mingw*)
@@ -740,6 +740,10 @@ AC_SUBST(LTO_DEFS)
 # So tagged (zzz_and_finally) to ensure that this gets sorted last in config.h
 AH_VERBATIM([zzz_and_finally],[
 #include "emulated.h"
+
+#ifdef __UNUSED_NOT_DEFINED
+#define __unused __attribute__((__unused__))
+#endif
 ])
 
 AC_CONFIG_FILES([Makefile include/Makefile libprunetrie/Makefile libstuff/Makefile libmacho/Makefile])

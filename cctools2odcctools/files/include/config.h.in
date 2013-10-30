@@ -446,6 +446,8 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-
 #include "emulated.h"
 
+#ifdef __UNUSED_NOT_DEFINED
+#define __unused __attribute__((__unused__))
+#endif
