@@ -388,6 +388,14 @@ patch_add_sdkroot_headers1() {
 
         do_sed $"s/} __mbstate_t/} NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
         do_sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
+
+        # For Linux x86_64 hosts. We get conflicting types otherwise.
+#        do_sed $"s/^typedef long long\t\t__int64_t;$/#if \!defined\(_BITS_TYPES_H\) || \!defined\(__WORDSIZE\) || \(defined\(__WORDSIZE\) \&\& \(__WORDSIZE\!=64\)\)\ntypedef long long\t__int64_t;/" ${DISTDIR}/include/i386/_types.h
+#        do_sed $"s/^typedef unsigned long long\t__uint64_t;$/typedef unsigned long long\t__uint64_t;\n#endif/" ${DISTDIR}/include/i386/_types.h
+
+        do_sed $"s/^typedef long long\t\t__int64_t;$/\/* __int64_t and __uint64_t unified with Linux x86-64 bits\/types.h for crosstool-ng *\/\ntypedef signed long int\t\t__int64_t;/" ${DISTDIR}/include/i386/_types.h
+        do_sed $"s/^typedef unsigned long long\t__uint64_t;$/typedef unsigned long int\t__uint64_t;/" ${DISTDIR}/include/i386/_types.h
+
     fi
 }
 

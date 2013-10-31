@@ -9,7 +9,9 @@
 #include <stdint.h>
 
 #ifdef __linux__
+ /* - see comment in emulated.h
  #include <sys/stat.h>
+ */
  #include <time.h>
  #include <unistd.h>
 #endif

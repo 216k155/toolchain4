@@ -15,9 +15,24 @@ extern "C" {
 unsigned int __cdecl sleep (unsigned int _Duration);
 #endif /* HAVE_DECL_SLEEP */
 
-#if (HAVE_DECL_MMAP==0)
+/*
+The following 2 includes *were* inside the
+#if (HAVE_DECL_MMAP==0) block. This change
+(and also libc.h not including  sys/stat.h)
+are because '__unused' is a define used in
+a single Apple header and Linux x86-64 uses
+an array called '__unused' in stat.h. It will
+be cleaner to instead remove __unused from
+the Apple header and then never worry about it
+again. Once done, we must also remove all the
+autoconf logic responsible for checing and
+defining __unused.
+*/
+
 #include <sys/stat.h>
 #include <unistd.h>
+
+#if (HAVE_DECL_MMAP==0)
 #define PROT_READ 0
 #define PROT_WRITE 0
 #define MAP_FILE 0
