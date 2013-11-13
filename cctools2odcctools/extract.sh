@@ -390,11 +390,8 @@ patch_add_sdkroot_headers1() {
         do_sed $"s/typedef __mbstate_t/typedef NONCONFLICTING__mbstate_t/" ${DISTDIR}/include/i386/_types.h
 
         # For Linux x86_64 hosts. We get conflicting types otherwise.
-#        do_sed $"s/^typedef long long\t\t__int64_t;$/#if \!defined\(_BITS_TYPES_H\) || \!defined\(__WORDSIZE\) || \(defined\(__WORDSIZE\) \&\& \(__WORDSIZE\!=64\)\)\ntypedef long long\t__int64_t;/" ${DISTDIR}/include/i386/_types.h
-#        do_sed $"s/^typedef unsigned long long\t__uint64_t;$/typedef unsigned long long\t__uint64_t;\n#endif/" ${DISTDIR}/include/i386/_types.h
-
-        do_sed $"s/^typedef long long\t\t__int64_t;$/\/* __int64_t and __uint64_t unified with Linux x86-64 bits\/types.h for crosstool-ng *\/\ntypedef signed long int\t\t__int64_t;/" ${DISTDIR}/include/i386/_types.h
-        do_sed $"s/^typedef unsigned long long\t__uint64_t;$/typedef unsigned long int\t__uint64_t;/" ${DISTDIR}/include/i386/_types.h
+        do_sed $"s/^typedef long long\t\t__int64_t;$/\/* __int64_t and __uint64_t unified with Linux x86-64 bits\/types.h for crosstool-ng *\/\n#if defined\(__LP64__\) \&\& defined\(__linux__\)\ntypedef signed long int\t\t__int64_t;\n#else\ntypedef long long\t\t__int64_t;\n#endif/" ${DISTDIR}/include/i386/_types.h
+        do_sed $"s/^typedef unsigned long long\t__uint64_t;$/#if defined\(__LP64__\) \&\& defined\(__linux__\)\ntypedef unsigned long int\t__uint64_t;\n#else\ntypedef unsigned long long\t\t__uint64_t;\n#endif\n/" ${DISTDIR}/include/i386/_types.h
 
     fi
 }
@@ -521,6 +518,9 @@ patch_apply_odcctools_patches_default_arch() {
 patch_apply_odcctools_patches_add_typename_ld64() {
     patch_apply_odcctools_patches "$PATCHFILES_ADD_TYPENAME_LD64"
 }
+patch_apply_odcctools_patches_remove_inc_arch_sparc_reg_h_PC_define() {
+    do_sed $"s^#define\tPC\t(1)^/*#define\tPC\t(1) .. defining PC breaks llvm-3.4 */^" ${DISTDIR}/include/architecture/sparc/reg.h
+}
 patch_qd_to_lld() {
     # MinGW falls over because mingw_pformat.c doesn't handle qd, so instead, change it lld.
     do_sed $"s^10qd^10lld^"  ${DISTDIR}/ar/archive.h
@@ -567,20 +567,20 @@ patch_apply_odcctools_patches_win_avoid_mmap_ofile() {
     patch_apply_odcctools_patches "$PATCHFILES_WIN_AVOID_MMAP_OFILE"
 }
 
-patch_to_from patch_apply_odcctools_patches_time_fixes                        fix_time_bugs.patch                     $DISTDIR
-patch_to_from patch_apply_odcctools_patches_add_compileguards                 add_compileguards.patch                 $DISTDIR
-patch_to_from patch_apply_odcctools_patches_remove_sysctl_osversion_detection remove_sysctl_osversion_detection.patch $DISTDIR
-patch_to_from patch_apply_odcctools_patches_qsort_r                           allow_glibc_or_bsd_qsort_r.patch        $DISTDIR
-patch_to_from patch_apply_odcctools_patches_map_64bit_arches                  map_64bit_arches.patch                  $DISTDIR
-patch_to_from patch_apply_odcctools_patches_printf_format_bugs                fix_printf_format_bugs.patch            $DISTDIR
-patch_to_from patch_apply_odcctools_patches_CROSS_SYSROOT                     add_CROSS_SYSROOT.patch                 $DISTDIR
-patch_to_from patch_apply_odcctools_patches_default_arch                      default_arch.patch                      $DISTDIR
-patch_to_from patch_apply_odcctools_patches_add_typename_ld64                 add_typename_ld64.patch                 $DISTDIR
-patch_to_from patch_apply_odcctools_patches_dont_typedef_NxConstantString     dont_typedef_NxConstantString.patch     $DISTDIR
-patch_to_from patch_apply_odcctools_patches_cross_prefixes_EXEEXT             cross_prefixes_and_EXEEXT.patch         $DISTDIR
-patch_to_from patch_apply_odcctools_patches_progname_fixes                    progname_fixes.patch                    $DISTDIR
-patch_to_from patch_apply_odcctools_patches_use_strerror                      use_strerror.patch                      $DISTDIR
-patch_to_from patch_apply_odcctools_patches_dont_assume_getattrlist           dont_assume_getattrlist.patch           $DISTDIR
+patch_to_from patch_apply_odcctools_patches_time_fixes                            fix_time_bugs.patch                     $DISTDIR
+patch_to_from patch_apply_odcctools_patches_add_compileguards                     add_compileguards.patch                 $DISTDIR
+patch_to_from patch_apply_odcctools_patches_remove_sysctl_osversion_detection     remove_sysctl_osversion_detection.patch $DISTDIR
+patch_to_from patch_apply_odcctools_patches_qsort_r                               allow_glibc_or_bsd_qsort_r.patch        $DISTDIR
+patch_to_from patch_apply_odcctools_patches_map_64bit_arches                      map_64bit_arches.patch                  $DISTDIR
+patch_to_from patch_apply_odcctools_patches_printf_format_bugs                    fix_printf_format_bugs.patch            $DISTDIR
+patch_to_from patch_apply_odcctools_patches_CROSS_SYSROOT                         add_CROSS_SYSROOT.patch                 $DISTDIR
+patch_to_from patch_apply_odcctools_patches_default_arch                          default_arch.patch                      $DISTDIR
+patch_to_from patch_apply_odcctools_patches_add_typename_ld64                     add_typename_ld64.patch                 $DISTDIR
+patch_to_from patch_apply_odcctools_patches_dont_typedef_NxConstantString         dont_typedef_NxConstantString.patch     $DISTDIR
+patch_to_from patch_apply_odcctools_patches_cross_prefixes_EXEEXT                 cross_prefixes_and_EXEEXT.patch         $DISTDIR
+patch_to_from patch_apply_odcctools_patches_progname_fixes                        progname_fixes.patch                    $DISTDIR
+patch_to_from patch_apply_odcctools_patches_use_strerror                          use_strerror.patch                      $DISTDIR
+patch_to_from patch_apply_odcctools_patches_dont_assume_getattrlist               dont_assume_getattrlist.patch           $DISTDIR
 
 patch_autoconfiscate() {
 
@@ -743,9 +743,10 @@ patch_configure_regen() {
     popd > /dev/null
 }
 
-patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                win_TMPDIR_to_TEMP.patch                $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_execute                       win_execute.patch                       $DISTDIR
-patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile              win_avoid_mmap_ofile.patch              $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                    win_TMPDIR_to_TEMP.patch                $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_execute                           win_execute.patch                       $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile                  win_avoid_mmap_ofile.patch              $DISTDIR
+patch_to_from patch_apply_odcctools_patches_remove_inc_arch_sparc_reg_h_PC_define remove_inc_arch_sparc_reg_h_PC.patch    $DISTDIR
 
 patch_to_from patch_autoconfiscate autoconfiscate.patch $DISTDIR
 
