@@ -116,7 +116,7 @@ DYLDVERS=210.2.3
 DYLDDISTFILE=${DYLDNAME}-${DYLDVERS}.tar.gz
 #TARBALLS_URL=http://www.opensource.apple.com/tarballs
 TARBALLS_URL=$HOME/Dropbox/darwin-compilers-work/tarballs
-OSXVER=10.7
+OSXVER=10.6
 
 PATCHESMAKE=1
 PATCHESUSE=0
@@ -566,6 +566,9 @@ patch_apply_odcctools_patches_win_execute() {
 patch_apply_odcctools_patches_win_avoid_mmap_ofile() {
     patch_apply_odcctools_patches "$PATCHFILES_WIN_AVOID_MMAP_OFILE"
 }
+patch_apply_odcctools_patches_win_64bit_fix() {
+    do_sed $"s^#if __LP64__^#if __LP64__ || defined(__x86_64__)^" ${DISTDIR}/ld64/src/ld/parsers/libunwind/AddressSpace.hpp
+}
 
 patch_to_from patch_apply_odcctools_patches_time_fixes                            fix_time_bugs.patch                     $DISTDIR
 patch_to_from patch_apply_odcctools_patches_add_compileguards                     add_compileguards.patch                 $DISTDIR
@@ -746,6 +749,8 @@ patch_configure_regen() {
 patch_to_from patch_apply_odcctools_patches_win_TMPDIR_to_TEMP                    win_TMPDIR_to_TEMP.patch                $DISTDIR
 patch_to_from patch_apply_odcctools_patches_win_execute                           win_execute.patch                       $DISTDIR
 patch_to_from patch_apply_odcctools_patches_win_avoid_mmap_ofile                  win_avoid_mmap_ofile.patch              $DISTDIR
+patch_to_from patch_apply_odcctools_patches_win_64bit_fix                         win_64bit_fix.patch                     $DISTDIR
+
 patch_to_from patch_apply_odcctools_patches_remove_inc_arch_sparc_reg_h_PC_define remove_inc_arch_sparc_reg_h_PC.patch    $DISTDIR
 
 patch_to_from patch_autoconfiscate autoconfiscate.patch $DISTDIR
