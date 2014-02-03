@@ -218,15 +218,16 @@ cp ${DISTDIR}/ld64/src/other/PruneTrie.cpp ${DISTDIR}/libprunetrie/
 find ${DISTDIR} -name \*.orig -exec rm -f "{}" \;
 rm -rf ${DISTDIR}/{cbtlibs,file,gprof,libdyld,mkshlib,profileServer}
 
-if [[ "$(uname -s)" = "Darwin" ]] ; then
-    SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
-    if [[ ! -d $SDKROOT ]] ; then
-    # Sandboxing... OSX becomes more like iOS every day.
-    SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSXVER}.sdk
-    fi
-else
+#if [[ "$(uname -s)" = "Darwin" ]] ; then
+#    SDKROOT=/Developer/SDKs/MacOSX${OSXVER}.sdk
+#    if [[ ! -d $SDKROOT ]] ; then
+#    # Sandboxing... OSX becomes more like iOS every day.
+#    SDKROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSXVER}.sdk
+#    fi
+#else
     SDKROOT=$(cd ${TOPSRCDIR}/../sdks/MacOSX${OSXVER}.sdk && pwd)
-fi
+#fi
+
 cp -Rf ${SDKROOT}/usr/include/objc ${DISTDIR}/include
 
 # llvm headers
@@ -734,6 +735,9 @@ if [[ "$(uname_bt)" = "Windows" ]] ; then
         AUTOCONF=autoconf-2.68
         AUTOHEADER=autoheader-2.68
     fi
+elif [[ "$(uname_bt)" = "Darwin" ]] ; then
+    AUTOCONF=autoconf213
+    AUTOHEADER=autoheader213
 fi
 
 # Attempt fix for ar header output:

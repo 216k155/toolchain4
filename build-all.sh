@@ -90,6 +90,11 @@ if [ ! "$DEBIAN_VERSION" = "6.0.5" -a "$(uname_bt)" = "Linux" ] ; then
         rebase_absolute_paths "$HOST_COMPILERS_ROOT_HOST/$(basename $LINUX64_CC_URL)" "/tmp/ahsieh-gcc-64-X27190/2"                         "$PWD/prebuilts/gcc/linux-x86/host"
     fi
     export PATH=$HOST_COMPILERS_ROOT_HOST/$(basename $LINUX32_CC_URL)/bin:$PATH
+elif [ "$(uname_bt)" = "Darwin" ]; then
+    CC="gcc-4.2 -m32 -isysroot $HOME/MacOSX10.7.sdk -mmacosx-version-min=10.5 -DMAXOSX_DEPLOYEMENT_TARGET=10.5"
+    CXX="g++-4.2 -m32 -isysroot $HOME/MacOSX10.7.sdk -mmacosx-version-min=10.5 -DMAXOSX_DEPLOYEMENT_TARGET=10.5"
+    LD="ld -m32 -syslibroot $HOME/MacOSX10.7.sdk -mmacosx-version-min=10.5"
+    export CC CXX LD
 fi
 
 DST=${BASE_TMP}/final-install
